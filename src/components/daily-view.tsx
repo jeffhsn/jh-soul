@@ -7,6 +7,7 @@ import { aamalForDay, type Weekday } from "@/data";
 import { eventsFor } from "@/data/hijri-events";
 import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
 import { CalendarPanel } from "./hijri-calendar";
+import { ContributionGraph } from "./contribution-graph";
 import { PrayerTimes } from "./prayer-times";
 import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
 import { AmalCard } from "./amal-card";
@@ -77,7 +78,12 @@ function DayContent({ now }: { now: Date }) {
   const ordered = [...pending, ...finished];
 
   return (
-    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14">
+    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 xl:max-w-[88rem] xl:grid-cols-[300px_minmax(0,1fr)_400px]">
+      {/* activity heatmap — left rail on wide screens */}
+      <aside className="hidden xl:sticky xl:top-10 xl:block xl:rounded-3xl xl:border xl:border-night-line-soft xl:bg-night-raise/40 xl:p-6 animate-rise">
+        <ContributionGraph refresh={done} />
+      </aside>
+
       <div className="min-w-0">
       {/* header */}
       <header className="animate-rise">
@@ -249,6 +255,11 @@ function DayContent({ now }: { now: Date }) {
           ))}
         </div>
       </section>
+
+      {/* activity heatmap — inline below the list on smaller screens */}
+      <div className="mt-12 rounded-3xl border border-night-line-soft bg-night-raise/40 p-5 xl:hidden">
+        <ContributionGraph refresh={done} />
+      </div>
 
       <footer className="mt-16 text-center text-xs text-cream-faint">
         <div className="hairline mb-6 opacity-40" />
