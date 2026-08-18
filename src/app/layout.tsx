@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Newsreader, Amiri } from "next/font/google";
+import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -41,7 +42,16 @@ export default function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${newsreader.variable} ${amiri.variable}`}
     >
+      <head>
+        {/* apply saved theme before first paint to avoid a flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("da:theme")==="light")document.documentElement.classList.add("light")}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="antialiased">
+        <ThemeToggle />
         {children}
       </body>
     </html>

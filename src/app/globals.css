@@ -60,6 +60,45 @@ html {
   color-scheme: dark;
   /* larger base type across the whole app (all rem sizes scale with this) */
   font-size: 112.5%;
+  /* heatmap cell colors */
+  --heat-0: rgba(29, 51, 56, 0.55);
+  --heat-4: #edcb85;
+  --heat-4-glow: 0 0 6px rgba(217, 169, 84, 0.55);
+}
+
+/* ---------- light mode: morning manuscript ---------- */
+html.light {
+  color-scheme: light;
+  --color-night: #f3ecda;
+  --color-night-raise: #ede4cd;
+  --color-night-card: #faf6ea;
+  --color-night-line: #d9cca8;
+  --color-night-line-soft: #e4d9bc;
+  --color-gold: #a87f2e;
+  --color-gold-bright: #8a671d;
+  --color-gold-dim: #b39a55;
+  --color-cream: #27333a;
+  --color-cream-dim: #5a6a6b;
+  --color-cream-faint: #93998c;
+  --color-sage: #3f7d66;
+  --heat-0: rgba(120, 105, 60, 0.14);
+  --heat-4: #a87f2e;
+  --heat-4-glow: 0 0 6px rgba(168, 127, 46, 0.45);
+}
+
+html.light body {
+  background-image:
+    radial-gradient(
+      52rem 30rem at 50% -8rem,
+      rgba(168, 127, 46, 0.14),
+      transparent 70%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23a87f2e' stroke-opacity='0.07'%3E%3Cpath d='M48 18 L56 40 L78 48 L56 56 L48 78 L40 56 L18 48 L40 40 Z'/%3E%3Ccircle cx='48' cy='48' r='6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* gold buttons keep ink-dark text in light mode for contrast */
+html.light .on-gold {
+  color: #f7f1e2;
 }
 
 body {
@@ -129,6 +168,15 @@ body {
     black calc(100% - 26px),
     transparent
   );
+}
+
+/* invisible scrollbars on inner panels */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* anything clickable shows a pointer (Tailwind 4 resets buttons to default cursor) */

@@ -31,10 +31,10 @@ export function HijriCalendar() {
           today&rsquo;s aamal
         </Link>
       </header>
-      <div className="mt-6">
+      <div className="mt-8">
         <CalendarPanel />
       </div>
-      <p className="mt-6 text-center text-[0.7rem] italic text-cream-faint">
+      <p className="mt-8 text-center text-[0.7rem] italic text-cream-faint">
         Dates follow the Umm al-Qura calendar — local moon-sighting may differ by a day.
       </p>
     </main>
@@ -61,10 +61,13 @@ export function CalendarPanel() {
   const month = days[0].hijri;
   const todayK = todayKey(now);
   const firstWeekday = days[0].date.getDay();
-  const monthEvents = days
-    .flatMap(({ date, hijri }) =>
-      eventsFor(hijri.month, hijri.day).map((e) => ({ e, date, hijri })),
-    );
+  const monthEvents = days.flatMap(({ date, hijri }) =>
+    eventsFor(hijri.month, hijri.day).map((e) => ({ e, date, hijri })),
+  );
+
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en", { day: "numeric", month: "short" });
+  const range = `${fmt(days[0].date)} — ${fmt(days[days.length - 1].date)}`;
 
   function shiftMonth(dir: -1 | 1) {
     const edge = new Date(
@@ -77,33 +80,38 @@ export function CalendarPanel() {
 
   return (
     <div>
+      {/* month header */}
       <div className="flex items-center justify-between">
         <button
           aria-label="Previous month"
           onClick={() => shiftMonth(-1)}
-          className="grid size-9 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+          className="grid size-8 place-items-center rounded-full text-cream-faint transition hover:text-gold-bright"
         >
-          <ChevronLeft className="size-4" />
+          <ChevronLeft className="size-5" />
         </button>
         <div className="text-center">
-          <h2 className="font-display text-2xl tracking-tight">
-            {month.monthName}
+          <h2 className="font-display text-[1.35rem] tracking-tight">
+            {month.monthName}{" "}
+            <span className="text-gold-dim">{month.year}</span>
           </h2>
-          <p className="mt-0.5 text-sm italic text-cream-dim">{month.year} AH</p>
+          <p className="mt-0.5 text-[0.72rem] italic text-cream-faint">{range}</p>
         </div>
         <button
           aria-label="Next month"
           onClick={() => shiftMonth(1)}
-          className="grid size-9 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+          className="grid size-8 place-items-center rounded-full text-cream-faint transition hover:text-gold-bright"
         >
-          <ChevronRight className="size-4" />
+          <ChevronRight className="size-5" />
         </button>
       </div>
 
-      {/* grid */}
-      <div className="mt-5 grid grid-cols-7 gap-1 text-center">
+      {/* grid — bare numbers, no boxes */}
+      <div className="mt-5 grid grid-cols-7 gap-y-1 text-center">
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-          <span key={i} className="pb-1 text-[0.68rem] uppercase tracking-wider text-cream-faint">
+          <span
+            key={i}
+            className="pb-2 text-[0.62rem] uppercase tracking-[0.18em] text-cream-faint"
+          >
             {d}
           </span>
         ))}
@@ -116,79 +124,80 @@ export function CalendarPanel() {
           return (
             <div
               key={hijri.day}
-              className={cn(
-                "relative flex aspect-square flex-col items-center justify-center rounded-xl border transition",
-                isToday
-                  ? "border-gold bg-gold/10 shadow-[0_0_14px_rgba(217,169,84,0.2)]"
-                  : evts.length
-                    ? "border-night-line bg-night-card"
-                    : "border-night-line-soft/60",
-              )}
+              title={
+                evts.length
+                  ? evts.map((e) => e.title).join(" · ")
+                  : `${hijri.day} ${month.monthName} · ${fmt(date)}`
+              }
+              className="flex flex-col items-center"
             >
               <span
                 className={cn(
-                  "font-display text-[1.05rem] leading-none",
-                  isToday ? "text-gold-bright" : "text-cream",
+                  "grid size-9 place-items-center rounded-full font-display text-[0.95rem] leading-none transition",
+                  isToday
+                    ? "bg-gold text-night shadow-[0_0_14px_rgba(217,169,84,0.4)]"
+                    : evts.length
+                      ? "text-cream"
+                      : "text-cream-faint",
                 )}
               >
                 {hijri.day}
               </span>
-              <span className="mt-0.5 text-[0.58rem] text-cream-faint">
-                {date.getDate()}/{date.getMonth() + 1}
+              <span className="flex h-1.5 items-center gap-0.5">
+                {evts.slice(0, 3).map((e, i) => (
+                  <span
+                    key={i}
+                    className="size-1 rounded-full"
+                    style={{ background: KIND_COLOR[e.kind] }}
+                  />
+                ))}
               </span>
-              {evts.length > 0 && (
-                <span className="absolute bottom-1.5 flex gap-0.5">
-                  {evts.slice(0, 3).map((e, i) => (
-                    <span
-                      key={i}
-                      className="size-1.5 rounded-full"
-                      style={{ background: KIND_COLOR[e.kind] }}
-                    />
-                  ))}
-                </span>
-              )}
             </div>
           );
         })}
       </div>
 
-      {/* events this month */}
-      <section className="mt-7">
-        <div className="mb-3 flex items-center gap-3">
-          <h3 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">
-            This month
-          </h3>
-          <div className="hairline flex-1 opacity-40" />
-        </div>
+      {/* occasions — quiet timeline */}
+      <div className="mt-6">
+        <div className="hairline mb-1 opacity-50" />
         {monthEvents.length === 0 ? (
-          <p className="text-sm italic text-cream-dim">
+          <p className="py-3 text-sm italic text-cream-dim">
             No major recorded occasions this month.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul>
             {monthEvents.map(({ e, date, hijri }, i) => {
               const isToday = todayKey(date) === todayK;
               return (
                 <li
                   key={i}
                   className={cn(
-                    "flex items-start gap-3 rounded-2xl border px-4 py-3",
-                    isToday
-                      ? "border-gold-dim/60 bg-night-card"
-                      : "border-night-line-soft bg-night-raise/50",
+                    "flex gap-3.5 py-3",
+                    i < monthEvents.length - 1 &&
+                      "border-b border-night-line-soft/50",
                   )}
                 >
                   <span
-                    className="mt-1.5 size-2 shrink-0 rounded-full"
-                    style={{ background: KIND_COLOR[e.kind] }}
-                  />
+                    className={cn(
+                      "w-7 shrink-0 pt-0.5 text-right font-display text-[1.15rem] leading-none",
+                      isToday ? "text-gold-bright" : "text-cream-dim",
+                    )}
+                  >
+                    {hijri.day}
+                  </span>
                   <div className="min-w-0">
-                    <p className="text-[0.92rem] leading-snug text-cream">{e.title}</p>
-                    <p className="mt-0.5 text-[0.72rem] text-cream-faint">
-                      {hijri.day} {month.monthName} · {date.toLocaleDateString("en", { day: "numeric", month: "short" })}
-                      {" · "}
-                      <span style={{ color: KIND_COLOR[e.kind] }}>{KIND_LABEL[e.kind]}</span>
-                      {isToday && <span className="text-gold-bright"> · today</span>}
+                    <p className="text-[0.85rem] leading-snug text-cream">
+                      {e.title}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1.5 text-[0.68rem] text-cream-faint">
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ background: KIND_COLOR[e.kind] }}
+                      />
+                      {KIND_LABEL[e.kind]} · {fmt(date)}
+                      {isToday && (
+                        <span className="text-gold-bright">· today</span>
+                      )}
                     </p>
                   </div>
                 </li>
@@ -196,7 +205,7 @@ export function CalendarPanel() {
             })}
           </ul>
         )}
-      </section>
+      </div>
     </div>
   );
 }

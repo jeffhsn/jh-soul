@@ -78,10 +78,13 @@ function DayContent({ now }: { now: Date }) {
   const ordered = [...pending, ...finished];
 
   return (
-    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 xl:max-w-[88rem] xl:grid-cols-[300px_minmax(0,1fr)_400px]">
-      {/* activity heatmap — left rail on wide screens */}
-      <aside className="hidden xl:sticky xl:top-10 xl:block xl:rounded-3xl xl:border xl:border-night-line-soft xl:bg-night-raise/40 xl:p-6 animate-rise">
-        <ContributionGraph refresh={done} />
+    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
+      {/* calendar — left rail on wide screens */}
+      <aside className="no-scrollbar scroll-fade hidden xl:sticky xl:top-0 xl:block xl:max-h-screen xl:overflow-y-auto xl:border-r xl:border-night-line-soft/60 xl:py-12 xl:pr-12 animate-rise">
+        <CalendarPanel />
+        <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
+          Umm al-Qura dates — moon-sighting may differ by a day.
+        </p>
       </aside>
 
       <div className="min-w-0">
@@ -257,7 +260,7 @@ function DayContent({ now }: { now: Date }) {
       </section>
 
       {/* activity heatmap — inline below the list on smaller screens */}
-      <div className="mt-12 rounded-3xl border border-night-line-soft bg-night-raise/40 p-5 xl:hidden">
+      <div className="mt-12 xl:hidden">
         <ContributionGraph refresh={done} />
       </div>
 
@@ -269,12 +272,17 @@ function DayContent({ now }: { now: Date }) {
       </footer>
       </div>
 
-      {/* always-visible calendar on wide screens */}
-      <aside className="hidden lg:sticky lg:top-10 lg:block lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:rounded-3xl lg:border lg:border-night-line-soft lg:bg-night-raise/40 lg:p-6 animate-rise">
-        <CalendarPanel />
-        <p className="mt-5 text-center text-[0.65rem] italic text-cream-faint">
-          Umm al-Qura dates — moon-sighting may differ by a day.
-        </p>
+      {/* right rail: calendar on lg (2-col), consistency heatmap on xl (3-col) */}
+      <aside className="no-scrollbar scroll-fade hidden lg:sticky lg:top-0 lg:block lg:max-h-screen lg:overflow-y-auto lg:border-l lg:border-night-line-soft/60 lg:py-12 lg:pl-12 animate-rise">
+        <div className="xl:hidden">
+          <CalendarPanel />
+          <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
+            Umm al-Qura dates — moon-sighting may differ by a day.
+          </p>
+        </div>
+        <div className="hidden xl:block">
+          <ContributionGraph refresh={done} />
+        </div>
       </aside>
 
       {open && (

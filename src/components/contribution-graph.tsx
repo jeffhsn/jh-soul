@@ -16,13 +16,13 @@ interface Cell {
 }
 
 const LEVEL_STYLE: Record<Cell["level"], React.CSSProperties> = {
-  0: { background: "rgba(29,51,56,0.55)" },
-  1: { background: "rgba(217,169,84,0.22)" },
-  2: { background: "rgba(217,169,84,0.45)" },
-  3: { background: "rgba(217,169,84,0.72)" },
+  0: { background: "var(--heat-0)" },
+  1: { background: "color-mix(in srgb, var(--color-gold) 25%, transparent)" },
+  2: { background: "color-mix(in srgb, var(--color-gold) 48%, transparent)" },
+  3: { background: "color-mix(in srgb, var(--color-gold) 75%, transparent)" },
   4: {
-    background: "#edcb85",
-    boxShadow: "0 0 6px rgba(217,169,84,0.55)",
+    background: "var(--heat-4)",
+    boxShadow: "var(--heat-4-glow)",
   },
 };
 
