@@ -139,6 +139,8 @@ function YouTubePlayer({ source }: { source: AudioSource }) {
         <img
           src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
           alt=""
+          loading="lazy"
+          decoding="async"
           className="aspect-video w-full object-cover opacity-70 transition group-hover:opacity-90"
         />
         <span className="absolute inset-0 grid place-items-center">

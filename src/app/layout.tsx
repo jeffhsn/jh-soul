@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Newsreader, Amiri } from "next/font/google";
+import { Pwa } from "@/components/pwa";
 import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
 
@@ -25,6 +26,11 @@ export const metadata: Metadata = {
   title: "Daily Aamal — your day of remembrance",
   description:
     "A calm daily checklist of Shia aamal — duas, ziyarat, tasbih and Quran — with audio, one gentle step at a time.",
+  appleWebApp: {
+    capable: true,
+    title: "Daily Aamal",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -49,10 +55,14 @@ export default function RootLayout({
             __html: `try{if(localStorage.getItem("da:theme")==="light")document.documentElement.classList.add("light")}catch(e){}`,
           }}
         />
+        {/* warm up connections used on every visit */}
+        <link rel="preconnect" href="https://api.aladhan.com" />
+        <link rel="preconnect" href="https://i.ytimg.com" />
       </head>
       <body className="antialiased">
         <ThemeToggle />
         {children}
+        <Pwa />
       </body>
     </html>
   );
