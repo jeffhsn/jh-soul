@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Flame } from "lucide-react";
-import { aamalForDay, TIME_LABELS, type Amal, type TimeOfDay, type Weekday } from "@/data";
-import { gregorianDate, hijriDate, todayKey } from "@/lib/dates";
+import Link from "next/link";
+import { CalendarDays, ChevronLeft, ChevronRight, Flame, Sunrise } from "lucide-react";
+import { aamalForDay, type Weekday } from "@/data";
+import { eventsFor } from "@/data/hijri-events";
+import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
+import { PrayerTimes } from "./prayer-times";
 import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
 import { AmalCard } from "./amal-card";
 import { FocusView } from "./focus-view";
 import { ProgressRing } from "./progress-ring";
 
-const TIME_SECTIONS: TimeOfDay[] = ["morning", "afternoon", "any", "evening", "night"];
+const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function DailyView() {
   // resolve "today" on the client only, to avoid SSR/client date mismatch
@@ -24,9 +27,7 @@ export function DailyView() {
     return (
       <main className="mx-auto max-w-xl px-5 py-16">
         <div className="hairline mb-8" />
-        <p className="text-center font-display text-cream-dim">
-          ﷽
-        </p>
+        <p className="text-center font-display text-cream-dim">﷽</p>
       </main>
     );
   }
@@ -34,8 +35,17 @@ export function DailyView() {
 }
 
 function DayContent({ now }: { now: Date }) {
-  const date = todayKey(now);
-  const weekday = now.getDay() as Weekday;
+  // offset in days from today; 0 = today
+  const [offset, setOffset] = useState(0);
+  const viewed = useMemo(() => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + offset);
+    return d;
+  }, [now, offset]);
+
+  const date = todayKey(viewed);
+  const isToday = offset === 0;
+  const weekday = viewed.getDay() as Weekday;
   const aamal = useMemo(() => aamalForDay(weekday), [weekday]);
   const [done, setDone] = useDone(date);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -43,23 +53,27 @@ function DayContent({ now }: { now: Date }) {
 
   const completed = aamal.filter((a) => done[a.id]).length;
   const total = aamal.length;
+  const totalMinutes = aamal.reduce((s, a) => s + a.minutes, 0);
+  const remainingMinutes = aamal
+    .filter((a) => !done[a.id])
+    .reduce((s, a) => s + a.minutes, 0);
   const allDone = total > 0 && completed === total;
 
   useEffect(() => {
-    recordDayTotal(date, total);
-  }, [date, total]);
+    // only stamp real today — browsing other days must not affect streaks
+    if (isToday) recordDayTotal(date, total);
+  }, [isToday, date, total]);
   useEffect(() => {
     setStreak(computeStreak());
   }, [done]);
 
+  const hp = hijriParts(viewed);
+  const todaysEvents = eventsFor(hp.month, hp.day);
+
   const open = openId ? aamal.find((a) => a.id === openId) ?? null : null;
-
-  const sections = TIME_SECTIONS.map((t) => ({
-    time: t,
-    items: aamal.filter((a) => a.timeOfDay === t),
-  })).filter((s) => s.items.length > 0);
-
-  let cardIndex = 0;
+  const pending = aamal.filter((a) => !done[a.id]);
+  const finished = aamal.filter((a) => done[a.id]);
+  const ordered = [...pending, ...finished];
 
   return (
     <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14">
@@ -68,18 +82,81 @@ function DayContent({ now }: { now: Date }) {
         <p className="text-center font-arabic text-xl text-gold/90 animate-glow-pulse">
           بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
         </p>
+
+        {/* day navigation */}
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <button
+            aria-label="Previous day"
+            onClick={() => setOffset((o) => o - 1)}
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <div className="flex flex-1 items-center justify-center gap-1.5 sm:gap-2">
+            {DAY_LETTERS.map((letter, d) => {
+              const delta = d - now.getDay();
+              const selected = d === weekday && Math.abs(offset) < 7;
+              const isTodayDot = d === now.getDay();
+              return (
+                <button
+                  key={d}
+                  aria-label={`View ${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d]}`}
+                  onClick={() => setOffset(delta)}
+                  className={
+                    "grid size-8 place-items-center rounded-full text-[0.72rem] transition " +
+                    (selected
+                      ? "bg-gold font-semibold text-night shadow-[0_0_12px_rgba(217,169,84,0.35)]"
+                      : isTodayDot
+                        ? "border border-gold-dim/60 text-gold-bright"
+                        : "border border-night-line text-cream-faint hover:text-cream-dim")
+                  }
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            aria-label="Next day"
+            onClick={() => setOffset((o) => o + 1)}
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+
         <div className="mt-6 flex items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-[1.7rem] leading-tight tracking-tight">
-              {gregorianDate(now)}
+              {isToday ? "Today" : gregorianDate(viewed)}
             </h1>
-            <p className="mt-1 text-sm italic text-cream-dim">{hijriDate(now)}</p>
-            {streak > 0 && (
-              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-gold-bright">
-                <Flame className="size-3.5" />
-                {streak}-day streak
-              </p>
-            )}
+            <p className="mt-1 text-sm italic text-cream-dim">
+              {isToday && <>{gregorianDate(viewed)} · </>}
+              {hijriDate(viewed)}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {streak > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-gold-bright">
+                  <Flame className="size-3.5" />
+                  {streak}-day streak
+                </span>
+              )}
+              <Link
+                href="/calendar"
+                className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
+              >
+                <CalendarDays className="size-3.5" />
+                calendar
+              </Link>
+              {!isToday && (
+                <button
+                  onClick={() => setOffset(0)}
+                  className="rounded-full border border-gold-dim/50 px-2.5 py-0.5 text-xs text-gold-bright transition hover:border-gold"
+                >
+                  ← back to today
+                </button>
+              )}
+            </div>
           </div>
           <ProgressRing value={completed} max={total} size={72}>
             <span className="font-display text-sm text-cream">
@@ -88,52 +165,82 @@ function DayContent({ now }: { now: Date }) {
             </span>
           </ProgressRing>
         </div>
+        {/* occasions on this day */}
+        {todaysEvents.length > 0 && (
+          <div className="mt-4 space-y-1.5">
+            {todaysEvents.map((e, i) => (
+              <Link
+                key={i}
+                href="/calendar"
+                className="flex items-start gap-2.5 rounded-2xl border border-night-line-soft bg-night-raise/50 px-3.5 py-2.5 transition hover:border-gold-dim/50"
+              >
+                <span
+                  className="mt-1.5 size-2 shrink-0 rounded-full"
+                  style={{
+                    background:
+                      e.kind === "mourning"
+                        ? "#c0666e"
+                        : e.kind === "celebration"
+                          ? "#7fb8a4"
+                          : "#d9a954",
+                  }}
+                />
+                <span className="text-[0.85rem] leading-snug text-cream-dim">
+                  {e.title}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* prayer times for the viewed day */}
+        <PrayerTimes date={viewed} />
+
         <div className="hairline mt-6" />
       </header>
 
-      {allDone && (
+      {allDone ? (
         <div className="mt-8 rounded-2xl border border-gold-dim/40 bg-night-card p-6 text-center animate-rise">
           <p className="font-arabic text-2xl text-gold-bright">
             تَقَبَّلَ اللَّهُ أَعْمَالَكُمْ
           </p>
           <p className="mt-2 font-display text-lg">May Allah accept your deeds.</p>
           <p className="mt-1 text-sm italic text-cream-dim">
-            Today&rsquo;s aamal are complete. Rest with a peaceful heart.
+            {isToday
+              ? "Today's session is complete. Go into your day with a light heart."
+              : "This day's session was completed."}
+          </p>
+        </div>
+      ) : (
+        /* one-sitting banner */
+        <div className="mt-8 flex items-center gap-3 rounded-2xl border border-night-line-soft bg-night-raise/60 px-4 py-3 animate-rise">
+          <Sunrise className="size-4 shrink-0 text-gold" />
+          <p className="text-[0.85rem] leading-snug text-cream-dim">
+            <span className="text-cream">One sitting, after Fajr.</span>{" "}
+            {completed > 0 ? (
+              <>~{remainingMinutes} min left of {totalMinutes}.</>
+            ) : (
+              <>The whole session is about {totalMinutes} minutes.</>
+            )}
           </p>
         </div>
       )}
 
-      {/* sections */}
-      {sections.map((section) => {
-        const pending = section.items.filter((a) => !done[a.id]);
-        const finished = section.items.filter((a) => done[a.id]);
-        const ordered = [...pending, ...finished];
-        return (
-          <section key={section.time} className="mt-9">
-            <div className="mb-3 flex items-center gap-3">
-              <h2 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">
-                {TIME_LABELS[section.time]}
-              </h2>
-              <div className="hairline flex-1 opacity-40" />
-              <span className="text-[0.72rem] text-cream-faint">
-                {finished.length}/{section.items.length}
-              </span>
-            </div>
-            <div className="space-y-2.5">
-              {ordered.map((amal) => (
-                <AmalCard
-                  key={amal.id}
-                  amal={amal}
-                  done={!!done[amal.id]}
-                  index={cardIndex++}
-                  onOpen={() => setOpenId(amal.id)}
-                  onToggle={(v) => setDone(amal.id, v)}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {/* the session — one flat block, in recitation order */}
+      <section className="mt-6">
+        <div className="space-y-2.5">
+          {ordered.map((amal, i) => (
+            <AmalCard
+              key={amal.id}
+              amal={amal}
+              done={!!done[amal.id]}
+              index={i}
+              onOpen={() => setOpenId(amal.id)}
+              onToggle={(v) => setDone(amal.id, v)}
+            />
+          ))}
+        </div>
+      </section>
 
       <footer className="mt-16 text-center text-xs text-cream-faint">
         <div className="hairline mb-6 opacity-40" />

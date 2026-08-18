@@ -43,7 +43,7 @@ export function AmalCard({
         "group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all duration-300 animate-rise",
         done
           ? "border-night-line-soft bg-night-raise/50 opacity-55"
-          : "border-night-line bg-night-card hover:border-gold-dim/60 hover:bg-night-card/80",
+          : "border-night-line bg-night-card hover:-translate-y-[1px] hover:border-gold-dim/60 hover:bg-night-card/80 hover:shadow-[0_10px_28px_rgba(0,0,0,0.35)]",
       )}
       style={{ animationDelay: `${Math.min(index * 60, 480)}ms` }}
     >

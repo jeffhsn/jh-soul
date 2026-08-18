@@ -58,7 +58,7 @@ export function FocusView({
           </div>
 
           {/* body */}
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+          <div className="scroll-fade min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-7">
             {amal.type === "tasbih" && amal.counterPhases ? (
               <TasbihBeads
                 amalId={amal.id}

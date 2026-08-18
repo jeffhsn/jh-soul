@@ -63,8 +63,14 @@ export function PhraseCounter({
         onClick={tap}
         disabled={finished}
         aria-label="Count one recitation"
-        className="mt-10 touch-manipulation rounded-full outline-none transition active:scale-[0.97]"
+        className="relative mt-10 touch-manipulation rounded-full outline-none transition active:scale-[0.97]"
       >
+        {state.count > 0 && !finished && (
+          <span
+            key={state.count}
+            className="tap-ripple pointer-events-none absolute inset-0 rounded-full border-2 border-gold/60"
+          />
+        )}
         <ProgressRing value={Math.min(state.count, target)} max={target} size={220} stroke={6}>
           <span className="flex flex-col items-center">
             <span

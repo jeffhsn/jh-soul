@@ -7,9 +7,10 @@ import { useCountState } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 /**
- * A digital misbaha. Tap anywhere on the strand to pass one bead.
- * Beads slide along an arc like a real strand; each phase (34/33/33)
- * gets its own bead colour, with a separator bead between phases.
+ * A digital misbaha that behaves like the real thing: beads hang on a sagging
+ * string; the current bead sits large under your thumb in the middle; each tap
+ * flicks it to the pile on the left with a spring. 34 / 33 / 33, each phase
+ * with its own bead material.
  */
 export function TasbihBeads({
   amalId,
@@ -23,40 +24,33 @@ export function TasbihBeads({
   onComplete: () => void;
 }) {
   const [state, setState] = useCountState(amalId, date);
-  const [justTapped, setJustTapped] = useState(0);
   const doneRef = useRef(false);
-
   const phase = phases[Math.min(state.phase, phases.length - 1)];
   const finished = state.phase >= phases.length;
   const totalAll = useMemo(() => phases.reduce((s, p) => s + p.count, 0), [phases]);
-  const doneAll = useMemo(
-    () =>
-      phases
-        .slice(0, Math.min(state.phase, phases.length))
-        .reduce((s, p) => s + p.count, 0) + (finished ? 0 : state.count),
-    [phases, state, finished],
-  );
+  const doneAll =
+    phases.slice(0, Math.min(state.phase, phases.length)).reduce((s, p) => s + p.count, 0) +
+    (finished ? 0 : state.count);
+
+  function vibrate(pattern: number | number[]) {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(pattern);
+      } catch {}
+    }
+  }
 
   function tap() {
     if (finished) return;
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(12);
-      } catch {}
-    }
-    setJustTapped((t) => t + 1);
+    vibrate(12);
     const nextCount = state.count + 1;
     if (nextCount >= phase.count) {
       const nextPhase = state.phase + 1;
       setState({ phase: nextPhase, count: 0 });
+      vibrate([20, 40, 20]);
       if (nextPhase >= phases.length && !doneRef.current) {
         doneRef.current = true;
-        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-          try {
-            navigator.vibrate([30, 60, 30]);
-          } catch {}
-        }
-        setTimeout(onComplete, 900);
+        setTimeout(onComplete, 1100);
       }
     } else {
       setState({ phase: state.phase, count: nextCount });
@@ -66,10 +60,10 @@ export function TasbihBeads({
   return (
     <div className="flex select-none flex-col items-center">
       {/* phase phrase */}
-      <div className="text-center" key={finished ? "done" : state.phase}>
+      <div className="min-h-[7.5rem] text-center" key={finished ? "done" : state.phase}>
         {finished ? (
           <>
-            <p className="arabic-text text-3xl text-gold-bright">
+            <p className="arabic-text animate-rise text-3xl text-gold-bright">
               تَقَبَّلَ اللَّهُ
             </p>
             <p className="mt-2 text-sm italic text-cream-dim">
@@ -78,9 +72,7 @@ export function TasbihBeads({
           </>
         ) : (
           <>
-            <p className="arabic-text animate-rise text-4xl text-cream">
-              {phase.phrase.ar}
-            </p>
+            <p className="arabic-text animate-rise text-4xl text-cream">{phase.phrase.ar}</p>
             <p className="mt-2 text-sm italic text-sage/85">{phase.phrase.tr}</p>
             <p className="mt-0.5 text-[0.82rem] text-cream-dim">{phase.phrase.en}</p>
           </>
@@ -92,36 +84,36 @@ export function TasbihBeads({
         onClick={tap}
         disabled={finished}
         aria-label="Pass one bead"
-        className="relative mt-8 block w-full max-w-md cursor-pointer touch-manipulation outline-none"
+        className="relative mt-2 block h-[230px] w-full max-w-md touch-manipulation overflow-hidden outline-none"
       >
-        <BeadStrand
+        <Strand
           count={finished ? phases[phases.length - 1].count : phase.count}
           value={finished ? phases[phases.length - 1].count : state.count}
           phase={finished ? phases.length - 1 : state.phase}
-          pulse={justTapped}
+          finished={finished}
         />
-        {/* big count */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-4">
+        {/* count, under the strand */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-1 flex items-baseline justify-center gap-1.5">
           <span
             key={finished ? "fin" : state.count}
-            className="animate-bead-pop font-display text-6xl tabular-nums text-cream"
+            className="animate-bead-pop font-display text-5xl tabular-nums text-cream"
           >
             {finished ? "✓" : state.count}
           </span>
           {!finished && (
-            <span className="mt-1 text-sm text-cream-faint">of {phase.count}</span>
+            <span className="text-sm text-cream-faint">/ {phase.count}</span>
           )}
         </div>
       </button>
 
       {!finished && (
-        <p className="mt-4 text-[0.78rem] uppercase tracking-[0.2em] text-cream-faint">
-          tap the beads
+        <p className="mt-3 text-[0.78rem] uppercase tracking-[0.2em] text-cream-faint">
+          tap to pass a bead
         </p>
       )}
 
       {/* phase pips + overall progress */}
-      <div className="mt-6 flex items-center gap-2">
+      <div className="mt-5 flex items-center gap-2">
         {phases.map((p, i) => (
           <span
             key={i}
@@ -154,95 +146,138 @@ export function TasbihBeads({
   );
 }
 
-const PHASE_COLORS = [
-  { fill: "#d9a954", glow: "rgba(217,169,84,0.55)" }, // gold — Allahu Akbar
-  { fill: "#7fb8a4", glow: "rgba(127,184,164,0.5)" }, // sage — Alhamdulillah
-  { fill: "#c98d6b", glow: "rgba(201,141,107,0.5)" }, // clay — SubhanAllah
+/** Bead materials per phase: [highlight, base, shadow, glow] */
+const MATERIALS = [
+  { hi: "#f4dCA0", base: "#d9a954", lo: "#7a5a22", glow: "rgba(217,169,84,0.5)" }, // amber — Allahu Akbar
+  { hi: "#c8e8db", base: "#7fb8a4", lo: "#3c6a59", glow: "rgba(127,184,164,0.45)" }, // jade — Alhamdulillah
+  { hi: "#f0c9ae", base: "#c98d6b", lo: "#7a4a30", glow: "rgba(201,141,107,0.45)" }, // clay — SubhanAllah
 ];
 
-/**
- * SVG strand: beads laid on a catenary-ish curve. Passed beads gather to the
- * left, glowing; the current bead sits highlighted; remaining wait on the right.
- */
-function BeadStrand({
+const W = 440; // logical width
+const CENTER = W / 2;
+
+/** y along the sagging string for a given x */
+function sag(x: number) {
+  const d = (x - CENTER) / CENTER; // -1 … 1
+  return 92 + 46 * (1 - d * d); // parabola, lowest at center
+}
+
+function Strand({
   count,
   value,
   phase,
-  pulse,
+  finished,
 }: {
   count: number;
   value: number;
   phase: number;
-  pulse: number;
+  finished: boolean;
 }) {
-  const W = 400;
-  const H = 240;
-  const color = PHASE_COLORS[phase % PHASE_COLORS.length];
+  const m = MATERIALS[phase % MATERIALS.length];
+  const [uid] = useState(() => Math.random().toString(36).slice(2, 8));
 
-  // bead positions along a hanging curve
-  const positions = useMemo(() => {
-    const pts: { x: number; y: number }[] = [];
-    for (let i = 0; i < count; i++) {
-      const t = count === 1 ? 0.5 : i / (count - 1);
-      const x = 28 + t * (W - 56);
-      // catenary dip
-      const y = 46 + Math.sin(Math.PI * t) * 132;
-      pts.push({ x, y });
+  // position of bead i given how many are passed
+  function place(i: number) {
+    if (finished || i < value) {
+      // passed pile, most recent nearest center-left
+      const k = value - 1 - i; // 0 = just passed
+      const x = Math.max(34, CENTER - 92 - k * 16);
+      return { x, y: sag(x), s: 1, o: k > 11 ? 0 : 1 - k * 0.055, z: 40 - k };
     }
-    return pts;
-  }, [count]);
+    if (i === value) {
+      // current bead, big, at the lowest point
+      return { x: CENTER, y: sag(CENTER), s: 1.65, o: 1, z: 60 };
+    }
+    // waiting, climbing up to the right
+    const k = i - value; // 1 = next
+    const x = CENTER + 76 + (k - 1) * 34;
+    return { x, y: sag(x), s: 1, o: x > W - 20 ? 0 : 1 - k * 0.09, z: 40 - k };
+  }
 
-  const pathD = useMemo(() => {
-    if (!positions.length) return "";
-    return (
-      `M ${positions[0].x} ${positions[0].y} ` +
-      positions
-        .slice(1)
-        .map((p) => `L ${p.x} ${p.y}`)
-        .join(" ")
-    );
-  }, [positions]);
+  // string path through the sag
+  const stringD = useMemo(() => {
+    const pts: string[] = [];
+    for (let x = 12; x <= W - 12; x += 16) pts.push(`${x} ${sag(x)}`);
+    return "M " + pts.join(" L ");
+  }, []);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+    <div className="absolute inset-0">
       {/* string */}
-      <path d={pathD} fill="none" stroke="var(--color-night-line)" strokeWidth="1.5" />
-      {positions.map((p, i) => {
-        const passed = i < value;
-        const isCurrent = i === value;
-        const r = isCurrent ? 11 : 8;
+      <svg viewBox={`0 0 ${W} 230`} className="absolute inset-0 h-full w-full" aria-hidden>
+        <defs>
+          <linearGradient id={`str-${uid}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#1d3338" stopOpacity="0" />
+            <stop offset="0.12" stopColor="#2c4a50" />
+            <stop offset="0.88" stopColor="#2c4a50" />
+            <stop offset="1" stopColor="#1d3338" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={stringD} fill="none" stroke={`url(#str-${uid})`} strokeWidth="2.5" />
+      </svg>
+
+      {/* glow under the current bead */}
+      {!finished && (
+        <div
+          className="absolute size-24 rounded-full transition-all duration-300"
+          style={{
+            left: `${((CENTER - 48) / W) * 100}%`,
+            top: sag(CENTER) - 24,
+            background: `radial-gradient(circle, ${m.glow}, transparent 65%)`,
+            filter: "blur(6px)",
+          }}
+        />
+      )}
+
+      {/* beads */}
+      {Array.from({ length: count }, (_, i) => {
+        const p = place(i);
+        const passed = finished || i < value;
+        const current = !finished && i === value;
         return (
-          <g key={i}>
-            {passed && (
-              <circle cx={p.x} cy={p.y} r={r + 4} fill={color.glow} opacity={0.18} />
-            )}
-            <circle
-              cx={p.x}
-              cy={p.y}
-              r={r}
-              fill={passed ? color.fill : "var(--color-night-card)"}
-              stroke={
-                isCurrent
-                  ? color.fill
-                  : passed
-                    ? "transparent"
-                    : "var(--color-night-line)"
-              }
-              strokeWidth={isCurrent ? 2.5 : 1.5}
-              className="transition-all duration-300"
-              style={
-                isCurrent && pulse
-                  ? { filter: `drop-shadow(0 0 8px ${color.glow})` }
-                  : undefined
-              }
+          <div
+            key={i}
+            className="absolute size-9 rounded-full will-change-transform"
+            style={{
+              left: `${(p.x / W) * 100}%`,
+              top: p.y,
+              transform: `translate(-50%, -50%) scale(${p.s})`,
+              opacity: p.o,
+              zIndex: p.z,
+              transition:
+                "left 0.42s cubic-bezier(0.34,1.45,0.5,1), top 0.42s cubic-bezier(0.34,1.45,0.5,1), transform 0.42s cubic-bezier(0.34,1.45,0.5,1), opacity 0.4s ease, background 0.3s ease",
+              background: passed || current
+                ? `radial-gradient(circle at 33% 28%, ${m.hi}, ${m.base} 52%, ${m.lo} 100%)`
+                : `radial-gradient(circle at 33% 28%, #2a444a, #17282c 55%, #0d181b 100%)`,
+              boxShadow: current
+                ? `0 6px 18px rgba(0,0,0,0.5), 0 0 22px ${m.glow}, inset 0 -3px 6px rgba(0,0,0,0.35)`
+                : passed
+                  ? `0 3px 8px rgba(0,0,0,0.45), inset 0 -2px 4px rgba(0,0,0,0.3)`
+                  : `0 2px 6px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.45)`,
+              border: passed || current ? "none" : "1px solid #223a40",
+            }}
+          >
+            {/* specular highlight */}
+            <span
+              className="absolute rounded-full"
+              style={{
+                left: "24%",
+                top: "16%",
+                width: "26%",
+                height: "20%",
+                background: "rgba(255,255,255,0.5)",
+                filter: "blur(1.5px)",
+                opacity: passed || current ? 0.7 : 0.18,
+              }}
             />
-            {/* bead highlight */}
-            {passed && (
-              <circle cx={p.x - r / 3} cy={p.y - r / 3} r={r / 4} fill="#fff" opacity={0.25} />
-            )}
-          </g>
+            {/* string hole hint */}
+            <span
+              className="absolute left-1/2 top-1/2 size-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ background: "rgba(0,0,0,0.35)" }}
+            />
+          </div>
         );
       })}
-    </svg>
+    </div>
   );
 }
