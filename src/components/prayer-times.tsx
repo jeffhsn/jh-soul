@@ -104,23 +104,42 @@ async function detectLoc(): Promise<Loc> {
   throw new Error("no location");
 }
 
-/** Geocode a typed place name → Loc (Nominatim). */
-async function geocode(query: string): Promise<Loc | null> {
+interface Suggestion extends Loc {
+  /** full place description for the dropdown's second line */
+  detail: string;
+}
+
+/** Search place names → suggestions (Nominatim). */
+async function searchPlaces(query: string): Promise<Suggestion[]> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=en`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=en`,
     );
     const j = await res.json();
-    if (Array.isArray(j) && j[0]) {
-      const parts = String(j[0].display_name).split(",");
-      const label =
-        parts.length > 1
-          ? `${parts[0].trim()}, ${parts[parts.length - 1].trim()}`
-          : parts[0].trim();
-      return { lat: Number(j[0].lat), lon: Number(j[0].lon), label, source: "manual" };
-    }
-  } catch {}
-  return null;
+    if (!Array.isArray(j)) return [];
+    return j
+      .map((r): Suggestion | null => {
+        const lat = Number(r.lat);
+        const lon = Number(r.lon);
+        if (!isFinite(lat) || !isFinite(lon)) return null;
+        const a = r.address ?? {};
+        const place =
+          a.city || a.town || a.village || a.municipality || a.county ||
+          String(r.display_name).split(",")[0].trim();
+        const cc = a.country_code ? String(a.country_code).toUpperCase() : "";
+        const parts = String(r.display_name).split(",").map((s: string) => s.trim());
+        return {
+          lat,
+          lon,
+          label: cc ? `${place}, ${cc}` : place,
+          detail: parts.slice(1).join(", "),
+          source: "manual",
+        };
+      })
+      .filter((s): s is Suggestion => s !== null);
+  } catch {
+    return [];
+  }
 }
 
 type State =
@@ -137,9 +156,31 @@ export function PrayerTimes({ date }: { date: Date }) {
   const [loc, setLoc] = useState<Loc | null>(null);
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
-  const [editBusy, setEditBusy] = useState<false | "search" | "detect">(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [highlight, setHighlight] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const [detecting, setDetecting] = useState(false);
   const [editError, setEditError] = useState(false);
   const dateKey = todayKey(date);
+
+  // debounced autocomplete
+  useEffect(() => {
+    if (!editing) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      const found = await searchPlaces(q);
+      setSuggestions(found);
+      setHighlight(0);
+      setSearching(false);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [query, editing]);
 
   // resolve location once (stored > detected)
   useEffect(() => {
@@ -204,37 +245,26 @@ export function PrayerTimes({ date }: { date: Date }) {
     };
   }, [dateKey, date, loc]);
 
-  const submitQuery = useCallback(async () => {
-    const q = query.trim();
-    if (!q) return;
-    setEditBusy("search");
+  const pick = useCallback((s: Loc) => {
+    saveLoc(s);
+    setLoc(s);
+    setEditing(false);
+    setQuery("");
+    setSuggestions([]);
     setEditError(false);
-    const found = await geocode(q);
-    setEditBusy(false);
-    if (found) {
-      saveLoc(found);
-      setLoc(found);
-      setEditing(false);
-      setQuery("");
-    } else {
-      setEditError(true);
-    }
-  }, [query]);
+  }, []);
 
   const useMyLocation = useCallback(async () => {
-    setEditBusy("detect");
+    setDetecting(true);
     setEditError(false);
     try {
       const l = await detectLoc();
-      saveLoc(l);
-      setLoc(l);
-      setEditing(false);
-      setQuery("");
+      pick(l);
     } catch {
       setEditError(true);
     }
-    setEditBusy(false);
-  }, []);
+    setDetecting(false);
+  }, [pick]);
 
   if (state.status === "error" && !loc) {
     return (
@@ -309,43 +339,88 @@ export function PrayerTimes({ date }: { date: Date }) {
           </button>
         </div>
       ) : (
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submitQuery()}
-            placeholder="City, e.g. Najaf or London"
-            className="w-52 rounded-full border border-night-line bg-night-card px-3.5 py-1.5 text-[0.78rem] text-cream placeholder:text-cream-faint focus:border-gold-dim focus:outline-none"
-          />
-          <button
-            onClick={submitQuery}
-            disabled={editBusy !== false}
-            className="rounded-full bg-gold px-3.5 py-1.5 text-[0.72rem] font-semibold text-night transition hover:bg-gold-bright disabled:opacity-60"
-          >
-            {editBusy === "search" ? "…" : "set"}
-          </button>
-          <button
-            onClick={useMyLocation}
-            disabled={editBusy !== false}
-            className="inline-flex items-center gap-1 rounded-full border border-night-line px-3 py-1.5 text-[0.72rem] text-cream-dim transition hover:border-gold-dim hover:text-cream disabled:opacity-60"
-          >
-            <LocateFixed className="size-3" />
-            {editBusy === "detect" ? "…" : "use my location"}
-          </button>
-          <button
-            onClick={() => {
-              setEditing(false);
-              setEditError(false);
-            }}
-            className="text-[0.72rem] text-cream-faint hover:text-cream-dim"
-          >
-            cancel
-          </button>
+        <div className="mx-auto mt-2 w-full max-w-sm">
+          <div className="relative">
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setHighlight((h) => Math.min(h + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setHighlight((h) => Math.max(h - 1, 0));
+                } else if (e.key === "Enter" && suggestions[highlight]) {
+                  pick(suggestions[highlight]);
+                } else if (e.key === "Escape") {
+                  setEditing(false);
+                }
+              }}
+              placeholder="Start typing a city… e.g. Najaf, Qom, London"
+              className="w-full rounded-2xl border border-night-line bg-night-card px-4 py-2.5 text-[0.85rem] text-cream placeholder:text-cream-faint focus:border-gold-dim focus:outline-none"
+            />
+            {(suggestions.length > 0 || searching) && (
+              <ul className="absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-2xl border border-night-line bg-night-card shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+                {searching && suggestions.length === 0 && (
+                  <li className="px-4 py-3 text-[0.78rem] italic text-cream-faint">
+                    searching…
+                  </li>
+                )}
+                {suggestions.map((s, i) => (
+                  <li key={`${s.lat},${s.lon}`}>
+                    <button
+                      onClick={() => pick(s)}
+                      onMouseEnter={() => setHighlight(i)}
+                      className={cn(
+                        "flex w-full flex-col items-start px-4 py-2.5 text-left transition",
+                        i === highlight && "bg-gold/10",
+                      )}
+                    >
+                      <span className="inline-flex items-center gap-1.5 text-[0.85rem] text-cream">
+                        <MapPin className="size-3 text-gold-dim" />
+                        {s.label}
+                      </span>
+                      {s.detail && (
+                        <span className="mt-0.5 line-clamp-1 pl-[18px] text-[0.68rem] text-cream-faint">
+                          {s.detail}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <button
+              onClick={useMyLocation}
+              disabled={detecting}
+              className="inline-flex items-center gap-1 rounded-full border border-night-line px-3 py-1.5 text-[0.72rem] text-cream-dim transition hover:border-gold-dim hover:text-cream disabled:opacity-60"
+            >
+              <LocateFixed className="size-3" />
+              {detecting ? "detecting…" : "use my location"}
+            </button>
+            <button
+              onClick={() => {
+                setEditing(false);
+                setEditError(false);
+              }}
+              className="rounded-full px-3 py-1.5 text-[0.72rem] text-cream-faint hover:text-cream-dim"
+            >
+              cancel
+            </button>
+          </div>
           {editError && (
-            <span className="w-full text-center text-[0.7rem] text-[#c0666e]">
-              Couldn&rsquo;t find that place — try a city name
-            </span>
+            <p className="mt-1.5 text-center text-[0.7rem] text-[#c0666e]">
+              Couldn&rsquo;t detect your location — try typing a city instead
+            </p>
+          )}
+          {query.trim().length >= 2 && !searching && suggestions.length === 0 && (
+            <p className="mt-1.5 text-center text-[0.7rem] text-cream-faint">
+              No places found — keep typing or try another spelling
+            </p>
           )}
         </div>
       )}
