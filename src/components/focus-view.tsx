@@ -32,8 +32,8 @@ export function FocusView({
           className="fixed inset-x-0 bottom-0 top-0 z-50 flex flex-col overflow-hidden outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-8 data-[state=open]:fade-in-0 sm:inset-x-auto sm:left-1/2 sm:top-[3vh] sm:h-[94vh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:rounded-3xl sm:border sm:border-night-line"
           style={{ backgroundColor: "var(--color-night-raise)" }}
         >
-          {/* header */}
-          <div className="flex items-start justify-between gap-4 border-b border-night-line-soft px-6 pb-4 pt-5">
+          {/* header — clears the status bar when full-screen on phones */}
+          <div className="flex items-start justify-between gap-4 border-b border-night-line-soft px-6 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-5">
             <div className="min-w-0">
               <Dialog.Title className="font-display text-xl leading-tight">
                 {amal.title}
@@ -100,7 +100,7 @@ export function FocusView({
 
           {/* footer — mark done (interactive types complete themselves) */}
           {!interactive && (
-            <div className="border-t border-night-line-soft px-6 py-4">
+            <div className="border-t border-night-line-soft px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
               <button
                 onClick={() => onDone(!done)}
                 className={cn(

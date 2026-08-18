@@ -293,7 +293,7 @@ export function PrayerTimes({ date }: { date: Date }) {
 
   return (
     <div className="mt-5">
-      <div className="grid grid-cols-6 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/60">
+      <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/60 sm:grid-cols-6">
         {SHOWN.map(({ key, label }) => (
           <div
             key={key}
@@ -359,7 +359,7 @@ export function PrayerTimes({ date }: { date: Date }) {
                 }
               }}
               placeholder="Start typing a city… e.g. Najaf, Qom, London"
-              className="w-full rounded-2xl border border-night-line bg-night-card px-4 py-2.5 text-[0.85rem] text-cream placeholder:text-cream-faint focus:border-gold-dim focus:outline-none"
+              className="w-full rounded-2xl border border-night-line bg-night-card px-4 py-2.5 text-[16px] text-cream placeholder:text-cream-faint focus:border-gold-dim focus:outline-none"
             />
             {(suggestions.length > 0 || searching) && (
               <ul className="absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-2xl border border-night-line bg-night-card shadow-[0_16px_40px_rgba(0,0,0,0.45)]">

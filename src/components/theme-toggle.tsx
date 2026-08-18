@@ -23,7 +23,8 @@ export function ThemeToggle() {
     <button
       aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
       onClick={toggle}
-      className="fixed right-4 top-4 z-30 grid size-10 place-items-center rounded-full border border-night-line bg-night-raise/80 text-cream-dim backdrop-blur transition hover:border-gold-dim hover:text-gold-bright sm:right-6 sm:top-6"
+      className="fixed right-4 z-30 grid size-10 place-items-center rounded-full border border-night-line bg-night-raise/80 text-cream-dim backdrop-blur transition hover:border-gold-dim hover:text-gold-bright active:scale-95 sm:right-6"
+      style={{ top: "max(1rem, env(safe-area-inset-top))" }}
     >
       {light === null ? (
         <Moon className="size-4 opacity-0" />

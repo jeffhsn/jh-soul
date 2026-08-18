@@ -78,7 +78,7 @@ function DayContent({ now }: { now: Date }) {
   const ordered = [...pending, ...finished];
 
   return (
-    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
+    <main className="mx-auto max-w-xl px-4 pb-28 pt-10 sm:px-5 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
       {/* calendar — left rail on wide screens */}
       <aside className="no-scrollbar scroll-fade hidden xl:sticky xl:top-0 xl:block xl:max-h-screen xl:overflow-y-auto xl:border-r xl:border-night-line-soft/60 xl:py-12 xl:pr-12 animate-rise">
         <CalendarPanel />
@@ -99,11 +99,11 @@ function DayContent({ now }: { now: Date }) {
           <button
             aria-label="Previous day"
             onClick={() => setOffset((o) => o - 1)}
-            className="grid size-8 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream sm:size-9"
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream sm:size-9"
           >
             <ChevronLeft className="size-4" />
           </button>
-          <div className="flex flex-1 items-center justify-center gap-1 sm:gap-2">
+          <div className="no-scrollbar flex flex-1 items-center justify-start gap-0.5 overflow-x-auto min-[375px]:justify-center sm:gap-2">
             {DAY_LETTERS.map((letter, d) => {
               // the strip always shows the week containing the *viewed* day
               const dayDate = new Date(viewed);
@@ -117,7 +117,7 @@ function DayContent({ now }: { now: Date }) {
                   aria-label={`View ${dayDate.toDateString()}`}
                   onClick={() => setOffset(dayOffset)}
                   className={
-                    "flex size-9 flex-col items-center justify-center rounded-full leading-none transition sm:size-10 " +
+                    "flex size-8 shrink-0 flex-col items-center justify-center rounded-full leading-none transition sm:size-10 " +
                     (selected
                       ? "bg-gold font-semibold text-night shadow-[0_0_12px_rgba(217,169,84,0.35)]"
                       : isTodayDot
@@ -136,7 +136,7 @@ function DayContent({ now }: { now: Date }) {
           <button
             aria-label="Next day"
             onClick={() => setOffset((o) => o + 1)}
-            className="grid size-8 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream sm:size-9"
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream sm:size-9"
           >
             <ChevronRight className="size-4" />
           </button>

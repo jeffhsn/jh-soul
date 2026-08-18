@@ -43,25 +43,29 @@ export function AmalCard({
         "group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all duration-300 animate-rise",
         done
           ? "border-night-line-soft bg-night-raise/50 opacity-55"
-          : "border-night-line bg-night-card hover:-translate-y-[1px] hover:border-gold-dim/60 hover:bg-night-card/80 hover:shadow-[0_10px_28px_rgba(0,0,0,0.35)]",
+          : "border-night-line bg-night-card hover:-translate-y-[1px] hover:border-gold-dim/60 hover:bg-night-card/80 hover:shadow-[0_10px_28px_rgba(0,0,0,0.35)] active:scale-[0.99]",
       )}
       style={{ animationDelay: `${Math.min(index * 60, 480)}ms` }}
     >
-      {/* check control */}
+      {/* check control — 44px hit area around a smaller visual circle */}
       <button
         aria-label={done ? `Mark ${amal.title} as not done` : `Mark ${amal.title} as done`}
         onClick={(e) => {
           e.stopPropagation();
           onToggle(!done);
         }}
-        className={cn(
-          "grid size-7 shrink-0 place-items-center rounded-full border transition-all duration-300",
-          done
-            ? "border-gold bg-gold text-night shadow-[0_0_10px_rgba(217,169,84,0.4)]"
-            : "border-cream-faint text-transparent hover:border-gold hover:text-gold-dim",
-        )}
+        className="-m-2 grid size-11 shrink-0 place-items-center active:scale-90 transition-transform"
       >
-        <Check className="size-4" strokeWidth={3} />
+        <span
+          className={cn(
+            "grid size-7 place-items-center rounded-full border transition-all duration-300",
+            done
+              ? "border-gold bg-gold text-night shadow-[0_0_10px_rgba(217,169,84,0.4)]"
+              : "border-cream-faint text-transparent hover:border-gold hover:text-gold-dim",
+          )}
+        >
+          <Check className="size-4" strokeWidth={3} />
+        </span>
       </button>
 
       {/* main click area opens focus view */}
@@ -70,7 +74,7 @@ export function AmalCard({
         className="flex min-w-0 flex-1 items-center gap-4 text-left"
       >
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <span
               className={cn(
                 "font-display text-[1.05rem] leading-snug",
@@ -80,7 +84,7 @@ export function AmalCard({
               {amal.title}
             </span>
             {amal.arabicTitle && (
-              <span className="font-arabic shrink-0 text-[1.05rem] leading-none text-gold-bright/80">
+              <span className="font-arabic ml-auto text-[1.05rem] leading-none text-gold-bright/80">
                 {amal.arabicTitle}
               </span>
             )}

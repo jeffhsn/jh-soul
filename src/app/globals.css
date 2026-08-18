@@ -2,19 +2,19 @@
 @import "tw-animate-css";
 
 @theme {
-  /* Night-prayer palette: deep ink teal, candle gold, aged cream */
-  --color-night: #0b1416;
-  --color-night-raise: #101d20;
-  --color-night-card: #132226;
-  --color-night-line: #1d3338;
-  --color-night-line-soft: #16292d;
-  --color-gold: #d9a954;
-  --color-gold-bright: #edcb85;
-  --color-gold-dim: #8a6c35;
-  --color-cream: #f2e9d6;
-  --color-cream-dim: #8fa4a0;
-  --color-cream-faint: #5c7370;
-  --color-sage: #7fb8a4;
+  /* Night-sky palette: midnight indigo, lantern brass, moonlit cream */
+  --color-night: #0e131f;
+  --color-night-raise: #121a2b;
+  --color-night-card: #151e31;
+  --color-night-line: #243049;
+  --color-night-line-soft: #1a2338;
+  --color-gold: #dcab5c;
+  --color-gold-bright: #f0cd8c;
+  --color-gold-dim: #8f7440;
+  --color-cream: #f0ead9;
+  --color-cream-dim: #98a3b8;
+  --color-cream-faint: #5d687f;
+  --color-sage: #8fb8c9;
 
   --font-display: var(--font-fraunces), "Georgia", serif;
   --font-body: var(--font-newsreader), "Georgia", serif;
@@ -60,30 +60,32 @@ html {
   color-scheme: dark;
   /* larger base type across the whole app (all rem sizes scale with this) */
   font-size: 112.5%;
+  /* don't let iOS inflate text on rotate */
+  -webkit-text-size-adjust: 100%;
   /* no rubber-band blank space when scrolling past the edges */
   overscroll-behavior-y: none;
   background-color: var(--color-night);
   /* heatmap cell colors */
-  --heat-0: rgba(29, 51, 56, 0.55);
+  --heat-0: rgba(36, 48, 73, 0.55);
   --heat-4: #edcb85;
   --heat-4-glow: 0 0 6px rgba(217, 169, 84, 0.55);
 }
 
-/* ---------- light mode: morning manuscript ---------- */
+/* ---------- light mode: soft daylight paper ---------- */
 html.light {
   color-scheme: light;
-  --color-night: #f3ecda;
-  --color-night-raise: #ede4cd;
-  --color-night-card: #faf6ea;
-  --color-night-line: #d9cca8;
-  --color-night-line-soft: #e4d9bc;
+  --color-night: #f6f2e9;
+  --color-night-raise: #efe9db;
+  --color-night-card: #fcfaf3;
+  --color-night-line: #ddd4bf;
+  --color-night-line-soft: #e8e1cf;
   --color-gold: #a87f2e;
   --color-gold-bright: #8a671d;
   --color-gold-dim: #b39a55;
-  --color-cream: #27333a;
-  --color-cream-dim: #5a6a6b;
-  --color-cream-faint: #93998c;
-  --color-sage: #3f7d66;
+  --color-cream: #232c3a;
+  --color-cream-dim: #5f6a7c;
+  --color-cream-faint: #98a0ab;
+  --color-sage: #41748c;
   --heat-0: rgba(120, 105, 60, 0.14);
   --heat-4: #a87f2e;
   --heat-4-glow: 0 0 6px rgba(168, 127, 46, 0.45);
@@ -92,11 +94,12 @@ html.light {
 html.light body {
   background-image:
     radial-gradient(
-      52rem 30rem at 50% -8rem,
-      rgba(168, 127, 46, 0.14),
+      56rem 32rem at 50% -10rem,
+      rgba(168, 127, 46, 0.12),
       transparent 70%
     ),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23a87f2e' stroke-opacity='0.07'%3E%3Cpath d='M48 18 L56 40 L78 48 L56 56 L48 78 L40 56 L18 48 L40 40 Z'/%3E%3Ccircle cx='48' cy='48' r='6'/%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(180deg, #f9f6ee 0%, #f6f2e9 45%, #f0eadc 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.17 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* gold buttons keep ink-dark text in light mode for contrast */
@@ -110,14 +113,20 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
-  /* lamp glow + faint khatam star lattice */
+  /* keep content clear of the notch and home indicator (standalone PWA) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* night sky: soft lantern glow, deep vertical gradient, fine grain */
   background-image:
     radial-gradient(
-      52rem 30rem at 50% -8rem,
-      rgba(217, 169, 84, 0.13),
+      56rem 32rem at 50% -10rem,
+      rgba(220, 171, 92, 0.1),
       transparent 70%
     ),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23d9a954' stroke-opacity='0.05'%3E%3Cpath d='M48 18 L56 40 L78 48 L56 56 L48 78 L40 56 L18 48 L40 40 Z'/%3E%3Ccircle cx='48' cy='48' r='6'/%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(180deg, #111a2d 0%, #0e131f 45%, #0b0f18 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   background-attachment: fixed;
 }
 
@@ -199,6 +208,13 @@ summary {
   cursor: pointer;
 }
 
+/* no 300ms delay / accidental double-tap zoom on any control */
+button,
+a,
+input {
+  touch-action: manipulation;
+}
+
 ::selection {
   background: rgba(217, 169, 84, 0.35);
 }
@@ -206,7 +222,7 @@ summary {
 /* calm scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1d3338 transparent;
+  scrollbar-color: #243049 transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

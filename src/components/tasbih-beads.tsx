@@ -207,10 +207,10 @@ function Strand({
       <svg viewBox={`0 0 ${W} 230`} className="absolute inset-0 h-full w-full" aria-hidden>
         <defs>
           <linearGradient id={`str-${uid}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#1d3338" stopOpacity="0" />
-            <stop offset="0.12" stopColor="#2c4a50" />
-            <stop offset="0.88" stopColor="#2c4a50" />
-            <stop offset="1" stopColor="#1d3338" stopOpacity="0" />
+            <stop offset="0" stopColor="#1a2338" stopOpacity="0" />
+            <stop offset="0.12" stopColor="#2e3d61" />
+            <stop offset="0.88" stopColor="#2e3d61" />
+            <stop offset="1" stopColor="#1a2338" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={stringD} fill="none" stroke={`url(#str-${uid})`} strokeWidth="2.5" />
@@ -248,13 +248,13 @@ function Strand({
                 "left 0.42s cubic-bezier(0.34,1.45,0.5,1), top 0.42s cubic-bezier(0.34,1.45,0.5,1), transform 0.42s cubic-bezier(0.34,1.45,0.5,1), opacity 0.4s ease, background 0.3s ease",
               background: passed || current
                 ? `radial-gradient(circle at 33% 28%, ${m.hi}, ${m.base} 52%, ${m.lo} 100%)`
-                : `radial-gradient(circle at 33% 28%, #2a444a, #17282c 55%, #0d181b 100%)`,
+                : `radial-gradient(circle at 33% 28%, #2b3550, #171e30 55%, #0d1220 100%)`,
               boxShadow: current
                 ? `0 6px 18px rgba(0,0,0,0.5), 0 0 22px ${m.glow}, inset 0 -3px 6px rgba(0,0,0,0.35)`
                 : passed
                   ? `0 3px 8px rgba(0,0,0,0.45), inset 0 -2px 4px rgba(0,0,0,0.3)`
                   : `0 2px 6px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.45)`,
-              border: passed || current ? "none" : "1px solid #223a40",
+              border: passed || current ? "none" : "1px solid #263252",
             }}
           >
             {/* specular highlight */}
