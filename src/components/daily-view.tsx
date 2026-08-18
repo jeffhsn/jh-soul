@@ -6,6 +6,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Flame, Sunrise } from "lucide-
 import { aamalForDay, type Weekday } from "@/data";
 import { eventsFor } from "@/data/hijri-events";
 import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
+import { CalendarPanel } from "./hijri-calendar";
 import { PrayerTimes } from "./prayer-times";
 import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
 import { AmalCard } from "./amal-card";
@@ -76,7 +77,8 @@ function DayContent({ now }: { now: Date }) {
   const ordered = [...pending, ...finished];
 
   return (
-    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14">
+    <main className="mx-auto max-w-xl px-5 pb-28 pt-10 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14">
+      <div className="min-w-0">
       {/* header */}
       <header className="animate-rise">
         <p className="text-center font-arabic text-xl text-gold/90 animate-glow-pulse">
@@ -88,22 +90,25 @@ function DayContent({ now }: { now: Date }) {
           <button
             aria-label="Previous day"
             onClick={() => setOffset((o) => o - 1)}
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+            className="grid size-8 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream sm:size-9"
           >
             <ChevronLeft className="size-4" />
           </button>
-          <div className="flex flex-1 items-center justify-center gap-1.5 sm:gap-2">
+          <div className="flex flex-1 items-center justify-center gap-1 sm:gap-2">
             {DAY_LETTERS.map((letter, d) => {
-              const delta = d - now.getDay();
-              const selected = d === weekday && Math.abs(offset) < 7;
-              const isTodayDot = d === now.getDay();
+              // the strip always shows the week containing the *viewed* day
+              const dayDate = new Date(viewed);
+              dayDate.setDate(dayDate.getDate() + (d - viewed.getDay()));
+              const dayOffset = offset + (d - viewed.getDay());
+              const selected = d === viewed.getDay();
+              const isTodayDot = dayOffset === 0;
               return (
                 <button
                   key={d}
-                  aria-label={`View ${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d]}`}
-                  onClick={() => setOffset(delta)}
+                  aria-label={`View ${dayDate.toDateString()}`}
+                  onClick={() => setOffset(dayOffset)}
                   className={
-                    "grid size-8 place-items-center rounded-full text-[0.72rem] transition " +
+                    "flex size-9 flex-col items-center justify-center rounded-full leading-none transition sm:size-10 " +
                     (selected
                       ? "bg-gold font-semibold text-night shadow-[0_0_12px_rgba(217,169,84,0.35)]"
                       : isTodayDot
@@ -111,7 +116,10 @@ function DayContent({ now }: { now: Date }) {
                         : "border border-night-line text-cream-faint hover:text-cream-dim")
                   }
                 >
-                  {letter}
+                  <span className="text-[0.6rem] uppercase opacity-70">{letter}</span>
+                  <span className="mt-0.5 text-[0.78rem] tabular-nums">
+                    {dayDate.getDate()}
+                  </span>
                 </button>
               );
             })}
@@ -119,7 +127,7 @@ function DayContent({ now }: { now: Date }) {
           <button
             aria-label="Next day"
             onClick={() => setOffset((o) => o + 1)}
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+            className="grid size-8 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream sm:size-9"
           >
             <ChevronRight className="size-4" />
           </button>
@@ -143,7 +151,7 @@ function DayContent({ now }: { now: Date }) {
               )}
               <Link
                 href="/calendar"
-                className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
+                className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream lg:hidden"
               >
                 <CalendarDays className="size-3.5" />
                 calendar
@@ -248,6 +256,15 @@ function DayContent({ now }: { now: Date }) {
           &ldquo;Verily in the remembrance of Allah do hearts find rest.&rdquo; — Qur&rsquo;an 13:28
         </p>
       </footer>
+      </div>
+
+      {/* always-visible calendar on wide screens */}
+      <aside className="hidden lg:sticky lg:top-10 lg:block lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:rounded-3xl lg:border lg:border-night-line-soft lg:bg-night-raise/40 lg:p-6 animate-rise">
+        <CalendarPanel />
+        <p className="mt-5 text-center text-[0.65rem] italic text-cream-faint">
+          Umm al-Qura dates — moon-sighting may differ by a day.
+        </p>
+      </aside>
 
       {open && (
         <FocusView

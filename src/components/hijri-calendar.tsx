@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
-import { hijriMonthDays, hijriParts, todayKey } from "@/lib/dates";
+import { hijriMonthDays, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,29 @@ const KIND_LABEL: Record<EventKind, string> = {
 };
 
 export function HijriCalendar() {
+  return (
+    <main className="mx-auto max-w-xl px-5 pb-24 pt-10 sm:pt-14">
+      <header className="animate-rise">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
+        >
+          <ArrowLeft className="size-3.5" />
+          today&rsquo;s aamal
+        </Link>
+      </header>
+      <div className="mt-6">
+        <CalendarPanel />
+      </div>
+      <p className="mt-6 text-center text-[0.7rem] italic text-cream-faint">
+        Dates follow the Umm al-Qura calendar — local moon-sighting may differ by a day.
+      </p>
+    </main>
+  );
+}
+
+/** Month grid + occasions — embeddable (sidebar on desktop, page on mobile). */
+export function CalendarPanel() {
   const [now, setNow] = useState<Date | null>(null);
   // anchor = any Gregorian date inside the displayed Hijri month
   const [anchor, setAnchor] = useState<Date | null>(null);
@@ -32,11 +55,7 @@ export function HijriCalendar() {
   const days = useMemo(() => (anchor ? hijriMonthDays(anchor) : []), [anchor]);
 
   if (!now || !anchor || days.length === 0) {
-    return (
-      <main className="mx-auto max-w-xl px-5 py-16">
-        <p className="text-center font-display text-cream-dim">﷽</p>
-      </main>
-    );
+    return <p className="py-10 text-center font-display text-cream-dim">﷽</p>;
   }
 
   const month = days[0].hijri;
@@ -57,46 +76,32 @@ export function HijriCalendar() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-5 pb-24 pt-10 sm:pt-14">
-      <header className="animate-rise">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
-          >
-            <ArrowLeft className="size-3.5" />
-            today&rsquo;s aamal
-          </Link>
+    <div>
+      <div className="flex items-center justify-between">
+        <button
+          aria-label="Previous month"
+          onClick={() => shiftMonth(-1)}
+          className="grid size-9 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <div className="text-center">
+          <h2 className="font-display text-2xl tracking-tight">
+            {month.monthName}
+          </h2>
+          <p className="mt-0.5 text-sm italic text-cream-dim">{month.year} AH</p>
         </div>
-        <div className="mt-6 flex items-center justify-between">
-          <button
-            aria-label="Previous month"
-            onClick={() => shiftMonth(-1)}
-            className="grid size-9 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
-          >
-            <ChevronLeft className="size-4" />
-          </button>
-          <div className="text-center">
-            <h1 className="font-display text-2xl tracking-tight">
-              {month.monthName}
-            </h1>
-            <p className="mt-0.5 text-sm italic text-cream-dim">
-              {month.year} AH
-            </p>
-          </div>
-          <button
-            aria-label="Next month"
-            onClick={() => shiftMonth(1)}
-            className="grid size-9 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
-          >
-            <ChevronRight className="size-4" />
-          </button>
-        </div>
-        <div className="hairline mt-6" />
-      </header>
+        <button
+          aria-label="Next month"
+          onClick={() => shiftMonth(1)}
+          className="grid size-9 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
 
       {/* grid */}
-      <div className="mt-6 grid grid-cols-7 gap-1 text-center">
+      <div className="mt-5 grid grid-cols-7 gap-1 text-center">
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
           <span key={i} className="pb-1 text-[0.68rem] uppercase tracking-wider text-cream-faint">
             {d}
@@ -148,11 +153,11 @@ export function HijriCalendar() {
       </div>
 
       {/* events this month */}
-      <section className="mt-8">
+      <section className="mt-7">
         <div className="mb-3 flex items-center gap-3">
-          <h2 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">
+          <h3 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">
             This month
-          </h2>
+          </h3>
           <div className="hairline flex-1 opacity-40" />
         </div>
         {monthEvents.length === 0 ? (
@@ -191,10 +196,7 @@ export function HijriCalendar() {
             })}
           </ul>
         )}
-        <p className="mt-6 text-center text-[0.7rem] italic text-cream-faint">
-          Dates follow the Umm al-Qura calendar — local moon-sighting may differ by a day.
-        </p>
       </section>
-    </main>
+    </div>
   );
 }
