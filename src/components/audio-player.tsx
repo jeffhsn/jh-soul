@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CirclePlay, Pause, Play } from "lucide-react";
+import { CirclePlay, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { AudioSource } from "@/data";
 import { cn } from "@/lib/utils";
 
@@ -9,10 +9,16 @@ import { cn } from "@/lib/utils";
  * Plays the preferred source first (Ali Fani when available) with the rest as
  * selectable fallbacks. mp3 → native audio with custom controls;
  * youtube → lightweight embed that only loads the iframe on tap.
+ * Many mp3 sources (e.g. the daily Quran portion's per-ayah recitation)
+ * become a continuous playlist that reads them out one after another.
  */
 export function AudioPlayer({ sources }: { sources: AudioSource[] }) {
   const [active, setActive] = useState(0);
   const source = sources[active];
+
+  if (sources.length > 5 && sources.every((s) => s.kind === "mp3")) {
+    return <PlaylistPlayer sources={sources} />;
+  }
 
   // disambiguate pills when the same reciter appears more than once
   const labels = sources.map((s, i) => {
@@ -58,6 +64,90 @@ function formatTime(s: number) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+/**
+ * Continuous verse-by-verse playback: one audio element whose src advances
+ * through the list (same element keeps iOS's tap-to-play permission alive).
+ * The title always names the exact track playing, so you know where you are.
+ */
+function PlaylistPlayer({ sources }: { sources: AudioSource[] }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const track = sources[index];
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onEnd = () => {
+      setIndex((i) => {
+        if (i < sources.length - 1) return i + 1;
+        setPlaying(false);
+        return i;
+      });
+    };
+    el.addEventListener("ended", onEnd);
+    return () => el.removeEventListener("ended", onEnd);
+  }, [sources.length]);
+
+  // when the track changes while playing, keep the recitation flowing
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (playing) void el.play().catch(() => setPlaying(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
+  const jump = (delta: number) =>
+    setIndex((i) => Math.min(sources.length - 1, Math.max(0, i + delta)));
+
+  return (
+    <div className="rounded-2xl border border-night-line bg-night-card/70 p-4">
+      <audio ref={ref} src={track.url} preload="none" />
+      <p className="text-center text-[1rem] text-cream">{track.title}</p>
+      <p className="mt-0.5 text-center text-[0.78rem] text-cream-faint">
+        verse {index + 1} of {sources.length} · plays straight through
+      </p>
+      <div className="mt-3 flex items-center justify-center gap-4">
+        <button
+          aria-label="Previous verse"
+          onClick={() => jump(-1)}
+          className="grid size-11 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+        >
+          <SkipBack className="size-4" />
+        </button>
+        <button
+          aria-label={playing ? "Pause" : "Play"}
+          onClick={() => {
+            const el = ref.current;
+            if (!el) return;
+            if (playing) {
+              el.pause();
+              setPlaying(false);
+            } else {
+              void el.play().catch(() => {});
+              setPlaying(true);
+            }
+          }}
+          className="grid size-14 shrink-0 place-items-center rounded-full bg-gold text-night shadow-[0_0_18px_rgba(220,175,94,0.3)] transition hover:bg-gold-bright"
+        >
+          {playing ? (
+            <Pause className="size-5" fill="currentColor" />
+          ) : (
+            <Play className="size-5 translate-x-[1px]" fill="currentColor" />
+          )}
+        </button>
+        <button
+          aria-label="Next verse"
+          onClick={() => jump(1)}
+          className="grid size-11 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+        >
+          <SkipForward className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function Mp3Player({ source }: { source: AudioSource }) {

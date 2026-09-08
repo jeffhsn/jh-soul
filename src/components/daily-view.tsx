@@ -331,11 +331,6 @@ function DayContent({ now }: { now: Date }) {
         </div>
       </section>
 
-      {/* 4 — quiet shelf, outside the daily flow */}
-      <div className="mt-10">
-        <ResourcesPanel />
-      </div>
-
       <footer className="mt-14 text-center text-xs text-cream-faint">
         <div className="hairline mb-6 opacity-40" />
         <p className="italic">
@@ -354,6 +349,10 @@ function DayContent({ now }: { now: Date }) {
         </div>
         <div className="hidden xl:block">
           <ContributionGraph refresh={done} />
+        </div>
+        {/* optional reading — desktop keeps it in the rail, off the checklist */}
+        <div className="mt-10">
+          <ResourcesPanel />
         </div>
       </aside>
 

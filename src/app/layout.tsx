@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Newsreader, Amiri } from "next/font/google";
+import { Fraunces, Alegreya_Sans, Amiri } from "next/font/google";
 import { Pwa } from "@/components/pwa";
 import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
@@ -10,10 +10,13 @@ const fraunces = Fraunces({
   axes: ["opsz"],
 });
 
-const newsreader = Newsreader({
+// body/UI text: a warm humanist sans — far easier to read at small sizes
+// than a serif, and its calligraphic roots sit well with Fraunces + Amiri
+const alegreyaSans = Alegreya_Sans({
   subsets: ["latin"],
-  variable: "--font-newsreader",
+  weight: ["400", "500", "700"],
   style: ["normal", "italic"],
+  variable: "--font-alegreya-sans",
 });
 
 const amiri = Amiri({
@@ -47,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${newsreader.variable} ${amiri.variable}`}
+      className={`${fraunces.variable} ${alegreyaSans.variable} ${amiri.variable}`}
       // the theme boot script below adds "light" before hydration on purpose
       suppressHydrationWarning
     >

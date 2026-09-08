@@ -5,20 +5,20 @@
   /* Mosque-at-night palette: deep emerald ink, lantern gold, warm ivory.
      Text tiers are deliberately bright — legibility beats moodiness. */
   --color-night: #101613;
-  --color-night-raise: #1a231c;
-  --color-night-card: #1e2d23;
-  --color-night-line: #465a4c;
-  --color-night-line-soft: #2c3b30;
+  --color-night-raise: #1b241d;
+  --color-night-card: #213127;
+  --color-night-line: #52685a;
+  --color-night-line-soft: #314135;
   --color-gold: #dcaf5e;
   --color-gold-bright: #f5d795;
-  --color-gold-dim: #ab904e;
-  --color-cream: #faf6e8;
-  --color-cream-dim: #d0d8c7;
-  --color-cream-faint: #9aa68f;
-  --color-sage: #9dd2ba;
+  --color-gold-dim: #b3985a;
+  --color-cream: #fdfaef;
+  --color-cream-dim: #dde3d3;
+  --color-cream-faint: #a9b49d;
+  --color-sage: #a3d6bf;
 
   --font-display: var(--font-fraunces), "Georgia", serif;
-  --font-body: var(--font-newsreader), "Georgia", serif;
+  --font-body: var(--font-alegreya-sans), "Gill Sans", "Segoe UI", sans-serif;
   --font-arabic: var(--font-amiri), "Amiri", "Scheherazade New", serif;
 
   --animate-rise: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -60,7 +60,7 @@
 html {
   color-scheme: dark;
   /* larger base type across the whole app (all rem sizes scale with this) */
-  font-size: 112.5%;
+  font-size: 120%;
   /* don't let iOS inflate text on rotate */
   -webkit-text-size-adjust: 100%;
   /* no rubber-band blank space when scrolling past the edges */
@@ -75,18 +75,18 @@ html {
 /* ---------- light mode: sage-white morning courtyard, deep green ink, bronze ---------- */
 html.light {
   color-scheme: light;
-  --color-night: #f3f6f0;
-  --color-night-raise: #e8ede3;
+  --color-night: #f6f8f2;
+  --color-night-raise: #e9eee2;
   --color-night-card: #ffffff;
-  --color-night-line: #c9d3c4;
-  --color-night-line-soft: #dbe2d4;
+  --color-night-line: #c3cebe;
+  --color-night-line-soft: #d8e0d1;
   --color-gold: #8c6a12;
-  --color-gold-bright: #6b520a;
-  --color-gold-dim: #a5915c;
-  --color-cream: #152018;
-  --color-cream-dim: #3e4e42;
-  --color-cream-faint: #61705d;
-  --color-sage: #1e6249;
+  --color-gold-bright: #664e08;
+  --color-gold-dim: #9d8950;
+  --color-cream: #121b14;
+  --color-cream-dim: #35443a;
+  --color-cream-faint: #566458;
+  --color-sage: #1c5c45;
   --heat-0: rgba(30, 98, 73, 0.12);
   --heat-4: #8c6a12;
   --heat-4-glow: 0 0 6px rgba(140, 106, 18, 0.4);
@@ -115,9 +115,6 @@ body {
   background-color: var(--color-night);
   color: var(--color-cream);
   font-family: var(--font-body);
-  /* Newsreader is a variable font — a touch above regular keeps the small
-     serif text legible on phone screens without losing its character */
-  font-weight: 450;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
   /* keep content clear of the notch and home indicator (standalone PWA) */
