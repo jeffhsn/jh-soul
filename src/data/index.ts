@@ -5,6 +5,7 @@ import { weekly } from "./weekly";
 import { extras } from "./extras";
 import { extras2 } from "./extras2";
 import { audioOverrides } from "./audio";
+import { quranPortionFor } from "./quran-daily";
 
 /** All aamal with researched audio merged in (Ali Fani first, then fallbacks). */
 export const allAamal: Amal[] = [
@@ -52,6 +53,7 @@ const SESSION_ORDER: string[][] = [
   ["ziyarat-ashura"],
   ["dua-kumayl", "dua-nudba"],
   ["surah-kahf"],
+  ["quran-daily"],
   ["surah-mulk"],
   ["amana-rasul"],
 ];
@@ -60,10 +62,13 @@ const RANK = new Map<string, number>(
   SESSION_ORDER.flatMap((group, i) => group.map((id) => [id, i] as const)),
 );
 
-export function aamalForDay(weekday: Weekday): Amal[] {
-  return allAamal
-    .filter((a) => a.days === "daily" || a.days.includes(weekday))
-    .sort((a, b) => (RANK.get(a.id) ?? 99) - (RANK.get(b.id) ?? 99));
+export function aamalForDay(weekday: Weekday, date?: Date): Amal[] {
+  const list = allAamal.filter(
+    (a) => a.days === "daily" || a.days.includes(weekday),
+  );
+  // the year-long khatm portion is computed from the date, not stored
+  if (date) list.push(quranPortionFor(date));
+  return list.sort((a, b) => (RANK.get(a.id) ?? 99) - (RANK.get(b.id) ?? 99));
 }
 
 export const TIME_LABELS: Record<TimeOfDay, string> = {

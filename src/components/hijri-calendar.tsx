@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const KIND_COLOR: Record<EventKind, string> = {
   mourning: "#c0666e",
-  celebration: "#7fb8a4",
+  celebration: "#6db894",
   sacred: "#d9a954",
 };
 
@@ -135,7 +135,7 @@ export function CalendarPanel() {
                 className={cn(
                   "grid size-9 place-items-center rounded-full font-display text-[0.95rem] leading-none transition",
                   isToday
-                    ? "bg-gold text-night shadow-[0_0_14px_rgba(217,169,84,0.4)]"
+                    ? "bg-gold text-night shadow-[0_0_14px_rgba(220,175,94,0.4)]"
                     : evts.length
                       ? "text-cream"
                       : "text-cream-faint",

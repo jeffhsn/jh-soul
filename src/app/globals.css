@@ -2,19 +2,20 @@
 @import "tw-animate-css";
 
 @theme {
-  /* Night-sky palette: midnight indigo, lantern brass, moonlit cream */
-  --color-night: #0e131f;
-  --color-night-raise: #121a2b;
-  --color-night-card: #151e31;
-  --color-night-line: #243049;
-  --color-night-line-soft: #1a2338;
-  --color-gold: #dcab5c;
-  --color-gold-bright: #f0cd8c;
-  --color-gold-dim: #8f7440;
-  --color-cream: #f0ead9;
-  --color-cream-dim: #98a3b8;
-  --color-cream-faint: #5d687f;
-  --color-sage: #8fb8c9;
+  /* Mosque-at-night palette: deep emerald ink, lantern gold, warm ivory.
+     Text tiers are deliberately bright — legibility beats moodiness. */
+  --color-night: #101613;
+  --color-night-raise: #182119;
+  --color-night-card: #1c2a20;
+  --color-night-line: #3a4c3e;
+  --color-night-line-soft: #283528;
+  --color-gold: #dcaf5e;
+  --color-gold-bright: #f2d492;
+  --color-gold-dim: #a58a4a;
+  --color-cream: #f8f4e6;
+  --color-cream-dim: #c6cfbd;
+  --color-cream-faint: #8b9782;
+  --color-sage: #96ccb4;
 
   --font-display: var(--font-fraunces), "Georgia", serif;
   --font-body: var(--font-newsreader), "Georgia", serif;
@@ -66,40 +67,40 @@ html {
   overscroll-behavior-y: none;
   background-color: var(--color-night);
   /* heatmap cell colors */
-  --heat-0: rgba(36, 48, 73, 0.55);
+  --heat-0: rgba(58, 76, 62, 0.5);
   --heat-4: #edcb85;
-  --heat-4-glow: 0 0 6px rgba(217, 169, 84, 0.55);
+  --heat-4-glow: 0 0 6px rgba(220, 175, 94, 0.55);
 }
 
-/* ---------- light mode: soft daylight paper ---------- */
+/* ---------- light mode: porcelain paper, green ink, bronze accents ---------- */
 html.light {
   color-scheme: light;
-  --color-night: #f6f2e9;
-  --color-night-raise: #efe9db;
-  --color-night-card: #fcfaf3;
-  --color-night-line: #ddd4bf;
-  --color-night-line-soft: #e8e1cf;
-  --color-gold: #a87f2e;
-  --color-gold-bright: #8a671d;
-  --color-gold-dim: #b39a55;
-  --color-cream: #232c3a;
-  --color-cream-dim: #5f6a7c;
-  --color-cream-faint: #98a0ab;
-  --color-sage: #41748c;
-  --heat-0: rgba(120, 105, 60, 0.14);
-  --heat-4: #a87f2e;
-  --heat-4-glow: 0 0 6px rgba(168, 127, 46, 0.45);
+  --color-night: #faf8f1;
+  --color-night-raise: #f0eee3;
+  --color-night-card: #ffffff;
+  --color-night-line: #d7d4c4;
+  --color-night-line-soft: #e7e5d8;
+  --color-gold: #a67c1f;
+  --color-gold-bright: #7d5d10;
+  --color-gold-dim: #b49a54;
+  --color-cream: #1d2a20;
+  --color-cream-dim: #4c5c50;
+  --color-cream-faint: #6f7c6c;
+  --color-sage: #276b52;
+  --heat-0: rgba(39, 107, 82, 0.12);
+  --heat-4: #a67c1f;
+  --heat-4-glow: 0 0 6px rgba(166, 124, 31, 0.4);
 }
 
 html.light body {
   background-image:
     radial-gradient(
       56rem 32rem at 50% -10rem,
-      rgba(168, 127, 46, 0.12),
+      rgba(166, 124, 31, 0.07),
       transparent 70%
     ),
-    linear-gradient(180deg, #f9f6ee 0%, #f6f2e9 45%, #f0eadc 100%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.17 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    linear-gradient(180deg, #fdfcf8 0%, #faf8f1 45%, #f4f2e8 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.16 0 0 0 0 0.1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* gold buttons keep ink-dark text in light mode for contrast */
@@ -118,14 +119,14 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  /* night sky: soft lantern glow, deep vertical gradient, fine grain */
+  /* mosque courtyard at night: lantern glow above, deep green ink below */
   background-image:
     radial-gradient(
       56rem 32rem at 50% -10rem,
-      rgba(220, 171, 92, 0.1),
+      rgba(220, 175, 94, 0.12),
       transparent 70%
     ),
-    linear-gradient(180deg, #111a2d 0%, #0e131f 45%, #0b0f18 100%),
+    linear-gradient(180deg, #152018 0%, #101613 45%, #0b100c 100%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   background-attachment: fixed;
 }
@@ -157,7 +158,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(217, 169, 84, 0.55),
+    rgba(220, 175, 94, 0.55),
     transparent
   );
   height: 1px;
@@ -216,13 +217,13 @@ input {
 }
 
 ::selection {
-  background: rgba(217, 169, 84, 0.35);
+  background: rgba(220, 175, 94, 0.35);
 }
 
 /* calm scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #243049 transparent;
+  scrollbar-color: #3a4c3e transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

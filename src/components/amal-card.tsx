@@ -42,7 +42,7 @@ export function AmalCard({
       className={cn(
         "group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all duration-300 animate-rise",
         done
-          ? "border-night-line-soft bg-night-raise/50 opacity-55"
+          ? "border-night-line-soft bg-night-raise/50 opacity-75"
           : "border-night-line bg-night-card hover:-translate-y-[1px] hover:border-gold-dim/60 hover:bg-night-card/80 hover:shadow-[0_10px_28px_rgba(0,0,0,0.35)] active:scale-[0.99]",
       )}
       style={{ animationDelay: `${Math.min(index * 60, 480)}ms` }}
@@ -60,7 +60,7 @@ export function AmalCard({
           className={cn(
             "grid size-7 place-items-center rounded-full border transition-all duration-300",
             done
-              ? "border-gold bg-gold text-night shadow-[0_0_10px_rgba(217,169,84,0.4)]"
+              ? "border-gold bg-gold text-night shadow-[0_0_10px_rgba(220,175,94,0.4)]"
               : "border-cream-faint text-transparent hover:border-gold hover:text-gold-dim",
           )}
         >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LocateFixed, MapPin, Pencil } from "lucide-react";
+import { ChevronDown, LocateFixed, MapPin, Pencil } from "lucide-react";
 import { todayKey } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
@@ -154,6 +154,8 @@ type State =
 export function PrayerTimes({ date }: { date: Date }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [loc, setLoc] = useState<Loc | null>(null);
+  // phones show one summary line; tapping it reveals the full grid
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -292,7 +294,32 @@ export function PrayerTimes({ date }: { date: Date }) {
   }
 
   return (
-    <div className="mt-5">
+    <div className="mt-4 sm:mt-5">
+      {/* phone summary line — next prayer at a glance, tap for the rest */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-night-line-soft bg-night-raise/60 px-4 py-2.5 text-[0.8rem] text-cream-dim transition active:scale-[0.99] sm:hidden"
+      >
+        <span className="inline-flex min-w-0 items-center gap-2">
+          <MapPin className="size-3.5 shrink-0 text-gold-dim" />
+          {nextKey && timings ? (
+            <span className="truncate">
+              Next ·{" "}
+              <span className="text-cream">
+                {nextKey} {timings[nextKey]}
+              </span>
+            </span>
+          ) : (
+            <span className="truncate">Prayer times{loc ? ` · ${loc.label}` : ""}</span>
+          )}
+        </span>
+        <ChevronDown
+          className={cn("size-4 shrink-0 transition-transform", open && "rotate-180")}
+        />
+      </button>
+
+      <div className={cn(open ? "mt-2 block" : "hidden", "sm:mt-0 sm:block")}>
       <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/60 sm:grid-cols-6">
         {SHOWN.map(({ key, label }) => (
           <div
@@ -424,6 +451,7 @@ export function PrayerTimes({ date }: { date: Date }) {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

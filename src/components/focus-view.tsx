@@ -107,7 +107,7 @@ export function FocusView({
                   "flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-display text-[0.95rem] transition-all",
                   done
                     ? "border border-night-line text-cream-dim hover:text-cream"
-                    : "bg-gold text-night shadow-[0_0_24px_rgba(217,169,84,0.25)] hover:bg-gold-bright",
+                    : "bg-gold text-night shadow-[0_0_24px_rgba(220,175,94,0.25)] hover:bg-gold-bright",
                 )}
               >
                 <Check className="size-4" strokeWidth={3} />

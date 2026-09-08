@@ -184,6 +184,12 @@ export const extras: Amal[] = [
     minutes: 1,
     merit:
       "Give sadaqa early in the day, for calamity does not step over sadaqa — Imam al-Sadiq (a)",
+    links: [
+      {
+        label: "Feed a hungry child — ShareTheMeal",
+        url: "https://sharethemeal.org/",
+      },
+    ],
   },
   {
     id: "muawwidhat",

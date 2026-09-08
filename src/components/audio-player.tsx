@@ -94,7 +94,7 @@ function Mp3Player({ source }: { source: AudioSource }) {
           else void el.play();
           setPlaying(!playing);
         }}
-        className="grid size-11 shrink-0 place-items-center rounded-full bg-gold text-night shadow-[0_0_18px_rgba(217,169,84,0.3)] transition hover:bg-gold-bright"
+        className="grid size-11 shrink-0 place-items-center rounded-full bg-gold text-night shadow-[0_0_18px_rgba(220,175,94,0.3)] transition hover:bg-gold-bright"
       >
         {playing ? (
           <Pause className="size-4" fill="currentColor" />

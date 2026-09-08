@@ -47,7 +47,7 @@ export function ProgressRing({
           className="transition-[stroke-dashoffset] duration-700 ease-out"
           style={{
             filter:
-              pct >= 1 ? "drop-shadow(0 0 6px rgba(217,169,84,0.55))" : undefined,
+              pct >= 1 ? "drop-shadow(0 0 6px rgba(220,175,94,0.55))" : undefined,
           }}
         />
       </svg>
