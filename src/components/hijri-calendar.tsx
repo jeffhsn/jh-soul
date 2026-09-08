@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { hijriMonthDays, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
-import { ResourcesPanel } from "./resources";
 import { cn } from "@/lib/utils";
 
 const KIND_COLOR: Record<EventKind, string> = {
@@ -38,10 +37,6 @@ export function HijriCalendar() {
       <p className="mt-8 text-center text-[0.7rem] italic text-cream-faint">
         Dates follow the Umm al-Qura calendar — local moon-sighting may differ by a day.
       </p>
-      {/* optional reading — lives here, away from the daily checklist */}
-      <div className="mt-10">
-        <ResourcesPanel />
-      </div>
     </main>
   );
 }

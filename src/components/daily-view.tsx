@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight, Flame, Sunrise } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, Sunrise } from "lucide-react";
 import { aamalForDay, type Weekday } from "@/data";
 import { eventsFor } from "@/data/hijri-events";
 import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
@@ -87,6 +87,30 @@ function DayContent({ now }: { now: Date }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [openId]);
 
+  // swipe left/right anywhere on the day (except the calendar) to change days,
+  // mirroring the arrow keys on desktop
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    if ((e.target as HTMLElement).closest("[data-no-swipe]")) {
+      touchStart.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const s = touchStart.current;
+    touchStart.current = null;
+    if (!s) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    // decisively horizontal only, so vertical scrolling never changes the day
+    if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) {
+      setOffset((o) => o + (dx < 0 ? 1 : -1));
+    }
+  }
+
   const hp = hijriParts(viewed);
   const todaysEvents = eventsFor(hp.month, hp.day);
 
@@ -108,7 +132,7 @@ function DayContent({ now }: { now: Date }) {
         </p>
       </aside>
 
-      <div className="min-w-0">
+      <div className="min-w-0" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {/* 1 — what day is it */}
       <header className="animate-rise">
         <p className="text-center font-arabic text-xl text-gold/90 animate-glow-pulse">
@@ -199,13 +223,6 @@ function DayContent({ now }: { now: Date }) {
               {streak}-day streak
             </span>
           )}
-          <Link
-            href="/calendar"
-            className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream lg:hidden"
-          >
-            <CalendarDays className="size-3.5" />
-            calendar
-          </Link>
           {!isToday && (
             <button
               onClick={() => setOffset(0)}
@@ -216,9 +233,15 @@ function DayContent({ now }: { now: Date }) {
           )}
         </div>
 
-        {/* occasions on this day */}
+        {/* the month at a glance — inline on phones; wide screens carry it in a rail.
+            data-no-swipe: day-swiping must not fire from the calendar */}
+        <div className="mt-6 lg:hidden" data-no-swipe>
+          <CalendarPanel />
+        </div>
+
+        {/* occasions on this day — phones see them in the calendar's timeline above */}
         {todaysEvents.length > 0 && (
-          <div className="mt-4 space-y-1.5">
+          <div className="mt-4 hidden space-y-1.5 lg:block">
             {todaysEvents.map((e, i) => (
               <Link
                 key={i}
@@ -328,6 +351,11 @@ function DayContent({ now }: { now: Date }) {
         {/* consistency heatmap — inline here on smaller screens */}
         <div className="mt-10 xl:hidden">
           <ContributionGraph refresh={done} />
+        </div>
+
+        {/* optional reading — after progress on phones; wide screens keep it in the rail */}
+        <div className="mt-10 lg:hidden">
+          <ResourcesPanel />
         </div>
       </section>
 
