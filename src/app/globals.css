@@ -5,17 +5,17 @@
   /* Mosque-at-night palette: deep emerald ink, lantern gold, warm ivory.
      Text tiers are deliberately bright — legibility beats moodiness. */
   --color-night: #101613;
-  --color-night-raise: #182119;
-  --color-night-card: #1c2a20;
-  --color-night-line: #3a4c3e;
-  --color-night-line-soft: #283528;
+  --color-night-raise: #1a231c;
+  --color-night-card: #1e2d23;
+  --color-night-line: #465a4c;
+  --color-night-line-soft: #2c3b30;
   --color-gold: #dcaf5e;
-  --color-gold-bright: #f2d492;
-  --color-gold-dim: #a58a4a;
-  --color-cream: #f8f4e6;
-  --color-cream-dim: #c6cfbd;
-  --color-cream-faint: #8b9782;
-  --color-sage: #96ccb4;
+  --color-gold-bright: #f5d795;
+  --color-gold-dim: #ab904e;
+  --color-cream: #faf6e8;
+  --color-cream-dim: #d0d8c7;
+  --color-cream-faint: #9aa68f;
+  --color-sage: #9dd2ba;
 
   --font-display: var(--font-fraunces), "Georgia", serif;
   --font-body: var(--font-newsreader), "Georgia", serif;
@@ -72,35 +72,38 @@ html {
   --heat-4-glow: 0 0 6px rgba(220, 175, 94, 0.55);
 }
 
-/* ---------- light mode: porcelain paper, green ink, bronze accents ---------- */
+/* ---------- light mode: sage-white morning courtyard, deep green ink, bronze ---------- */
 html.light {
   color-scheme: light;
-  --color-night: #faf8f1;
-  --color-night-raise: #f0eee3;
+  --color-night: #f3f6f0;
+  --color-night-raise: #e8ede3;
   --color-night-card: #ffffff;
-  --color-night-line: #d7d4c4;
-  --color-night-line-soft: #e7e5d8;
-  --color-gold: #a67c1f;
-  --color-gold-bright: #7d5d10;
-  --color-gold-dim: #b49a54;
-  --color-cream: #1d2a20;
-  --color-cream-dim: #4c5c50;
-  --color-cream-faint: #6f7c6c;
-  --color-sage: #276b52;
-  --heat-0: rgba(39, 107, 82, 0.12);
-  --heat-4: #a67c1f;
-  --heat-4-glow: 0 0 6px rgba(166, 124, 31, 0.4);
+  --color-night-line: #c9d3c4;
+  --color-night-line-soft: #dbe2d4;
+  --color-gold: #8c6a12;
+  --color-gold-bright: #6b520a;
+  --color-gold-dim: #a5915c;
+  --color-cream: #152018;
+  --color-cream-dim: #3e4e42;
+  --color-cream-faint: #61705d;
+  --color-sage: #1e6249;
+  --heat-0: rgba(30, 98, 73, 0.12);
+  --heat-4: #8c6a12;
+  --heat-4-glow: 0 0 6px rgba(140, 106, 18, 0.4);
 }
 
 html.light body {
   background-image:
     radial-gradient(
       56rem 32rem at 50% -10rem,
-      rgba(166, 124, 31, 0.07),
+      rgba(140, 106, 18, 0.06),
       transparent 70%
     ),
-    linear-gradient(180deg, #fdfcf8 0%, #faf8f1 45%, #f4f2e8 100%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.16 0 0 0 0 0.1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    linear-gradient(180deg, #f8faf5 0%, #f3f6f0 45%, #ecf1e8 100%);
+}
+
+html.light * {
+  scrollbar-color: #c9d3c4 transparent;
 }
 
 /* gold buttons keep ink-dark text in light mode for contrast */
@@ -112,6 +115,9 @@ body {
   background-color: var(--color-night);
   color: var(--color-cream);
   font-family: var(--font-body);
+  /* Newsreader is a variable font — a touch above regular keeps the small
+     serif text legible on phone screens without losing its character */
+  font-weight: 450;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
   /* keep content clear of the notch and home indicator (standalone PWA) */
@@ -126,7 +132,7 @@ body {
       rgba(220, 175, 94, 0.12),
       transparent 70%
     ),
-    linear-gradient(180deg, #152018 0%, #101613 45%, #0b100c 100%),
+    linear-gradient(180deg, #17231a 0%, #101613 45%, #0b100c 100%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   background-attachment: fixed;
 }

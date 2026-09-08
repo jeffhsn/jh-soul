@@ -12,6 +12,13 @@ export function Pwa() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
+      // when an updated worker takes over, reload once so the fresh
+      // styles/shell appear without a manual hard-refresh
+      let hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (hadController) window.location.reload();
+        hadController = true;
+      });
     }
     try {
       const cutoff = daysAgoKey(45);
