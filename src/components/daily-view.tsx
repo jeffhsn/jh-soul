@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Flame, Sunrise } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  ListChecks,
+  Sunrise,
+  TrendingUp,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { aamalForDay, type Weekday } from "@/data";
 import { eventsFor } from "@/data/hijri-events";
 import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
@@ -53,6 +62,12 @@ function DayContent({ now }: { now: Date }) {
   const [done, setDone] = useDone(date);
   const [openId, setOpenId] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
+  // phone navigation: the list is the app; calendar and progress are one tap away
+  const [tab, setTab] = useState<"today" | "calendar" | "progress">("today");
+  function switchTab(next: typeof tab) {
+    setTab(next);
+    window.scrollTo(0, 0);
+  }
 
   const completed = aamal.filter((a) => done[a.id]).length;
   const total = aamal.length;
@@ -123,7 +138,7 @@ function DayContent({ now }: { now: Date }) {
     "grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream active:scale-95";
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-24 pt-8 sm:px-5 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
+    <main className="mx-auto max-w-xl px-4 pb-32 pt-8 sm:px-5 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 lg:pb-24 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
       {/* calendar — left rail on wide screens */}
       <aside className="no-scrollbar scroll-fade hidden xl:sticky xl:top-0 xl:block xl:max-h-screen xl:overflow-y-auto xl:border-r xl:border-night-line-soft/60 xl:py-12 xl:pr-12 animate-rise">
         <CalendarPanel />
@@ -132,7 +147,29 @@ function DayContent({ now }: { now: Date }) {
         </p>
       </aside>
 
-      <div className="min-w-0" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* phone tabs: calendar and progress live on their own screens */}
+      {tab === "calendar" && (
+        <div className="animate-rise lg:hidden">
+          <CalendarPanel />
+          <p className="mt-6 text-center text-[0.7rem] italic text-cream-faint">
+            Umm al-Qura dates — moon-sighting may differ by a day.
+          </p>
+        </div>
+      )}
+      {tab === "progress" && (
+        <div className="animate-rise lg:hidden">
+          <ContributionGraph refresh={done} />
+          <div className="mt-10">
+            <ResourcesPanel />
+          </div>
+        </div>
+      )}
+
+      <div
+        className={cn("min-w-0", tab !== "today" && "hidden lg:block")}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
       {/* 1 — what day is it */}
       <header className="animate-rise">
         <p className="text-center font-arabic text-xl text-gold/90 animate-glow-pulse">
@@ -233,15 +270,9 @@ function DayContent({ now }: { now: Date }) {
           )}
         </div>
 
-        {/* the month at a glance — inline on phones; wide screens carry it in a rail.
-            data-no-swipe: day-swiping must not fire from the calendar */}
-        <div className="mt-6 lg:hidden" data-no-swipe>
-          <CalendarPanel />
-        </div>
-
-        {/* occasions on this day — phones see them in the calendar's timeline above */}
+        {/* occasions on this day */}
         {todaysEvents.length > 0 && (
-          <div className="mt-4 hidden space-y-1.5 lg:block">
+          <div className="mt-4 space-y-1.5">
             {todaysEvents.map((e, i) => (
               <Link
                 key={i}
@@ -348,14 +379,9 @@ function DayContent({ now }: { now: Date }) {
           </div>
         )}
 
-        {/* consistency heatmap — inline here on smaller screens */}
-        <div className="mt-10 xl:hidden">
+        {/* consistency heatmap inline on lg two-column; phones have the Progress tab */}
+        <div className="mt-10 hidden lg:block xl:hidden">
           <ContributionGraph refresh={done} />
-        </div>
-
-        {/* optional reading — after progress on phones; wide screens keep it in the rail */}
-        <div className="mt-10 lg:hidden">
-          <ResourcesPanel />
         </div>
       </section>
 
@@ -383,6 +409,34 @@ function DayContent({ now }: { now: Date }) {
           <ResourcesPanel />
         </div>
       </aside>
+
+      {/* phone bottom navigation — the list first, the rest one tap away */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-night-line-soft bg-night-raise/95 backdrop-blur lg:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="mx-auto flex max-w-xl">
+          {(
+            [
+              { key: "today", label: "Today", Icon: ListChecks },
+              { key: "calendar", label: "Calendar", Icon: CalendarDays },
+              { key: "progress", label: "Progress", Icon: TrendingUp },
+            ] as const
+          ).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => switchTab(key)}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-0.5 py-2.5 transition",
+                tab === key ? "text-gold-bright" : "text-cream-faint",
+              )}
+            >
+              <Icon className="size-5" />
+              <span className="text-[0.68rem] tracking-wide">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {open && (
         <FocusView
