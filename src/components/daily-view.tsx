@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -20,9 +21,17 @@ import { ContributionGraph } from "./contribution-graph";
 import { PrayerTimes } from "./prayer-times";
 import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
 import { AmalCard } from "./amal-card";
-import { FocusView } from "./focus-view";
 import { ProgressRing } from "./progress-ring";
 import { ResourcesPanel } from "./resources";
+import { Splash } from "./splash";
+import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
+
+// the reader dialog (audio players, tasbih beads, counters) is only needed
+// once an item is tapped — keep it out of the initial bundle
+const FocusView = dynamic(
+  () => import("./focus-view").then((m) => m.FocusView),
+  { ssr: false },
+);
 
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -35,15 +44,23 @@ export function DailyView() {
     return () => clearInterval(t);
   }, []);
 
-  if (!now) {
-    return (
-      <main className="mx-auto max-w-xl px-5 py-16">
-        <div className="hairline mb-8" />
-        <p className="text-center font-display text-cream-dim">﷽</p>
-      </main>
-    );
-  }
-  return <DayContent now={now} />;
+  return (
+    <>
+      {/* splash overlay — stays mounted and fades out, so the first paint
+          (the bismillah) remains the page's largest contentful paint */}
+      <div
+        aria-hidden={!!now}
+        className={cn(
+          "fixed inset-0 z-[60] grid place-items-center transition-opacity duration-700",
+          now && "pointer-events-none opacity-0",
+        )}
+        style={{ background: "var(--color-night)" }}
+      >
+        <Splash />
+      </div>
+      {now && <DayContent now={now} />}
+    </>
+  );
 }
 
 function DayContent({ now }: { now: Date }) {
@@ -138,9 +155,9 @@ function DayContent({ now }: { now: Date }) {
     "grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream active:scale-95";
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-32 pt-8 sm:px-5 sm:pt-14 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-14 lg:pb-24 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
-      {/* calendar — left rail on wide screens */}
-      <aside className="no-scrollbar scroll-fade hidden xl:sticky xl:top-0 xl:block xl:max-h-screen xl:overflow-y-auto xl:border-r xl:border-night-line-soft/60 xl:py-12 xl:pr-12 animate-rise">
+    <main className="mx-auto max-w-xl px-4 pb-32 pt-8 sm:px-5 sm:pt-14 lg:grid lg:h-dvh lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-14 lg:overflow-hidden lg:pb-0 lg:pt-0 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
+      {/* calendar — fixed left rail on wide screens; only the middle column scrolls */}
+      <aside className="no-scrollbar scroll-fade hidden xl:block xl:h-dvh xl:overflow-y-auto xl:border-r xl:border-night-line-soft/60 xl:py-12 xl:pr-12 animate-rise">
         <CalendarPanel />
         <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
           Umm al-Qura dates — moon-sighting may differ by a day.
@@ -166,7 +183,10 @@ function DayContent({ now }: { now: Date }) {
       )}
 
       <div
-        className={cn("min-w-0", tab !== "today" && "hidden lg:block")}
+        className={cn(
+          "no-scrollbar min-w-0 lg:h-dvh lg:overflow-y-auto lg:py-14",
+          tab !== "today" && "hidden lg:block",
+        )}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -393,8 +413,11 @@ function DayContent({ now }: { now: Date }) {
       </footer>
       </div>
 
-      {/* right rail: calendar on lg (2-col), consistency heatmap on xl (3-col) */}
-      <aside className="no-scrollbar scroll-fade hidden lg:sticky lg:top-0 lg:block lg:max-h-screen lg:overflow-y-auto lg:border-l lg:border-night-line-soft/60 lg:py-12 lg:pl-12 animate-rise">
+      {/* right rail: fixed pane — calendar on lg (2-col), heatmap on xl (3-col) */}
+      <aside className="no-scrollbar scroll-fade hidden lg:block lg:h-dvh lg:overflow-y-auto lg:border-l lg:border-night-line-soft/60 lg:py-12 lg:pl-12 animate-rise">
+        <div className="mb-8 flex justify-end">
+          <ThemeToggle />
+        </div>
         <div className="xl:hidden">
           <CalendarPanel />
           <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
@@ -435,6 +458,7 @@ function DayContent({ now }: { now: Date }) {
               <span className="text-[0.68rem] tracking-wide">{label}</span>
             </button>
           ))}
+          <ThemeToggleNavItem />
         </div>
       </nav>
 

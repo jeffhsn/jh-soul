@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Alegreya_Sans, Amiri } from "next/font/google";
 import { Pwa } from "@/components/pwa";
-import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -40,7 +39,6 @@ export const viewport: Viewport = {
   themeColor: "#101613",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 
@@ -66,7 +64,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://i.ytimg.com" />
       </head>
       <body className="antialiased">
-        <ThemeToggle />
         {children}
         <Pwa />
       </body>

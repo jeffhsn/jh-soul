@@ -60,26 +60,32 @@ async function labelFor(lat: number, lon: number): Promise<string> {
   return "your location";
 }
 
-/** Detect location: precise if the user allows, else IP-approximate. */
-async function detectLoc(): Promise<Loc> {
-  const fromGeo = await new Promise<{ lat: number; lon: number } | null>((resolve) => {
-    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-      resolve(null);
-      return;
-    }
-    const bail = setTimeout(() => resolve(null), 8_000);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        clearTimeout(bail);
-        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-      },
-      () => {
-        clearTimeout(bail);
-        resolve(null);
-      },
-      { maximumAge: 3_600_000, timeout: 7_000 },
-    );
-  });
+/**
+ * Detect location. Browser geolocation (a permission prompt) only runs when
+ * the user explicitly asks via "use my location" — first visits fall back to
+ * a silent IP lookup so the page never prompts on load.
+ */
+async function detectLoc(useBrowserGeo = false): Promise<Loc> {
+  const fromGeo = !useBrowserGeo
+    ? null
+    : await new Promise<{ lat: number; lon: number } | null>((resolve) => {
+        if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+          resolve(null);
+          return;
+        }
+        const bail = setTimeout(() => resolve(null), 8_000);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(bail);
+            resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+          },
+          () => {
+            clearTimeout(bail);
+            resolve(null);
+          },
+          { maximumAge: 3_600_000, timeout: 7_000 },
+        );
+      });
   if (fromGeo) {
     return { ...fromGeo, label: await labelFor(fromGeo.lat, fromGeo.lon), source: "geo" };
   }
@@ -260,7 +266,7 @@ export function PrayerTimes({ date }: { date: Date }) {
     setDetecting(true);
     setEditError(false);
     try {
-      const l = await detectLoc();
+      const l = await detectLoc(true);
       pick(l);
     } catch {
       setEditError(true);

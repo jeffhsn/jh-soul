@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { hijriMonthDays, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
+import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
 const KIND_COLOR: Record<EventKind, string> = {
@@ -22,7 +23,7 @@ const KIND_LABEL: Record<EventKind, string> = {
 export function HijriCalendar() {
   return (
     <main className="mx-auto max-w-xl px-5 pb-24 pt-10 sm:pt-14">
-      <header className="animate-rise">
+      <header className="flex items-center justify-between gap-3 animate-rise">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
@@ -30,6 +31,7 @@ export function HijriCalendar() {
           <ArrowLeft className="size-3.5" />
           today&rsquo;s aamal
         </Link>
+        <ThemeToggle />
       </header>
       <div className="mt-8">
         <CalendarPanel />
