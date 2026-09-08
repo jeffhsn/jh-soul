@@ -154,8 +154,8 @@ type State =
 export function PrayerTimes({ date }: { date: Date }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [loc, setLoc] = useState<Loc | null>(null);
-  // phones show one summary line; tapping it reveals the full grid
-  const [open, setOpen] = useState(false);
+  // phones show the full grid by default; the summary line collapses it
+  const [open, setOpen] = useState(true);
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
