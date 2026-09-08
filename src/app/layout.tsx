@@ -48,6 +48,8 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${fraunces.variable} ${newsreader.variable} ${amiri.variable}`}
+      // the theme boot script below adds "light" before hydration on purpose
+      suppressHydrationWarning
     >
       <head>
         {/* apply saved theme before first paint to avoid a flash */}
