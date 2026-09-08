@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
+/** Keep the browser/status-bar chrome color in step with the chosen theme. */
+function syncThemeColor(light: boolean) {
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", light ? "#f3f6f0" : "#101613");
+}
+
 export function ThemeToggle() {
   const [light, setLight] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setLight(document.documentElement.classList.contains("light"));
+    const isLight = document.documentElement.classList.contains("light");
+    setLight(isLight);
+    syncThemeColor(isLight);
   }, []);
 
   function toggle() {
@@ -16,6 +25,7 @@ export function ThemeToggle() {
     try {
       localStorage.setItem("da:theme", next ? "light" : "dark");
     } catch {}
+    syncThemeColor(next);
     setLight(next);
   }
 
