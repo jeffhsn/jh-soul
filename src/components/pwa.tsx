@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { daysAgoKey } from "@/lib/dates";
+import { startSync } from "@/lib/sync";
 
 /**
  * Registers the service worker (offline use + instant repeat loads) and
@@ -10,6 +11,7 @@ import { daysAgoKey } from "@/lib/dates";
  */
 export function Pwa() {
   useEffect(() => {
+    startSync(); // keeps everything saved in the cloud, silently
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
       // when an updated worker takes over, reload once so the fresh

@@ -1,5 +1,5 @@
 /* Soul Work service worker — offline-first shell, always-fresh HTML. */
-const VERSION = "da-v17";
+const VERSION = "da-v18";
 const SHELL = ["/", "/calendar"];
 
 self.addEventListener("install", (event) => {
@@ -26,7 +26,8 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // leave APIs/audio alone
+  if (url.origin !== self.location.origin) return; // leave third parties/audio alone
+  if (url.pathname.startsWith("/api/")) return; // sync must always hit the network
 
   // pages: network first so content updates, cache fallback for offline
   if (req.mode === "navigate") {

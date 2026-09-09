@@ -242,7 +242,7 @@ export const extras: Amal[] = [
     links: [
       {
         label: "Full method and duas — Duas.org",
-        url: "https://www.duas.org/salatlayl.htm",
+        url: "https://www.duas.org/salat-al-layl-tahajjud-prayer.html",
       },
     ],
   },

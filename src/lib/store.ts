@@ -12,11 +12,21 @@ import { daysAgoKey, todayKey } from "./dates";
 
 const listeners = new Set<() => void>();
 
-function emit() {
+export function emit() {
   listeners.forEach((l) => l());
 }
 
-function subscribe(cb: () => void) {
+/** Per-key last-write timestamps, used by cloud sync to merge devices. */
+const META = "da:meta:updated";
+export function stamp(key: string) {
+  try {
+    const m = JSON.parse(window.localStorage.getItem(META) ?? "{}");
+    m[key] = Date.now();
+    window.localStorage.setItem(META, JSON.stringify(m));
+  } catch {}
+}
+
+export function subscribe(cb: () => void) {
   listeners.add(cb);
   const onStorage = () => cb();
   window.addEventListener("storage", onStorage);
@@ -39,6 +49,7 @@ function read<T>(key: string, fallback: T): T {
 function write(key: string, value: unknown) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    stamp(key);
   } catch {
     // storage full / private mode — degrade silently
   }
@@ -90,6 +101,7 @@ export function recordDayTotal(date: string, total: number) {
   if (window.localStorage.getItem(key) !== String(total)) {
     try {
       window.localStorage.setItem(key, String(total));
+      stamp(key);
     } catch {}
   }
 }
@@ -179,6 +191,7 @@ export function useSadaqaAmount(date: string = todayKey()) {
       if (next === null || !Number.isFinite(next)) {
         try {
           window.localStorage.removeItem(sadaqaKey(date));
+          stamp(sadaqaKey(date));
         } catch {}
         emit();
       } else {
