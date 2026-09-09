@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { hijriMonthDays, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
 import { ThemeToggle } from "./theme-toggle";
@@ -48,11 +48,27 @@ export function CalendarPanel() {
   const [now, setNow] = useState<Date | null>(null);
   // anchor = any Gregorian date inside the displayed Hijri month
   const [anchor, setAnchor] = useState<Date | null>(null);
+  // which day numbers the grid shows; the hover tooltip shows the other
+  const [calMode, setCalMode] = useState<"hijri" | "gregorian">("hijri");
   useEffect(() => {
     const d = new Date();
     setNow(d);
     setAnchor(d);
+    try {
+      if (localStorage.getItem("da:calmode") === "gregorian")
+        setCalMode("gregorian");
+    } catch {}
   }, []);
+
+  function flipMode() {
+    setCalMode((m) => {
+      const next = m === "hijri" ? "gregorian" : "hijri";
+      try {
+        localStorage.setItem("da:calmode", next);
+      } catch {}
+      return next;
+    });
+  }
 
   const days = useMemo(() => (anchor ? hijriMonthDays(anchor) : []), [anchor]);
 
@@ -97,6 +113,13 @@ export function CalendarPanel() {
             <span className="text-gold-dim">{month.year}</span>
           </h2>
           <p className="mt-0.5 text-[0.72rem] italic text-cream-faint">{range}</p>
+          <button
+            onClick={flipMode}
+            className="mx-auto mt-1.5 flex items-center gap-1 rounded-full border border-night-line px-2.5 py-0.5 text-[0.65rem] text-cream-faint transition hover:border-gold-dim hover:text-cream-dim"
+          >
+            <ArrowLeftRight className="size-3" />
+            {calMode === "hijri" ? "show Gregorian days" : "show Hijri days"}
+          </button>
         </div>
         <button
           aria-label="Next month"
@@ -126,13 +149,19 @@ export function CalendarPanel() {
           return (
             <div
               key={hijri.day}
-              title={
-                evts.length
-                  ? evts.map((e) => e.title).join(" · ")
-                  : `${hijri.day} ${month.monthName} · ${fmt(date)}`
-              }
-              className="flex flex-col items-center"
+              title={evts.length ? evts.map((e) => e.title).join(" · ") : undefined}
+              className="group relative flex flex-col items-center"
             >
+              {/* subtle hover tooltip: the same day in the other calendar */}
+              <span className="pointer-events-none absolute -top-7 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-night-line bg-night-card px-2.5 py-1 text-[0.68rem] text-cream-dim opacity-0 shadow-[0_6px_18px_rgba(0,0,0,0.3)] transition-opacity duration-150 group-hover:opacity-100">
+                {calMode === "hijri"
+                  ? date.toLocaleDateString("en", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                    })
+                  : `${date.toLocaleDateString("en", { weekday: "short" })}, ${hijri.day} ${month.monthName}`}
+              </span>
               <span
                 className={cn(
                   "grid size-9 place-items-center rounded-full font-display text-[0.95rem] leading-none transition",
@@ -143,7 +172,7 @@ export function CalendarPanel() {
                       : "text-cream-faint",
                 )}
               >
-                {hijri.day}
+                {calMode === "hijri" ? hijri.day : date.getDate()}
               </span>
               <span className="flex h-1.5 items-center gap-0.5">
                 {evts.slice(0, 3).map((e, i) => (
