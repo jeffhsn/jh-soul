@@ -5,7 +5,12 @@ import { HandCoins } from "lucide-react";
 import { useSadaqaAmount, useSadaqaTotal } from "@/lib/store";
 
 export const formatAmount = (n: number) =>
-  new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(n);
+  new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(n);
 
 /**
  * Quick amount field for the daily sadaqa: type a number, press Enter, done.
@@ -31,7 +36,7 @@ export function SadaqaEntry({
 
   function commit(raw: string) {
     setText(raw);
-    const cleaned = raw.replace(/[^0-9.]/g, "");
+    const cleaned = raw.replace(",", ".").replace(/[^0-9.]/g, "");
     const n = cleaned === "" ? null : Number(cleaned);
     setAmount(n === null || !Number.isFinite(n) ? null : n);
   }
@@ -42,6 +47,10 @@ export function SadaqaEntry({
         <span className="flex items-center gap-1.5 text-[0.72rem] uppercase tracking-[0.18em] text-cream-faint">
           <HandCoins className="size-3.5 text-gold-dim" />
           How much did you give today?
+        </span>
+        <div className="relative mt-3">
+        <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 font-display text-3xl text-gold-dim">
+          €
         </span>
         <input
           ref={inputRef}
@@ -59,10 +68,11 @@ export function SadaqaEntry({
               onDone();
             }
           }}
-          className="mt-3 w-full rounded-2xl border border-night-line bg-night-card px-5 py-4 font-display text-3xl tabular-nums text-cream outline-none transition placeholder:text-cream-faint/60 focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(220,175,94,0.15)]"
+          className="w-full rounded-2xl border border-night-line bg-night-card py-4 pl-12 pr-5 font-display text-3xl tabular-nums text-cream outline-none transition placeholder:text-cream-faint/60 focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(220,175,94,0.15)]"
         />
+        </div>
         <span className="mt-2 block text-[0.78rem] italic text-cream-dim">
-          Press Enter to mark it done. Any currency — it is your own number.
+          In euro. Press Enter to mark it done.
         </span>
       </label>
 
