@@ -151,3 +151,84 @@ export function useCountState(amalId: string, date: string = todayKey()) {
   );
   return [state, setState] as const;
 }
+
+// ---------- sadaqa amounts ----------
+// `da:sadaqa:<date>` → number (how much was given that day, in the user's own currency)
+
+function sadaqaKey(date: string) {
+  return `da:sadaqa:${date}`;
+}
+
+function readSadaqa(date: string): number | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(sadaqaKey(date));
+  if (raw === null) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Amount given on one day; `null` means nothing was written down. */
+export function useSadaqaAmount(date: string = todayKey()) {
+  const amount = useSyncExternalStore(
+    subscribe,
+    () => readSadaqa(date),
+    () => null,
+  );
+  const setAmount = useCallback(
+    (next: number | null) => {
+      if (next === null || !Number.isFinite(next)) {
+        try {
+          window.localStorage.removeItem(sadaqaKey(date));
+        } catch {}
+        emit();
+      } else {
+        write(sadaqaKey(date), next);
+      }
+    },
+    [date],
+  );
+  return [amount, setAmount] as const;
+}
+
+export interface SadaqaTotal {
+  /** sum of every amount ever written down */
+  total: number;
+  /** number of days with an amount recorded */
+  days: number;
+}
+
+function computeSadaqaTotal(): SadaqaTotal {
+  if (typeof window === "undefined") return { total: 0, days: 0 };
+  let total = 0;
+  let days = 0;
+  const prefix = "da:sadaqa:";
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key || !key.startsWith(prefix)) continue;
+    const n = Number(window.localStorage.getItem(key));
+    if (!Number.isFinite(n) || n <= 0) continue;
+    total += n;
+    days++;
+  }
+  return { total, days };
+}
+
+const EMPTY_SADAQA: SadaqaTotal = { total: 0, days: 0 };
+let sadaqaTotalCache: SadaqaTotal = EMPTY_SADAQA;
+
+/** Lifetime sadaqa given, recomputed whenever any progress changes. */
+export function useSadaqaTotal(): SadaqaTotal {
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      const next = computeSadaqaTotal();
+      if (
+        next.total !== sadaqaTotalCache.total ||
+        next.days !== sadaqaTotalCache.days
+      )
+        sadaqaTotalCache = next;
+      return sadaqaTotalCache;
+    },
+    () => EMPTY_SADAQA,
+  );
+}

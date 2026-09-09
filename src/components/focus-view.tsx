@@ -9,6 +9,7 @@ import { AudioPlayer } from "./audio-player";
 import { LinesReader } from "./lines-reader";
 import { PhraseCounter } from "./phrase-counter";
 import { QuranPortionReader } from "./quran-portion-reader";
+import { SadaqaEntry } from "./sadaqa-entry";
 import { TasbihBeads } from "./tasbih-beads";
 
 export function FocusView({
@@ -132,6 +133,22 @@ export function FocusView({
                 phrase={amal.lines?.[0]}
                 onComplete={() => onDone(true)}
               />
+            ) : amal.id === "sadaqa" ? (
+              <>
+                <SadaqaEntry date={date} onDone={() => onDone(true)} />
+                {amal.links?.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
+                  >
+                    {link.label}
+                    <ArrowUpRight className="size-3.5" />
+                  </a>
+                ))}
+              </>
             ) : amal.verseRefs && amal.audio ? (
               <>
                 {/* daily Quran portion: read along with the recitation */}

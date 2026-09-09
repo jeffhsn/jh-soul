@@ -23,6 +23,7 @@ import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
 import { AmalCard } from "./amal-card";
 import { ProgressRing } from "./progress-ring";
 import { ResourcesPanel } from "./resources";
+import { SadaqaLifetime } from "./sadaqa-entry";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
 
@@ -412,6 +413,9 @@ function DayContent({ now }: { now: Date }) {
             </div>
           </div>
         )}
+
+        {/* what has been given, all time */}
+        <SadaqaLifetime />
 
         {/* consistency heatmap inline on lg two-column; phones have the Progress tab */}
         <div className="mt-10 hidden lg:block xl:hidden">
