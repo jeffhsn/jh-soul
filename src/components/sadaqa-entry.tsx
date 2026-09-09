@@ -80,27 +80,64 @@ export function SadaqaEntry({
   );
 }
 
-/** Lifetime sadaqa summary shown under the day's progress. */
-export function SadaqaLifetime() {
+/** Lifetime sadaqa — a rail panel beside the calendar and heatmap. */
+export function SadaqaPanel() {
   const { total, days } = useSadaqaTotal();
+  const [today] = useSadaqaAmount();
+  const average = days > 0 ? total / days : 0;
+
   return (
-    <div className="mt-3 flex items-center gap-4 rounded-2xl border border-night-line-soft bg-night-card px-5 py-4">
-      <span className="grid size-10 shrink-0 place-items-center rounded-full border border-gold-dim/40 text-gold-bright">
-        <HandCoins className="size-4" />
-      </span>
-      <div className="min-w-0">
-        <p className="font-display text-[1.05rem] tabular-nums">
-          {formatAmount(total)}
-          <span className="ml-2 text-[0.84rem] font-normal text-cream-dim">
-            sadaqa given in your lifetime
-          </span>
+    <section>
+      <div className="mb-3 flex items-center gap-3">
+        <h3 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">
+          Sadaqa
+        </h3>
+        <div className="hairline flex-1 opacity-40" />
+        <span className="font-arabic text-base leading-none text-gold-bright/80">
+          ٱلصَّدَقَةُ
+        </span>
+      </div>
+
+      <div className="relative overflow-hidden rounded-2xl border border-night-line-soft bg-night-card px-5 py-5">
+        {/* soft gold glow behind the figure */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full opacity-60 blur-2xl"
+          style={{
+            background:
+              "radial-gradient(circle, color-mix(in srgb, var(--color-gold) 28%, transparent), transparent 70%)",
+          }}
+        />
+        <p className="text-[0.7rem] uppercase tracking-[0.18em] text-cream-faint">
+          Given in your lifetime
         </p>
-        <p className="mt-0.5 text-[0.8rem] text-cream-faint">
+        <p className="mt-1.5 font-display text-[2.4rem] leading-none tabular-nums text-gold-bright">
+          {formatAmount(total)}
+        </p>
+
+        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-night-line-soft pt-4">
+          <Stat label="Today" value={today === null ? "—" : formatAmount(today)} />
+          <Stat label="Days" value={String(days)} />
+          <Stat label="Per day" value={days ? formatAmount(Math.round(average)) : "—"} />
+        </div>
+
+        <p className="mt-4 text-[0.72rem] italic leading-snug text-cream-dim">
           {days === 0
-            ? "Write down what you give in the Daily Sadaqa card — it adds up here."
-            : `Recorded across ${days} ${days === 1 ? "day" : "days"}.`}
+            ? "Write down what you give in Daily Sadaqa — it adds up here."
+            : "Calamity does not step over sadaqa."}
         </p>
       </div>
+    </section>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[0.62rem] uppercase tracking-[0.16em] text-cream-faint">{label}</p>
+      <p className="mt-0.5 truncate font-display text-[1.05rem] tabular-nums text-cream">
+        {value}
+      </p>
     </div>
   );
 }

@@ -23,7 +23,7 @@ import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
 import { AmalCard } from "./amal-card";
 import { ProgressRing } from "./progress-ring";
 import { ResourcesPanel } from "./resources";
-import { SadaqaLifetime } from "./sadaqa-entry";
+import { SadaqaPanel } from "./sadaqa-entry";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
 
@@ -190,7 +190,10 @@ function DayContent({ now }: { now: Date }) {
       )}
       {tab === "progress" && (
         <div className="animate-rise lg:hidden">
-          <ContributionGraph refresh={done} />
+          <SadaqaPanel />
+          <div className="mt-10">
+            <ContributionGraph refresh={done} />
+          </div>
           <div className="mt-10">
             <ResourcesPanel />
           </div>
@@ -414,9 +417,6 @@ function DayContent({ now }: { now: Date }) {
           </div>
         )}
 
-        {/* what has been given, all time */}
-        <SadaqaLifetime />
-
         {/* consistency heatmap inline on lg two-column; phones have the Progress tab */}
         <div className="mt-10 hidden lg:block xl:hidden">
           <ContributionGraph refresh={done} />
@@ -435,6 +435,9 @@ function DayContent({ now }: { now: Date }) {
       <aside className="no-scrollbar scroll-fade hidden lg:block lg:h-dvh lg:overflow-y-auto lg:border-l lg:border-night-line-soft/60 lg:py-12 lg:pl-12 animate-rise">
         <div className="mb-8 flex justify-end">
           <ThemeToggle />
+        </div>
+        <div className="mb-10">
+          <SadaqaPanel />
         </div>
         <div className="xl:hidden">
           <CalendarPanel />
