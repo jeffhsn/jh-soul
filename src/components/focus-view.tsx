@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Dialog } from "radix-ui";
 import { ArrowUpRight, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Amal } from "@/data";
@@ -31,7 +31,7 @@ export function FocusView({
 }) {
   const interactive = amal.type === "tasbih" || amal.type === "counter";
 
-  // ← / → step through the day's aamal while the reader is open
+  // ← / → step through the day's aamal; Enter checks the open one as done
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement | null;
@@ -42,10 +42,23 @@ export function FocusView({
         return;
       if (e.key === "ArrowRight") onStep(1);
       else if (e.key === "ArrowLeft") onStep(-1);
+      else if (e.key === "Enter" && !interactive) {
+        // buttons/links inside the dialog keep their native Enter behaviour
+        if (
+          t &&
+          (t.tagName === "BUTTON" || t.tagName === "A") &&
+          t.closest('[role="dialog"]')
+        )
+          return;
+        e.preventDefault();
+        onDone(!done);
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onStep]);
+  }, [onStep, onDone, done, interactive]);
+
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const stepButton =
     "grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream disabled:opacity-30 disabled:hover:border-night-line disabled:hover:text-cream-dim";
@@ -55,6 +68,13 @@ export function FocusView({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-night/85 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          ref={contentRef}
+          // keep focus on the dialog itself so Enter marks the amal done
+          // instead of activating whichever button happens to be focused
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            contentRef.current?.focus();
+          }}
           className="fixed inset-x-0 bottom-0 top-0 z-50 flex flex-col overflow-hidden outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-8 data-[state=open]:fade-in-0 sm:inset-x-auto sm:left-1/2 sm:top-[3vh] sm:h-[94vh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:rounded-3xl sm:border sm:border-night-line"
           style={{ backgroundColor: "var(--color-night-raise)" }}
         >
