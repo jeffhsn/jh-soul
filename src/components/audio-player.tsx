@@ -70,25 +70,42 @@ function formatTime(s: number) {
  * Continuous verse-by-verse playback: one audio element whose src advances
  * through the list (same element keeps iOS's tap-to-play permission alive).
  * The title always names the exact track playing, so you know where you are.
+ * Pass `index`/`onIndexChange` to control the position from outside (the
+ * Quran portion reader uses this to highlight the ayah being recited).
  */
-function PlaylistPlayer({ sources }: { sources: AudioSource[] }) {
+export function PlaylistPlayer({
+  sources,
+  index: controlled,
+  onIndexChange,
+}: {
+  sources: AudioSource[];
+  index?: number;
+  onIndexChange?: (i: number) => void;
+}) {
   const ref = useRef<HTMLAudioElement>(null);
-  const [index, setIndex] = useState(0);
+  const [internal, setInternal] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const index = controlled ?? internal;
+  const indexRef = useRef(index);
+  indexRef.current = index;
+  const setIndex = (i: number) => {
+    if (i < 0 || i >= sources.length) return;
+    if (controlled === undefined) setInternal(i);
+    onIndexChange?.(i);
+  };
   const track = sources[index];
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const onEnd = () => {
-      setIndex((i) => {
-        if (i < sources.length - 1) return i + 1;
-        setPlaying(false);
-        return i;
-      });
+      const i = indexRef.current;
+      if (i < sources.length - 1) setIndex(i + 1);
+      else setPlaying(false);
     };
     el.addEventListener("ended", onEnd);
     return () => el.removeEventListener("ended", onEnd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sources.length]);
 
   // when the track changes while playing, keep the recitation flowing
@@ -99,8 +116,7 @@ function PlaylistPlayer({ sources }: { sources: AudioSource[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  const jump = (delta: number) =>
-    setIndex((i) => Math.min(sources.length - 1, Math.max(0, i + delta)));
+  const jump = (delta: number) => setIndex(index + delta);
 
   return (
     <div className="rounded-2xl border border-night-line bg-night-card/70 p-4">

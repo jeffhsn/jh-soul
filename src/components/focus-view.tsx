@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { AudioPlayer } from "./audio-player";
 import { LinesReader } from "./lines-reader";
 import { PhraseCounter } from "./phrase-counter";
+import { QuranPortionReader } from "./quran-portion-reader";
 import { TasbihBeads } from "./tasbih-beads";
 
 export function FocusView({
@@ -79,7 +80,8 @@ export function FocusView({
           style={{ backgroundColor: "var(--color-night-raise)" }}
         >
           {/* header — clears the status bar when full-screen on phones */}
-          <div className="flex items-start justify-between gap-4 border-b border-night-line-soft px-6 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-5">
+          <div className="border-b border-night-line-soft px-6 pb-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-5">
+            <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <Dialog.Title className="font-display text-xl leading-tight">
                 {amal.title}
@@ -88,11 +90,6 @@ export function FocusView({
                 <p className="font-arabic mt-1 text-lg leading-none text-gold-bright/85">
                   {amal.arabicTitle}
                 </p>
-              )}
-              {amal.merit && (
-                <Dialog.Description className="mt-2 text-[0.82rem] italic leading-snug text-cream-dim">
-                  {amal.merit}
-                </Dialog.Description>
               )}
             </div>
             <div className="mt-1 flex shrink-0 items-center gap-1.5">
@@ -122,6 +119,12 @@ export function FocusView({
                 <X className="size-4" />
               </Dialog.Close>
             </div>
+            </div>
+            {amal.merit && (
+              <Dialog.Description className="mt-2 text-[0.82rem] italic leading-snug text-cream-dim">
+                {amal.merit}
+              </Dialog.Description>
+            )}
           </div>
 
           {/* body */}
@@ -141,6 +144,27 @@ export function FocusView({
                 phrase={amal.lines?.[0]}
                 onComplete={() => onDone(true)}
               />
+            ) : amal.verseRefs && amal.audio ? (
+              <>
+                {/* daily Quran portion: read along with the recitation */}
+                <QuranPortionReader
+                  refs={amal.verseRefs}
+                  audio={amal.audio}
+                  date={date}
+                />
+                {amal.links?.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
+                  >
+                    {link.label}
+                    <ArrowUpRight className="size-3.5" />
+                  </a>
+                ))}
+              </>
             ) : (
               <>
                 {amal.audio && amal.audio.length > 0 && (

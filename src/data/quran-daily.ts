@@ -76,12 +76,15 @@ export function quranPortionFor(date: Date): Amal {
   const from = `${SURAH_NAMES[s1 - 1]} ${a1}`;
   const to = `${SURAH_NAMES[s2 - 1]} ${a2}`;
 
-  // one mp3 per ayah so the app reads the exact portion aloud, in order
+  // one mp3 per ayah so the app reads the exact portion aloud, in order;
+  // verseRefs stays 1:1 with the audio so the reader can follow along
   const audio: AudioSource[] = [];
+  const verseRefs: { surah: number; ayah: number; name: string }[] = [];
   for (let s = s1; s <= s2; s++) {
     const first = s === s1 ? a1 : 1;
     const last = s === s2 ? a2 : VERSE_COUNTS[s - 1];
     for (let a = first; a <= last; a++) {
+      verseRefs.push({ surah: s, ayah: a, name: SURAH_NAMES[s - 1] });
       audio.push({
         title: `${SURAH_NAMES[s - 1]} ${a} — Mishary Alafasy`,
         reciter: "Mishary Rashid Alafasy",
@@ -128,6 +131,7 @@ export function quranPortionFor(date: Date): Amal {
       },
     ],
     audio,
+    verseRefs,
     links,
   };
 }

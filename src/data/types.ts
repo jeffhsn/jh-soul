@@ -66,4 +66,6 @@ export interface Amal {
   /** ordered by preference: Ali Fani first when available, then fallbacks */
   audio?: AudioSource[];
   links?: ExternalLink[];
+  /** daily Quran portion only: the exact ayahs, aligned 1:1 with `audio` */
+  verseRefs?: { surah: number; ayah: number; name: string }[];
 }
