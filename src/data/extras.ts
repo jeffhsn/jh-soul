@@ -192,6 +192,61 @@ export const extras: Amal[] = [
     ],
   },
   {
+    id: "salat-layl",
+    title: "Salat al-Layl",
+    arabicTitle: "صَلَاةُ ٱللَّيْلِ",
+    subtitle: "The night prayer — 11 rak'ahs before Fajr",
+    type: "action",
+    days: "daily",
+    timeOfDay: "night",
+    minutes: 25,
+    merit:
+      "The night prayer beautifies the face, perfects one's character and increases sustenance — Imam al-Sadiq (a)",
+    lines: [
+      {
+        ar: "نَافِلَةُ ٱللَّيْلِ",
+        tr: "Nafilat al-Layl — 8 rak'ahs",
+        en: "Four prayers of two rak'ahs each, prayed like Fajr, with the intention of Nafilat al-Layl.",
+      },
+      {
+        ar: "صَلَاةُ ٱلشَّفْعِ",
+        tr: "Salat al-Shaf' — 2 rak'ahs",
+        en: "Two rak'ahs; it is recommended to recite Surah al-Nas in the first and Surah al-Falaq in the second.",
+      },
+      {
+        ar: "صَلَاةُ ٱلْوِتْرِ",
+        tr: "Salat al-Witr — 1 rak'ah",
+        en: "One rak'ah with a long qunut: pray for forty believers by name, then the phrases below.",
+      },
+      {
+        ar: "أَسْتَغْفِرُ ٱللَّهَ رَبِّي وَأَتُوبُ إِلَيْهِ",
+        tr: "Astaghfirullaha rabbi wa atubu ilayh — 70×",
+        en: "I seek the forgiveness of Allah, my Lord, and I turn to Him in repentance.",
+      },
+      {
+        ar: "هَٰذَا مَقَامُ ٱلْعَائِذِ بِكَ مِنَ ٱلنَّارِ",
+        tr: "Hadha maqamul-'a'idhi bika minan-nar — 7×",
+        en: "This is the station of one who seeks refuge in You from the Fire.",
+      },
+      {
+        ar: "ٱلْعَفْوَ",
+        tr: "Al-'afw — 300×",
+        en: "Pardon.",
+      },
+      {
+        ar: "رَبِّ ٱغْفِرْ لِي وَٱرْحَمْنِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ ٱلتَّوَّابُ ٱلرَّحِيمُ",
+        tr: "Rabbighfir li warhamni wa tub 'alayya, innaka antat-tawwabur-rahim",
+        en: "My Lord, forgive me, have mercy on me and accept my repentance. Indeed You are the Oft-Returning, the Merciful.",
+      },
+    ],
+    links: [
+      {
+        label: "Full method and duas — Duas.org",
+        url: "https://www.duas.org/salatlayl.htm",
+      },
+    ],
+  },
+  {
     id: "muawwidhat",
     title: "The Three Quls",
     arabicTitle: "ٱلْمُعَوِّذَاتُ",

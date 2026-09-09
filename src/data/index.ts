@@ -56,6 +56,7 @@ const SESSION_ORDER: string[][] = [
   ["quran-daily"],
   ["surah-mulk"],
   ["amana-rasul"],
+  ["salat-layl"],
 ];
 
 const RANK = new Map<string, number>(
