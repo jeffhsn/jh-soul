@@ -10,7 +10,7 @@ export function Splash() {
           بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
         </p>
         <p className="mt-5 font-display text-2xl tracking-tight text-cream">
-          Daily Aamal
+          jh-soul
         </p>
         <p className="mt-1.5 text-[0.9rem] italic text-cream-dim">
           your day of remembrance

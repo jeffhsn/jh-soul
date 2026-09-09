@@ -1,4 +1,4 @@
-# Daily Aamal
+# jh-soul
 
 A calm, daily checklist of Shia aamal — duas, ziyarat, tasbih and Quran — one gentle step at a time.
 

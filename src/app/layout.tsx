@@ -25,12 +25,12 @@ const amiri = Amiri({
 });
 
 export const metadata: Metadata = {
-  title: "Daily Aamal — your day of remembrance",
+  title: "jh-soul — your day of remembrance",
   description:
     "A calm daily checklist of Shia aamal — duas, ziyarat, tasbih and Quran — with audio, one gentle step at a time.",
   appleWebApp: {
     capable: true,
-    title: "Daily Aamal",
+    title: "jh-soul",
     statusBarStyle: "black-translucent",
   },
 };

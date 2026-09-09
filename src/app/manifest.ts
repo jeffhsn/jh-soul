@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Daily Aamal",
-    short_name: "Aamal",
+    name: "jh-soul",
+    short_name: "jh-soul",
     description:
       "A calm daily checklist of Shia aamal — duas, ziyarat, tasbih and Quran, with audio.",
     start_url: "/",
