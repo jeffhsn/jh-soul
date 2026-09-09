@@ -153,6 +153,23 @@ export const audioOverrides: Record<string, AudioSource[]> = {
     },
   ],
 
+  // ——— Ziyarat Ashura ———
+
+  "ziyarat-ashura": [
+    {
+      title: "Ziyarat Ashura (7-language subtitles) — Ali Fani",
+      reciter: "Ali Fani",
+      kind: "youtube",
+      url: "Sj5H_NOCUEI",
+    },
+    {
+      title: "Ziyarat Ashura (with lyrics) — Ali Fani",
+      reciter: "Ali Fani",
+      kind: "youtube",
+      url: "uR64-Yo6wfs",
+    },
+  ],
+
   // ——— Weekday ziyarat (duas.org mp3s) ———
 
   "ziyarat-prophet": [
