@@ -151,6 +151,20 @@ function DayContent({ now }: { now: Date }) {
   const finished = aamal.filter((a) => done[a.id]);
   const ordered = [...pending, ...finished];
 
+  // reader navigation: step through the day's list without closing it
+  const openIdx = open ? ordered.findIndex((a) => a.id === open.id) : -1;
+  function stepReader(delta: 1 | -1) {
+    const target = ordered[openIdx + delta];
+    if (target) setOpenId(target.id);
+  }
+  /** After checking an item off, open the next unfinished one (wrapping); close when the day is done. */
+  function advanceAfterDone(fromId: string) {
+    const i = ordered.findIndex((a) => a.id === fromId);
+    const rest = [...ordered.slice(i + 1), ...ordered.slice(0, i)];
+    const next = rest.find((a) => !done[a.id]);
+    setOpenId(next ? next.id : null);
+  }
+
   const navButton =
     "grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream active:scale-95";
 
@@ -464,13 +478,16 @@ function DayContent({ now }: { now: Date }) {
 
       {open && (
         <FocusView
+          key={open.id}
           amal={open}
           date={date}
           done={!!done[open.id]}
+          step={{ index: openIdx, total: ordered.length }}
+          onStep={stepReader}
           onClose={() => setOpenId(null)}
           onDone={(v) => {
             setDone(open.id, v);
-            if (v) setOpenId(null);
+            if (v) advanceAfterDone(open.id);
           }}
         />
       )}

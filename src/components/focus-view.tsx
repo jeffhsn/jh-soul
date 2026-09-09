@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { Dialog } from "radix-ui";
-import { ArrowUpRight, Check, X } from "lucide-react";
+import { ArrowUpRight, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { Amal } from "@/data";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "./audio-player";
@@ -13,16 +14,41 @@ export function FocusView({
   amal,
   date,
   done,
+  step,
+  onStep,
   onClose,
   onDone,
 }: {
   amal: Amal;
   date: string;
   done: boolean;
+  /** position of this amal in the day's list (0-based) and the list length */
+  step: { index: number; total: number };
+  /** move to the previous/next amal without closing the reader */
+  onStep: (delta: 1 | -1) => void;
   onClose: () => void;
   onDone: (value: boolean) => void;
 }) {
   const interactive = amal.type === "tasbih" || amal.type === "counter";
+
+  // ← / → step through the day's aamal while the reader is open
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)
+      )
+        return;
+      if (e.key === "ArrowRight") onStep(1);
+      else if (e.key === "ArrowLeft") onStep(-1);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onStep]);
+
+  const stepButton =
+    "grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream disabled:opacity-30 disabled:hover:border-night-line disabled:hover:text-cream-dim";
 
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
@@ -49,12 +75,33 @@ export function FocusView({
                 </Dialog.Description>
               )}
             </div>
-            <Dialog.Close
-              aria-label="Close"
-              className="mt-1 grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
-            >
-              <X className="size-4" />
-            </Dialog.Close>
+            <div className="mt-1 flex shrink-0 items-center gap-1.5">
+              <button
+                aria-label="Previous amal"
+                disabled={step.index <= 0}
+                onClick={() => onStep(-1)}
+                className={stepButton}
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="min-w-9 text-center text-[0.72rem] tabular-nums text-cream-faint">
+                {step.index + 1}/{step.total}
+              </span>
+              <button
+                aria-label="Next amal"
+                disabled={step.index >= step.total - 1}
+                onClick={() => onStep(1)}
+                className={stepButton}
+              >
+                <ChevronRight className="size-4" />
+              </button>
+              <Dialog.Close
+                aria-label="Close"
+                className="ml-1.5 grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+              >
+                <X className="size-4" />
+              </Dialog.Close>
+            </div>
           </div>
 
           {/* body */}
