@@ -41,9 +41,13 @@ export function FocusView({
         (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)
       )
         return;
-      if (e.key === "ArrowRight") onStep(1);
-      else if (e.key === "ArrowLeft") onStep(-1);
-      else if (e.key === "Enter" && !interactive) {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        onStep(1);
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        onStep(-1);
+      } else if (e.key === "Enter" && !interactive) {
         // buttons/links inside the dialog keep their native Enter behaviour
         if (
           t &&
