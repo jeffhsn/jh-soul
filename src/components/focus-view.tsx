@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Dialog } from "radix-ui";
-import { ArrowUpRight, Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { Amal } from "@/data";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "./audio-player";
@@ -62,7 +62,7 @@ export function FocusView({
   const contentRef = useRef<HTMLDivElement>(null);
 
   const stepButton =
-    "grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream disabled:opacity-30 disabled:hover:border-night-line disabled:hover:text-cream-dim";
+    "grid size-11 shrink-0 place-items-center rounded-full bg-gold text-night shadow-[0_4px_16px_rgba(0,0,0,0.35)] transition hover:bg-gold-bright active:scale-95 disabled:opacity-35 disabled:hover:bg-gold";
 
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
@@ -75,6 +75,11 @@ export function FocusView({
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             contentRef.current?.focus();
+          }}
+          // the step arrows live outside the panel — don't close on their clicks
+          onInteractOutside={(e) => {
+            if ((e.target as HTMLElement)?.closest?.("[data-step-nav]"))
+              e.preventDefault();
           }}
           className="fixed inset-x-0 bottom-0 top-0 z-50 flex flex-col overflow-hidden outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-8 data-[state=open]:fade-in-0 sm:inset-x-auto sm:left-1/2 sm:top-[3vh] sm:h-[94vh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:rounded-3xl sm:border sm:border-night-line"
           style={{ backgroundColor: "var(--color-night-raise)" }}
@@ -92,33 +97,12 @@ export function FocusView({
                 </p>
               )}
             </div>
-            <div className="mt-1 flex shrink-0 items-center gap-1.5">
-              <button
-                aria-label="Previous amal"
-                disabled={step.index <= 0}
-                onClick={() => onStep(-1)}
-                className={stepButton}
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <span className="min-w-9 text-center text-[0.72rem] tabular-nums text-cream-faint">
-                {step.index + 1}/{step.total}
-              </span>
-              <button
-                aria-label="Next amal"
-                disabled={step.index >= step.total - 1}
-                onClick={() => onStep(1)}
-                className={stepButton}
-              >
-                <ChevronRight className="size-4" />
-              </button>
-              <Dialog.Close
-                aria-label="Close"
-                className="ml-1.5 grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
-              >
-                <X className="size-4" />
-              </Dialog.Close>
-            </div>
+            <Dialog.Close
+              aria-label="Close"
+              className="mt-1 grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
+            >
+              <X className="size-4" />
+            </Dialog.Close>
             </div>
             {amal.merit && (
               <Dialog.Description className="mt-2 text-[0.82rem] italic leading-snug text-cream-dim">
@@ -207,6 +191,33 @@ export function FocusView({
             </div>
           )}
         </Dialog.Content>
+
+        {/* vertical stepper — floats outside the panel (right edge on phones),
+            gold so it reads as "move through the day", not part of the amal */}
+        <div
+          data-step-nav
+          className="pointer-events-auto fixed bottom-[7.5rem] right-2.5 z-50 flex flex-col items-center gap-2 sm:bottom-auto sm:right-auto sm:left-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))] sm:top-1/2 sm:-translate-y-1/2"
+        >
+          <button
+            aria-label="Previous amal"
+            disabled={step.index <= 0}
+            onClick={() => onStep(-1)}
+            className={stepButton}
+          >
+            <ChevronUp className="size-5" strokeWidth={2.5} />
+          </button>
+          <span className="rounded-full bg-night/70 px-2 py-0.5 text-[0.7rem] tabular-nums text-gold-bright backdrop-blur">
+            {step.index + 1}/{step.total}
+          </span>
+          <button
+            aria-label="Next amal"
+            disabled={step.index >= step.total - 1}
+            onClick={() => onStep(1)}
+            className={stepButton}
+          >
+            <ChevronDown className="size-5" strokeWidth={2.5} />
+          </button>
+        </div>
       </Dialog.Portal>
     </Dialog.Root>
   );
