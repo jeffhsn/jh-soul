@@ -16,8 +16,15 @@ export function AudioPlayer({ sources }: { sources: AudioSource[] }) {
   const [active, setActive] = useState(0);
   const source = sources[active];
 
-  if (sources.length > 5 && sources.every((s) => s.kind === "mp3")) {
-    return <PlaylistPlayer sources={sources} />;
+  // several mp3 files from one reciter are parts of a single recitation
+  // (verse by verse, or surah by surah) — play them straight through
+  const sequential =
+    sources.length > 1 &&
+    sources.every((s) => s.kind === "mp3") &&
+    (sources.length > 5 || new Set(sources.map((s) => s.reciter)).size === 1);
+  if (sequential) {
+    const unit = sources.every((s) => /^verse\b/i.test(s.title)) ? "verse" : "part";
+    return <PlaylistPlayer sources={sources} unit={unit} />;
   }
 
   // disambiguate pills when the same reciter appears more than once
@@ -77,9 +84,11 @@ export function PlaylistPlayer({
   sources,
   index: controlled,
   onIndexChange,
+  unit = "verse",
 }: {
   sources: AudioSource[];
   index?: number;
+  unit?: string;
   onIndexChange?: (i: number) => void;
 }) {
   const ref = useRef<HTMLAudioElement>(null);
@@ -123,7 +132,7 @@ export function PlaylistPlayer({
       <audio ref={ref} src={track.url} preload="none" />
       <p className="text-center text-[1rem] text-cream">{track.title}</p>
       <p className="mt-0.5 text-center text-[0.78rem] text-cream-faint">
-        verse {index + 1} of {sources.length} · plays straight through
+        {unit} {index + 1} of {sources.length} · plays straight through
       </p>
       <div className="mt-3 flex items-center justify-center gap-4">
         <button
