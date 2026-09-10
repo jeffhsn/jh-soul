@@ -192,6 +192,83 @@ export const extras: Amal[] = [
     ],
   },
   {
+    id: "ghusl-jumua",
+    title: "Ghusl al-Jumu'a",
+    arabicTitle: "غُسْلُ ٱلْجُمُعَةِ",
+    subtitle: "The Friday bath — purification for the week",
+    type: "action",
+    days: [5],
+    timeOfDay: "morning",
+    minutes: 10,
+    merit:
+      "A strongly recommended sunnah from dawn until noon on Friday; make the intention of Ghusl al-Jumu'a, qurbatan ilallah",
+    lines: [
+      {
+        ar: "أَغْتَسِلُ غُسْلَ ٱلْجُمُعَةِ قُرْبَةً إِلَى ٱللَّهِ",
+        tr: "Aghtasilu ghusl al-Jumu'a, qurbatan ilallah",
+        en: "I perform the Friday ghusl, seeking nearness to Allah.",
+      },
+    ],
+    links: [
+      {
+        label: "Friday aamal — Duas.org",
+        url: "https://www.duas.org/friday.htm",
+      },
+    ],
+  },
+  {
+    id: "surah-waqiah",
+    title: "Surah al-Waqi'ah",
+    arabicTitle: "سُورَةُ ٱلْوَاقِعَةِ",
+    subtitle: "The Inevitable — the nightly surah of sustenance",
+    type: "quran",
+    days: "daily",
+    timeOfDay: "night",
+    minutes: 6,
+    merit:
+      "Whoever recites al-Waqi'ah every night will never be touched by poverty — the Prophet (s)",
+    audio: [
+      {
+        title: "Surah al-Waqi'ah (full) — Mishary Rashid Alafasy",
+        reciter: "Mishary Rashid Alafasy",
+        kind: "mp3",
+        url: "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/056.mp3",
+      },
+    ],
+    links: [
+      {
+        label: "Read Surah al-Waqi'ah with translation — Al-Islam.org",
+        url: "https://al-islam.org/quran/56",
+      },
+    ],
+  },
+  {
+    id: "dua-tawassul",
+    title: "Dua al-Tawassul",
+    arabicTitle: "دُعَاءُ ٱلتَّوَسُّلِ",
+    subtitle: "Tuesday night — seeking intercession through the Fourteen Infallibles",
+    type: "dua",
+    days: [2],
+    timeOfDay: "night",
+    minutes: 15,
+    merit:
+      "Narrated by Allama al-Majlisi from the Imams (a): whoever calls on Allah through them does not return unanswered",
+    audio: [
+      {
+        title: "Dua al-Tawassul — Duas.org",
+        reciter: "Duas.org",
+        kind: "mp3",
+        url: "https://mp3.duas.org/Misc%20Duas/2_Tawassul.mp3",
+      },
+    ],
+    links: [
+      {
+        label: "Full text with translation — Duas.org",
+        url: "https://www.duas.org/tawassul.htm",
+      },
+    ],
+  },
+  {
     id: "salat-layl",
     title: "Salat al-Layl",
     arabicTitle: "صَلَاةُ ٱللَّيْلِ",

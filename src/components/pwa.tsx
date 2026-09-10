@@ -13,7 +13,16 @@ export function Pwa() {
   useEffect(() => {
     startSync(); // keeps everything saved in the cloud, silently
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          // an installed app can sit in memory for days — look for a new
+          // build every time it comes back to the foreground
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") reg.update().catch(() => {});
+          });
+        })
+        .catch(() => {});
       // when an updated worker takes over, reload once so the fresh
       // styles/shell appear without a manual hard-refresh
       let hadController = !!navigator.serviceWorker.controller;

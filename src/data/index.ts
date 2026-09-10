@@ -30,6 +30,7 @@ export const allAamal: Amal[] = [
  * with the before-sleep items closing the list.
  */
 const SESSION_ORDER: string[][] = [
+  ["ghusl-jumua"],
   ["fatiha"],
   ["ayat-kursi"],
   ["muawwidhat"],
@@ -51,9 +52,10 @@ const SESSION_ORDER: string[][] = [
     "ziyarat-mahdi",
   ],
   ["ziyarat-ashura"],
-  ["dua-kumayl", "dua-nudba"],
+  ["dua-kumayl", "dua-nudba", "dua-tawassul"],
   ["surah-kahf"],
   ["quran-daily"],
+  ["surah-waqiah"],
   ["surah-mulk"],
   ["amana-rasul"],
   ["salat-layl"],
