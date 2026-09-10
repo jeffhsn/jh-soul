@@ -20,3 +20,5 @@ app, zero setup, deliberately no sync UI). Client engine: src/lib/sync.ts (per-k
 timestamps stamped by store.write/stamp). Env: BLOB_READ_WRITE_TOKEN, BLOB_ACCESS=private, DA_SYNC_KEY — pull with
 `vercel env pull .env.local`. Sync starts from pwa.tsx on every load. The service worker never caches /api/.
 The owner wants anything worth keeping saved in the cloud this way, never only in the browser.
+Old address: the phone PWA was installed from https://dailyaamal.vercel.app (pre-rename). Keep it pointing at production —
+if it is not a project domain, run `vercel alias set <new-deployment-url> dailyaamal.vercel.app` after every prod deploy.
