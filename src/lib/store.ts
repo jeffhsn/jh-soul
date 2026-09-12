@@ -245,3 +245,21 @@ export function useSadaqaTotal(): SadaqaTotal {
     () => EMPTY_SADAQA,
   );
 }
+
+// ---------- playback speed ----------
+// `da:speed` → number (rate every recitation plays at, 1 = normal); synced like all preferences
+
+export const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2] as const;
+const SPEED_KEY = "da:speed";
+
+function readSpeed(): number {
+  const n = read<number>(SPEED_KEY, 1);
+  return typeof n === "number" && n >= 0.5 && n <= 3 ? n : 1;
+}
+
+/** Playback rate shared by every audio player in the app. */
+export function useSpeed() {
+  const speed = useSyncExternalStore(subscribe, readSpeed, () => 1);
+  const setSpeed = useCallback((next: number) => write(SPEED_KEY, next), []);
+  return [speed, setSpeed] as const;
+}

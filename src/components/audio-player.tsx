@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { CirclePlay, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { AudioSource } from "@/data";
+import { SPEEDS, useSpeed } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,6 +67,69 @@ export function AudioPlayer({ sources }: { sources: AudioSource[] }) {
   );
 }
 
+/** Keeps an audio element at the app-wide speed, even after its src changes. */
+function usePlaybackRate(ref: RefObject<HTMLAudioElement | null>) {
+  const [speed] = useSpeed();
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.playbackRate = speed;
+    // a new src resets the rate on some browsers — reapply once it is loaded
+    const reapply = () => {
+      el.playbackRate = speed;
+    };
+    el.addEventListener("loadedmetadata", reapply);
+    el.addEventListener("play", reapply);
+    return () => {
+      el.removeEventListener("loadedmetadata", reapply);
+      el.removeEventListener("play", reapply);
+    };
+  }, [ref, speed]);
+  return speed;
+}
+
+/** YouTube-style speed toggle: tap to step to the next rate, long list on hold. */
+function SpeedButton({ className }: { className?: string }) {
+  const [speed, setSpeed] = useSpeed();
+  const [open, setOpen] = useState(false);
+  const label = `${speed}×`;
+  return (
+    <div className={cn("relative", className)}>
+      <button
+        aria-label={`Playback speed ${label}`}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "rounded-full border px-2.5 py-1 text-[0.7rem] tabular-nums transition",
+          speed !== 1
+            ? "border-gold-dim/70 text-gold-bright"
+            : "border-night-line text-cream-faint hover:text-cream-dim",
+        )}
+      >
+        {label}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 flex flex-col overflow-hidden rounded-xl border border-night-line bg-night-card shadow-lg">
+          {SPEEDS.map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                setSpeed(s);
+                setOpen(false);
+              }}
+              className={cn(
+                "px-4 py-1.5 text-left text-[0.78rem] tabular-nums transition hover:bg-night-line/60",
+                s === speed ? "text-gold-bright" : "text-cream-dim",
+              )}
+            >
+              {s === 1 ? "Normal" : `${s}×`}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatTime(s: number) {
   if (!isFinite(s)) return "–:––";
   const m = Math.floor(s / 60);
@@ -96,13 +160,16 @@ export function PlaylistPlayer({
   const [playing, setPlaying] = useState(false);
   const index = controlled ?? internal;
   const indexRef = useRef(index);
-  indexRef.current = index;
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
   const setIndex = (i: number) => {
     if (i < 0 || i >= sources.length) return;
     if (controlled === undefined) setInternal(i);
     onIndexChange?.(i);
   };
   const track = sources[index];
+  usePlaybackRate(ref);
 
   useEffect(() => {
     const el = ref.current;
@@ -128,9 +195,10 @@ export function PlaylistPlayer({
   const jump = (delta: number) => setIndex(index + delta);
 
   return (
-    <div className="rounded-2xl border border-night-line bg-night-card/70 p-4">
+    <div className="relative rounded-2xl border border-night-line bg-night-card/70 p-4">
       <audio ref={ref} src={track.url} preload="none" />
-      <p className="text-center text-[1rem] text-cream">{track.title}</p>
+      <SpeedButton className="absolute right-3 top-3" />
+      <p className="px-12 text-center text-[1rem] text-cream">{track.title}</p>
       <p className="mt-0.5 text-center text-[0.78rem] text-cream-faint">
         {unit} {index + 1} of {sources.length} · plays straight through
       </p>
@@ -180,6 +248,7 @@ function Mp3Player({ source }: { source: AudioSource }) {
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  usePlaybackRate(ref);
 
   useEffect(() => {
     const el = ref.current;
@@ -230,8 +299,9 @@ function Mp3Player({ source }: { source: AudioSource }) {
           }}
           className="mt-1.5 h-1 w-full cursor-pointer appearance-none rounded-full bg-night-line accent-[var(--color-gold)]"
         />
-        <div className="mt-1 flex justify-between text-[0.68rem] text-cream-faint">
+        <div className="mt-1 flex items-center justify-between text-[0.68rem] text-cream-faint">
           <span>{formatTime(time)}</span>
+          <SpeedButton />
           <span>{formatTime(duration)}</span>
         </div>
       </div>
