@@ -1,6 +1,9 @@
-// Verified audio sources per amal id, ordered by preference (Ali Fani first when available).
-// Every YouTube id was checked against the oembed endpoint and every mp3 URL returns
-// HTTP 200 with an audio/mpeg content type (verified 2026-08-18).
+// Verified audio sources per amal id, ordered by preference: Ali Fani is ALWAYS first
+// wherever he has recorded the amal. Every YouTube id was checked against the oembed
+// endpoint and every mp3 URL returns HTTP 200 with an audio/mpeg content type
+// (verified 2026-08-18; ziyarat-prophet re-checked 2026-09-12). Ali Fani's official
+// channel has none of the other weekday ziyarat, the weekday duas, Dua Nudba or
+// Tasbih al-Zahra (searched 2026-09-12) — re-check before adding non-Fani sources first.
 
 import type { AudioSource } from "./types";
 
@@ -173,6 +176,18 @@ export const audioOverrides: Record<string, AudioSource[]> = {
   // ——— Weekday ziyarat (duas.org mp3s) ———
 
   "ziyarat-prophet": [
+    {
+      title: "Ziyarat of Prophet Muhammad (s) on Saturday — Ali Fani",
+      reciter: "Ali Fani",
+      kind: "youtube",
+      url: "7etHuGYmTQc",
+    },
+    {
+      title: "Ziyarat of Prophet Muhammad (s) (UR sub) — Ali Fani",
+      reciter: "Ali Fani",
+      kind: "youtube",
+      url: "tlASMIsf-sM",
+    },
     {
       title: "Saturday Ziyarat of the Holy Prophet (s)",
       reciter: "Duas.org",
