@@ -2,9 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowLeftRight, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
+  Droplet,
+  UtensilsCrossed,
+} from "lucide-react";
 import { hijriMonthDays, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
+import { fastFor, fastingMonthNote, ghuslFor } from "@/data/observances";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +21,9 @@ const KIND_COLOR: Record<EventKind, string> = {
   celebration: "#6db894",
   sacred: "#d9a954",
 };
+
+const GHUSL_COLOR = "#6fa8c9";
+const FAST_COLOR = "#c9975a";
 
 const KIND_LABEL: Record<EventKind, string> = {
   mourning: "mourning",
@@ -50,6 +61,9 @@ export function CalendarPanel() {
   const [anchor, setAnchor] = useState<Date | null>(null);
   // which day numbers the grid shows; the hover tooltip shows the other
   const [calMode, setCalMode] = useState<"hijri" | "gregorian">("hijri");
+  // tapped day (date key) — shows what its icons and dots mean; hover
+  // tooltips do not exist on a phone
+  const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => {
     const d = new Date();
     setNow(d);
@@ -82,6 +96,18 @@ export function CalendarPanel() {
   const monthEvents = days.flatMap(({ date, hijri }) =>
     eventsFor(hijri.month, hijri.day).map((e) => ({ e, date, hijri })),
   );
+
+  const monthNote = fastingMonthNote(month.month);
+  const pickedDay = days.find(({ date }) => todayKey(date) === picked) ?? null;
+  const pickedNotes: { icon: string; text: string }[] = [];
+  if (pickedDay) {
+    for (const e of eventsFor(pickedDay.hijri.month, pickedDay.hijri.day))
+      pickedNotes.push({ icon: KIND_COLOR[e.kind], text: e.title });
+    const g = ghuslFor(pickedDay.date, pickedDay.hijri);
+    if (g) pickedNotes.push({ icon: "ghusl", text: g });
+    const f = fastFor(pickedDay.date, pickedDay.hijri, days.length);
+    if (f) pickedNotes.push({ icon: "fast", text: f });
+  }
 
   const fmt = (d: Date) =>
     d.toLocaleDateString("en", { day: "numeric", month: "short" });
@@ -144,12 +170,18 @@ export function CalendarPanel() {
           <span key={`pad-${i}`} />
         ))}
         {days.map(({ date, hijri }) => {
-          const isToday = todayKey(date) === todayK;
+          const key = todayKey(date);
+          const isToday = key === todayK;
           const evts = eventsFor(hijri.month, hijri.day);
+          const ghusl = ghuslFor(date, hijri);
+          const fast = fastFor(date, hijri, days.length);
+          const notes = [...evts.map((e) => e.title), ghusl, fast].filter(Boolean);
           return (
-            <div
+            <button
+              type="button"
               key={hijri.day}
-              title={evts.length ? evts.map((e) => e.title).join(" · ") : undefined}
+              onClick={() => setPicked((p) => (p === key ? null : key))}
+              title={notes.length ? notes.join(" · ") : undefined}
               className="group relative flex flex-col items-center"
             >
               {/* subtle hover tooltip: the same day in the other calendar */}
@@ -167,14 +199,16 @@ export function CalendarPanel() {
                   "grid size-9 place-items-center rounded-full font-display text-[0.95rem] leading-none transition",
                   isToday
                     ? "bg-gold text-night shadow-[0_0_14px_rgba(220,175,94,0.4)]"
-                    : evts.length
+                    : picked === key
+                      ? "border border-gold-dim/60 text-cream"
+                      : evts.length
                       ? "text-cream"
                       : "text-cream-faint",
                 )}
               >
                 {calMode === "hijri" ? hijri.day : date.getDate()}
               </span>
-              <span className="flex h-1.5 items-center gap-0.5">
+              <span className="flex h-3 items-center gap-[3px]">
                 {evts.slice(0, 3).map((e, i) => (
                   <span
                     key={i}
@@ -182,11 +216,68 @@ export function CalendarPanel() {
                     style={{ background: KIND_COLOR[e.kind] }}
                   />
                 ))}
+                {ghusl && <Droplet className="size-2.5" style={{ color: GHUSL_COLOR }} />}
+                {fast && <UtensilsCrossed className="size-2.5" style={{ color: FAST_COLOR }} />}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {/* legend for the two icons */}
+      <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[0.66rem] text-cream-faint">
+        <span className="inline-flex items-center gap-1">
+          <Droplet className="size-3" style={{ color: GHUSL_COLOR }} />
+          recommended ghusl
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <UtensilsCrossed className="size-3" style={{ color: FAST_COLOR }} />
+          recommended fast
+        </span>
+      </p>
+
+      {/* the tapped day, spelled out */}
+      {pickedDay && (
+        <div className="mt-3 rounded-2xl border border-night-line-soft bg-night-raise/50 px-4 py-3 text-[0.8rem] leading-snug text-cream-dim animate-rise">
+          <p className="font-display text-[0.95rem] text-cream">
+            {pickedDay.hijri.day} {month.monthName}
+            <span className="text-cream-faint">
+              {" "}
+              ·{" "}
+              {pickedDay.date.toLocaleDateString("en", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </span>
+          </p>
+          {pickedNotes.length === 0 ? (
+            <p className="mt-1 italic text-cream-faint">Nothing marked on this day.</p>
+          ) : (
+            <ul className="mt-1.5 space-y-1">
+              {pickedNotes.map((n, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="mt-[3px] grid size-3 shrink-0 place-items-center">
+                    {n.icon === "ghusl" ? (
+                      <Droplet className="size-3" style={{ color: GHUSL_COLOR }} />
+                    ) : n.icon === "fast" ? (
+                      <UtensilsCrossed className="size-3" style={{ color: FAST_COLOR }} />
+                    ) : (
+                      <span className="size-1.5 rounded-full" style={{ background: n.icon }} />
+                    )}
+                  </span>
+                  {n.text}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {monthNote && (
+        <p className="mt-3 text-center text-[0.72rem] italic leading-snug text-cream-dim">
+          {monthNote}
+        </p>
+      )}
 
       {/* occasions — quiet timeline */}
       <div className="mt-6">
