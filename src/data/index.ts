@@ -6,6 +6,8 @@ import { extras } from "./extras";
 import { extras2 } from "./extras2";
 import { audioOverrides } from "./audio";
 import { quranPortionFor } from "./quran-daily";
+import { occasionsFor } from "./occasions";
+import { hijriParts } from "@/lib/dates";
 
 /** All aamal with researched audio merged in (Ali Fani first, then fallbacks). */
 export const allAamal: Amal[] = [
@@ -27,7 +29,7 @@ export const allAamal: Amal[] = [
 /**
  * One-sitting recitation order for the session after Maghrib, every day:
  * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
- * with the before-sleep items and Salat al-Layl closing the list.
+ * with the before-sleep items closing the list.
  * The owner has a single free block a day, so the sitting holds every to-do.
  * The few morning-bound aamal (`morning` set) are kept out of it, in their own
  * checklist — see `morningForDay`.
@@ -43,6 +45,7 @@ const SESSION_ORDER: string[][] = [
   ["dua-faraj"],
   ["salawat"],
   ["istighfar"],
+  ["dua-itidhar"],
   ["sadaqa"],
   [
     "ziyarat-prophet",
@@ -60,23 +63,30 @@ const SESSION_ORDER: string[][] = [
   ["surah-waqiah"],
   ["surah-mulk"],
   ["amana-rasul"],
-  ["salat-layl"],
 ];
+
+const OCCASION_RANK = SESSION_ORDER.findIndex((g) => g.includes("surah-kahf")) + 0.5;
 
 const RANK = new Map<string, number>(
   SESSION_ORDER.flatMap((group, i) => group.map((id) => [id, i] as const)),
 );
 
-const MORNING_ORDER = ["ghusl-jumua", "sadaqa", "dua-ahd", "dua-nudba"];
+const MORNING_ORDER = ["salat-layl", "ghusl-jumua", "sadaqa", "dua-ahd", "dua-nudba"];
+
+const dayAfter = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12);
 
 /**
  * The morning checklist: aamal whose blessing is lost if left to the evening.
  * Never part of the sitting or of the day's required total — a tick is a bonus.
  */
-export function morningForDay(weekday: Weekday): Amal[] {
-  return allAamal
+export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
+  const list = allAamal
     .filter((a) => a.morning && (a.days === "daily" || a.days.includes(weekday)))
     .sort((a, b) => MORNING_ORDER.indexOf(a.id) - MORNING_ORDER.indexOf(b.id));
+  // aamal of the daylight of today's Hijri date (Ghadir, Arafah, Arba'in…)
+  if (date)
+    list.push(...occasionsFor("day", hijriParts(date), date, hijriParts(dayAfter(date))));
+  return list;
 }
 
 /** The to-dos of the sitting after Maghrib (morning-bound aamal excluded). */
@@ -85,8 +95,17 @@ export function aamalForDay(weekday: Weekday, date?: Date): Amal[] {
     (a) => !a.morning && (a.days === "daily" || a.days.includes(weekday)),
   );
   // the year-long khatm portion is computed from the date, not stored
-  if (date) list.push(quranPortionFor(date));
-  return list.sort((a, b) => (RANK.get(a.id) ?? 99) - (RANK.get(b.id) ?? 99));
+  if (date) {
+    list.push(quranPortionFor(date));
+    // tonight, after Maghrib, is already the night of TOMORROW's Hijri date
+    const tomorrow = dayAfter(date);
+    list.push(
+      ...occasionsFor("night", hijriParts(tomorrow), tomorrow, hijriParts(dayAfter(tomorrow))),
+    );
+  }
+  // the night's special aamal come after the weekly ones, before the Quran portion
+  const rank = (a: Amal) => RANK.get(a.id) ?? (a.id.startsWith("occ-") ? OCCASION_RANK : 99);
+  return list.sort((a, b) => rank(a) - rank(b));
 }
 
 export const TIME_LABELS: Record<TimeOfDay, string> = {

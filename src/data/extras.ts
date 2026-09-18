@@ -275,6 +275,7 @@ export const extras: Amal[] = [
     title: "Salat al-Layl",
     arabicTitle: "صَلَاةُ ٱللَّيْلِ",
     subtitle: "The night prayer — 11 rak'ahs before Fajr",
+    morning: "Prayed in the last part of the night, before Fajr — tick it if you rose for it",
     type: "action",
     days: "daily",
     timeOfDay: "night",

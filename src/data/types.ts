@@ -64,6 +64,8 @@ export interface Amal {
   minutes: number;
   /** one-line merit/reward or source, e.g. "Taught by the Prophet (s) to Lady Fatima (a)" */
   merit?: string;
+  /** plain how-to steps, for occasion aamal whose full text lives behind a link */
+  steps?: string[];
   /** recitable text, required for dua/ziyarat/quran */
   lines?: Line[];
   /** for type "counter" */

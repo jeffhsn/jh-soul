@@ -28,6 +28,7 @@ import {
 import { CalendarPanel } from "./hijri-calendar";
 import { ContributionGraph } from "./contribution-graph";
 import { PrayerTimes } from "./prayer-times";
+import { QuranPanel } from "./quran-tracker";
 import {
   computeStreak,
   migrateMorningTicks,
@@ -112,7 +113,7 @@ function DayContent({ now }: { now: Date }) {
   const isToday = offset === 0;
   const weekday = viewed.getDay() as Weekday;
   const aamal = useMemo(() => aamalForDay(weekday, viewed), [weekday, viewed]);
-  const morningAamal = useMemo(() => morningForDay(weekday), [weekday]);
+  const morningAamal = useMemo(() => morningForDay(weekday, viewed), [weekday, viewed]);
   const [done, setDone] = useDone(date);
   const [morning, setMorning] = useMorning(date);
   const morningDone = morningAamal.filter((a) => morning[a.id]).length;
@@ -237,6 +238,9 @@ function DayContent({ now }: { now: Date }) {
       {tab === "progress" && (
         <div className="animate-rise lg:hidden">
           <SadaqaPanel />
+          <div className="mt-10">
+            <QuranPanel />
+          </div>
           <div className="mt-10">
             <ContributionGraph refresh={done} />
           </div>
@@ -469,7 +473,7 @@ function DayContent({ now }: { now: Date }) {
                     </span>
                   </button>
                   {/* the text is there if wanted, but never in the way */}
-                  {amal.lines && amal.lines.length > 1 && (
+                  {((amal.lines && amal.lines.length > 1) || amal.steps) && (
                     <button
                       aria-label={`Read ${amal.title}`}
                       onClick={() => setOpenId(amal.id)}
@@ -583,6 +587,9 @@ function DayContent({ now }: { now: Date }) {
         </div>
         <div className="mb-10">
           <SadaqaPanel />
+        </div>
+        <div className="mb-10">
+          <QuranPanel />
         </div>
         <div className="xl:hidden">
           <CalendarPanel />

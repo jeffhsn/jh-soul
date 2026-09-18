@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import type { CounterPhase } from "@/data";
 import { useCountState } from "@/lib/store";
+import { useCountKeys } from "@/lib/use-count-keys";
 import { cn } from "@/lib/utils";
 
 /**
@@ -56,6 +57,13 @@ export function TasbihBeads({
       setState({ phase: state.phase, count: nextCount });
     }
   }
+
+  function undo() {
+    // within the current phrase only — a finished phrase stays finished
+    if (finished || state.count <= 0) return;
+    setState({ phase: state.phase, count: state.count - 1 });
+  }
+  useCountKeys(tap, undo);
 
   return (
     <div className="flex select-none flex-col items-center">
@@ -132,6 +140,11 @@ export function TasbihBeads({
         {Math.min(doneAll, totalAll)} / {totalAll}
       </p>
 
+      <p className="mt-4 hidden text-center text-[0.68rem] tracking-wide text-cream-faint md:block">
+        <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Space</kbd> to
+        count · <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Backspace</kbd>{" "}
+        to undo
+      </p>
       <button
         onClick={() => {
           doneRef.current = false;

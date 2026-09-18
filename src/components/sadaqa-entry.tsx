@@ -201,7 +201,7 @@ export function SadaqaPanel() {
 
         {/* write today's amount right here — no need to open anything */}
         <div className="relative mt-5 flex items-center justify-between gap-3 border-t border-night-line-soft pt-4">
-          <span className="text-[0.8rem] text-cream-dim">Given today</span>
+          <span className="whitespace-nowrap text-[0.8rem] text-cream-dim">Given today</span>
           <SadaqaField />
         </div>
 

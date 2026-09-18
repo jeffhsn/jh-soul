@@ -10,9 +10,10 @@ import {
   Droplet,
   UtensilsCrossed,
 } from "lucide-react";
-import { hijriMonthDays, todayKey } from "@/lib/dates";
+import { hijriMonthDays, hijriParts, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
 import { fastFor, fastingMonthNote, ghuslFor } from "@/data/observances";
+import { occasionsFor } from "@/data/occasions";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +108,13 @@ export function CalendarPanel() {
     if (g) pickedNotes.push({ icon: "ghusl", text: g });
     const f = fastFor(pickedDay.date, pickedDay.hijri, days.length);
     if (f) pickedNotes.push({ icon: "fast", text: f });
+    // the special aamal that will appear in the app for this date
+    const d = pickedDay.date;
+    const next = hijriParts(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12));
+    for (const a of occasionsFor("night", pickedDay.hijri, d, next))
+      pickedNotes.push({ icon: "#d9a954", text: `The evening before, after Maghrib: ${a.title}` });
+    for (const a of occasionsFor("day", pickedDay.hijri, d, next))
+      pickedNotes.push({ icon: "#d9a954", text: `By day: ${a.title}` });
   }
 
   const fmt = (d: Date) =>

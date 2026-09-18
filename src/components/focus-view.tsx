@@ -177,6 +177,20 @@ export function FocusView({
                     <AudioPlayer sources={amal.audio} />
                   </div>
                 )}
+                {amal.steps && (
+                  <ol className="mb-6 space-y-3.5 pr-12 sm:pr-0">
+                    {amal.steps.map((step, i) => (
+                      <li key={i} className="flex gap-3.5">
+                        <span className="grid size-6 shrink-0 place-items-center rounded-full border border-gold-dim/50 font-display text-[0.75rem] tabular-nums text-gold-bright">
+                          {i + 1}
+                        </span>
+                        <span className="pt-0.5 text-[0.95rem] leading-relaxed text-cream">
+                          {step}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 {amal.lines && <LinesReader lines={amal.lines} />}
                 {amal.links?.map((link) => (
                   <a
@@ -184,7 +198,7 @@ export function FocusView({
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
+                    className="mr-2 mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
                   >
                     {link.label}
                     <ArrowUpRight className="size-3.5" />

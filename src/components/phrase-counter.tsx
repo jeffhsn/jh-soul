@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import type { Line } from "@/data";
 import { useCountState } from "@/lib/store";
+import { useCountKeys } from "@/lib/use-count-keys";
 import { ProgressRing } from "./progress-ring";
 
 /**
@@ -49,6 +50,12 @@ export function PhraseCounter({
     }
   }
 
+  function undo() {
+    if (finished || state.count <= 0) return;
+    setState({ phase: 0, count: state.count - 1 });
+  }
+  useCountKeys(tap, undo);
+
   return (
     <div className="flex select-none flex-col items-center">
       {phrase && (
@@ -92,6 +99,11 @@ export function PhraseCounter({
         </p>
       )}
 
+      <p className="mt-4 hidden text-center text-[0.68rem] tracking-wide text-cream-faint md:block">
+        <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Space</kbd> to
+        count · <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Backspace</kbd>{" "}
+        to undo
+      </p>
       <button
         onClick={() => {
           doneRef.current = false;
