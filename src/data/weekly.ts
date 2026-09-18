@@ -284,7 +284,7 @@ export const weekly: Amal[] = [
     days: [5],
     timeOfDay: "morning",
     minutes: 40,
-    merit: "Recommended on Friday mornings and the four Eids, mourning the occultation of Imam al-Mahdi (aj) (Iqbal al-A'mal of Sayyid ibn Tawus). Its best time is Friday morning — if you can, play the recitation on your way that morning and tick it off tonight; otherwise recite it in tonight's sitting in hope of its reward.",
+    merit: "Recommended on Friday mornings and the four Eids, mourning the occultation of Imam al-Mahdi (aj) (Iqbal al-A'mal of Sayyid ibn Tawus). Its time is Friday morning — if you cannot sit for it, play the recitation on your way.",
     lines: [
       { ar: "الْحَمْدُ لِلَّهِ رَبِّ ٱلْعَالَمِينَ", tr: "alhamdu lillahi rabbi al`alamina", en: "All praise be to Allah the Lord of the worlds." },
       { ar: "وَصَلَّىٰ ٱللَّهُ عَلَىٰ سَيِّدِنَا مُحَمَّدٍ نَبِيِّهِ", tr: "wa salla allahu `ala sayyidina muhammadin nabiyyihi", en: "May Allah send blessings upon our master Muhammad His Prophet" },

@@ -95,6 +95,62 @@ export function useDone(date: string = aamalKey()) {
   return [done, setDone] as const;
 }
 
+// ---------- morning checklist (bonus, never required) ----------
+// `da:morning:<date>` → JSON Record<amalId, true>. Kept apart from `da:done` on
+// purpose: streaks and the heatmap count the keys of `da:done` against
+// `da:total`, so bonus ticks stored there would pass for required ones.
+
+const morningCache = new Map<string, Record<string, boolean>>();
+
+function morningKey(date: string) {
+  return `da:morning:${date}`;
+}
+
+function getMorning(date: string): Record<string, boolean> {
+  const key = morningKey(date);
+  const raw = typeof window === "undefined" ? null : window.localStorage.getItem(key);
+  const cached = morningCache.get(key);
+  if (cached && (cached as { __raw?: string }).__raw === raw) return cached;
+  const parsed = read<Record<string, boolean>>(key, {});
+  Object.defineProperty(parsed, "__raw", { value: raw, enumerable: false });
+  morningCache.set(key, parsed);
+  return parsed;
+}
+
+export function useMorning(date: string = aamalKey()) {
+  const morning = useSyncExternalStore(
+    subscribe,
+    () => getMorning(date),
+    () => ({}) as Record<string, boolean>,
+  );
+  const setMorning = useCallback(
+    (amalId: string, value: boolean) => {
+      const next = { ...getMorning(date) } as Record<string, boolean>;
+      if (value) next[amalId] = true;
+      else delete next[amalId];
+      write(morningKey(date), next);
+    },
+    [date],
+  );
+  return [morning, setMorning] as const;
+}
+
+/**
+ * One-off per day: ticks made on morning aamal while they were still part of
+ * the main list are dropped from it (or they would count as required to-dos).
+ * They are deliberately NOT carried into the morning checklist — nothing there
+ * is ever ticked except by the owner's own hand.
+ */
+export function migrateMorningTicks(date: string, morningIds: string[]) {
+  if (typeof window === "undefined") return;
+  const done = getDone(date);
+  const moved = morningIds.filter((id) => done[id]);
+  if (!moved.length) return;
+  const nextDone = { ...done } as Record<string, boolean>;
+  for (const id of moved) delete nextDone[id];
+  write(doneKey(date), nextDone);
+}
+
 /** Record how many aamal existed today so streaks can be computed later. */
 export function recordDayTotal(date: string, total: number) {
   if (typeof window === "undefined") return;
@@ -217,7 +273,7 @@ export interface SadaqaTotal {
 
 function computeSadaqaTotal(): SadaqaTotal {
   if (typeof window === "undefined") return { total: 0, days: 0 };
-  let total = 0;
+  let cents = 0; // summed in cents — 0.1 + 0.2 must come out as 0.30
   let days = 0;
   const prefix = "da:sadaqa:";
   for (let i = 0; i < window.localStorage.length; i++) {
@@ -225,10 +281,10 @@ function computeSadaqaTotal(): SadaqaTotal {
     if (!key || !key.startsWith(prefix)) continue;
     const n = Number(window.localStorage.getItem(key));
     if (!Number.isFinite(n) || n <= 0) continue;
-    total += n;
+    cents += Math.round(n * 100);
     days++;
   }
-  return { total, days };
+  return { total: cents / 100, days };
 }
 
 const EMPTY_SADAQA: SadaqaTotal = { total: 0, days: 0 };

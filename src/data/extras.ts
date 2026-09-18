@@ -178,7 +178,7 @@ export const extras: Amal[] = [
     title: "Daily Sadaqa",
     arabicTitle: "ٱلصَّدَقَةُ",
     subtitle: "Give a little charity — even a coin set aside",
-    morning: "Given early, it shields the whole day — a coin set aside on waking is enough",
+    morning: "Given early, it shields the whole day",
     type: "action",
     days: "daily",
     timeOfDay: "morning",
@@ -189,6 +189,32 @@ export const extras: Amal[] = [
       {
         label: "Feed a hungry child — ShareTheMeal",
         url: "https://sharethemeal.org/",
+      },
+    ],
+  },
+  {
+    id: "ghusl-jumua",
+    title: "Ghusl al-Jumu'a",
+    arabicTitle: "غُسْلُ ٱلْجُمُعَةِ",
+    subtitle: "The Friday bath — purification for the week",
+    morning: "Best before noon on Friday — make your shower the ghusl, it only needs the intention",
+    type: "action",
+    days: [5],
+    timeOfDay: "morning",
+    minutes: 10,
+    merit:
+      "Whenever you shower on Friday, make the intention of Ghusl al-Jumu'a, qurbatan ilallah. Its time runs from Fajr to sunset on Friday, best before noon; if it was missed it can be made up on Saturday before sunset.",
+    lines: [
+      {
+        ar: "أَغْتَسِلُ غُسْلَ ٱلْجُمُعَةِ قُرْبَةً إِلَى ٱللَّهِ",
+        tr: "Aghtasilu ghusl al-Jumu'a, qurbatan ilallah",
+        en: "I perform the Friday ghusl, seeking nearness to Allah.",
+      },
+    ],
+    links: [
+      {
+        label: "Friday aamal — Duas.org",
+        url: "https://www.duas.org/friday.htm",
       },
     ],
   },

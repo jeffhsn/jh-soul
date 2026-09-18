@@ -8,7 +8,6 @@ import {
   Headphones,
   MoonStar,
   Sparkles,
-  Sunrise,
 } from "lucide-react";
 import type { Amal } from "@/data";
 import { cn } from "@/lib/utils";
@@ -101,12 +100,6 @@ export function AmalCard({
               <Clock3 className="size-3" />
               {amal.minutes} min
             </span>
-            {amal.morning && (
-              <span className="inline-flex items-center gap-1 text-gold-dim">
-                <Sunrise className="size-3" />
-                best in the morning
-              </span>
-            )}
             {hasAudio && (
               <span className="inline-flex items-center gap-1 text-sage/80">
                 <Headphones className="size-3" />

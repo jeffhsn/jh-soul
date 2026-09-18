@@ -4,13 +4,85 @@ import { useEffect, useRef, useState } from "react";
 import { HandCoins } from "lucide-react";
 import { useSadaqaAmount, useSadaqaTotal } from "@/lib/store";
 
-export const formatAmount = (n: number) =>
-  new Intl.NumberFormat("en-IE", {
+/** Money as money: €5 for whole euro, otherwise always two decimals (€0.70, never €0.7). */
+export const formatAmount = (n: number) => {
+  const cents = Math.round(n * 100);
+  const whole = cents % 100 === 0;
+  return new Intl.NumberFormat("en-IE", {
     style: "currency",
     currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(n);
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(cents / 100);
+};
+
+/** The same rule for the text field, without the symbol: "5", "0.70". */
+const fieldText = (n: number) => {
+  const cents = Math.round(n * 100);
+  return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
+};
+
+/** Keep digits and one decimal separator, at most two decimals (cents). */
+function cleanMoney(raw: string): string {
+  const s = raw.replace(",", ".").replace(/[^0-9.]/g, "");
+  const dot = s.indexOf(".");
+  if (dot === -1) return s;
+  return s.slice(0, dot) + "." + s.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+}
+
+/**
+ * Compact inline amount field — lives in the morning checklist row and in the
+ * Sadaqa panel. Every copy is bound to the same stored amount, so they agree.
+ * While focused it shows what is being typed; otherwise the stored amount,
+ * written as money (0.70).
+ */
+export function SadaqaField({
+  date,
+  className,
+}: {
+  date?: string;
+  className?: string;
+}) {
+  const [amount, setAmount] = useSadaqaAmount(date);
+  const [typing, setTyping] = useState<string | null>(null);
+  const value = typing ?? (amount === null ? "" : fieldText(amount));
+  const ref = useRef<HTMLInputElement>(null);
+
+  return (
+    <label
+      className={
+        "flex shrink-0 cursor-text items-center gap-1 rounded-full border border-night-line bg-night-card px-3 py-1.5 transition focus-within:border-gold-dim focus-within:shadow-[0_0_0_3px_rgba(220,175,94,0.12)] " +
+        (className ?? "")
+      }
+    >
+      <span className="font-display text-[0.95rem] text-gold-dim">€</span>
+      <input
+        ref={ref}
+        type="text"
+        inputMode="decimal"
+        enterKeyHint="done"
+        autoComplete="off"
+        aria-label="Sadaqa given today, in euro"
+        placeholder="0.00"
+        value={value}
+        onFocus={() => setTyping(value)}
+        onChange={(e) => {
+          const cleaned = cleanMoney(e.target.value);
+          setTyping(cleaned);
+          const n = cleaned === "" || cleaned === "." ? null : Number(cleaned);
+          const next = n === null || !Number.isFinite(n) ? null : Math.round(n * 100) / 100;
+          setAmount(next);
+        }}
+        onBlur={() => setTyping(null)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") ref.current?.blur();
+        }}
+        // 16px: anything smaller makes iOS zoom the page on focus
+        className="w-[4.2rem] bg-transparent font-display text-[16px] tabular-nums text-cream outline-none placeholder:text-cream-faint/60"
+      />
+    </label>
+  );
+}
 
 /**
  * Quick amount field for the daily sadaqa: type a number, press Enter, done.
@@ -24,7 +96,7 @@ export function SadaqaEntry({
   onDone: () => void;
 }) {
   const [amount, setAmount] = useSadaqaAmount(date);
-  const [text, setText] = useState(amount === null ? "" : String(amount));
+  const [text, setText] = useState(amount === null ? "" : fieldText(amount));
   const inputRef = useRef<HTMLInputElement>(null);
   const { total, days } = useSadaqaTotal();
 
@@ -35,10 +107,11 @@ export function SadaqaEntry({
   }, []);
 
   function commit(raw: string) {
-    setText(raw);
-    const cleaned = raw.replace(",", ".").replace(/[^0-9.]/g, "");
-    const n = cleaned === "" ? null : Number(cleaned);
-    setAmount(n === null || !Number.isFinite(n) ? null : n);
+    const cleaned = cleanMoney(raw);
+    setText(cleaned);
+    const n = cleaned === "" || cleaned === "." ? null : Number(cleaned);
+    // stored to the cent, so sums never pick up floating-point dust
+    setAmount(n === null || !Number.isFinite(n) ? null : Math.round(n * 100) / 100);
   }
 
   return (
@@ -58,9 +131,11 @@ export function SadaqaEntry({
           inputMode="decimal"
           enterKeyHint="done"
           autoComplete="off"
-          placeholder="0"
+          placeholder="0.00"
           value={text}
           onChange={(e) => commit(e.target.value)}
+          // ".5" or "0.7" settle into real money on leaving the field: 0.50, 0.70
+          onBlur={() => amount !== null && setText(fieldText(amount))}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -72,7 +147,7 @@ export function SadaqaEntry({
         />
         </div>
         <span className="mt-2 block text-[0.78rem] italic text-cream-dim">
-          In euro. Press Enter to mark it done.
+          In euro — cents count too (0.50). Press Enter to mark it done.
         </span>
       </label>
 
@@ -93,7 +168,6 @@ export function SadaqaEntry({
 /** Lifetime sadaqa — a rail panel beside the calendar and heatmap. */
 export function SadaqaPanel() {
   const { total, days } = useSadaqaTotal();
-  const [today] = useSadaqaAmount();
   const average = days > 0 ? total / days : 0;
 
   return (
@@ -125,15 +199,20 @@ export function SadaqaPanel() {
           {formatAmount(total)}
         </p>
 
-        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-night-line-soft pt-4">
-          <Stat label="Today" value={today === null ? "—" : formatAmount(today)} />
+        {/* write today's amount right here — no need to open anything */}
+        <div className="relative mt-5 flex items-center justify-between gap-3 border-t border-night-line-soft pt-4">
+          <span className="text-[0.8rem] text-cream-dim">Given today</span>
+          <SadaqaField />
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-night-line-soft pt-4">
           <Stat label="Days" value={String(days)} />
-          <Stat label="Per day" value={days ? formatAmount(Math.round(average)) : "—"} />
+          <Stat label="Average" value={days ? formatAmount(average) : "—"} />
         </div>
 
         <p className="mt-4 text-[0.72rem] italic leading-snug text-cream-dim">
           {days === 0
-            ? "Write down what you give in Daily Sadaqa — it adds up here."
+            ? "Write down what you give, to the cent — it adds up here."
             : "Calamity does not step over sadaqa."}
         </p>
       </div>

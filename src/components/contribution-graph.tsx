@@ -12,6 +12,8 @@ interface Cell {
   date: Date;
   completed: number;
   total: number;
+  /** morning aamal kept that day — a bonus on top of the required list */
+  bonus: number;
   level: 0 | 1 | 2 | 3 | 4;
   future: boolean;
 }
@@ -27,13 +29,15 @@ const LEVEL_STYLE: Record<Cell["level"], React.CSSProperties> = {
   },
 };
 
-function readDay(key: string): { completed: number; total: number } {
+function readDay(key: string): { completed: number; total: number; bonus: number } {
   try {
+    const morning = JSON.parse(localStorage.getItem(`da:morning:${key}`) ?? "{}");
+    const bonus = Object.keys(morning).length;
     const done = JSON.parse(localStorage.getItem(`da:done:${key}`) ?? "{}");
     const total = Number(localStorage.getItem(`da:total:${key}`) ?? 0);
-    return { completed: Object.keys(done).length, total };
+    return { completed: Object.keys(done).length, total, bonus };
   } catch {
-    return { completed: 0, total: 0 };
+    return { completed: 0, total: 0, bonus: 0 };
   }
 }
 
@@ -58,12 +62,13 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
     const cur = new Date(start);
     for (let i = 0; i < WEEKS * 7; i++) {
       const key = todayKey(cur);
-      const { completed, total } = readDay(key);
-      const ratio = total > 0 ? completed / total : 0;
+      const { completed, total, bonus } = readDay(key);
+      // morning aamal boost the day's shade; only a finished list glows
+      const ratio = total > 0 ? Math.min(1, (completed + bonus) / total) : 0;
       const level: Cell["level"] =
-        completed === 0
+        completed + bonus === 0
           ? 0
-          : ratio >= 1
+          : total > 0 && completed >= total
             ? 4
             : ratio >= 0.67
               ? 3
@@ -78,6 +83,7 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
         date: new Date(cur),
         completed,
         total,
+        bonus,
         level,
         future: key > todayK,
       });
@@ -89,12 +95,14 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
     const y = today.getFullYear();
     let active = 0;
     let perfect = 0;
+    let bonusTotal = 0;
     for (let d = 1; d <= today.getDate(); d++) {
-      const { completed, total } = readDay(todayKey(new Date(y, m, d)));
-      if (completed > 0) active++;
+      const { completed, total, bonus } = readDay(todayKey(new Date(y, m, d)));
+      bonusTotal += bonus;
+      if (completed + bonus > 0) active++;
       if (total > 0 && completed >= total) perfect++;
     }
-    return { cells, monthLabels, stats: { active, perfect } };
+    return { cells, monthLabels, stats: { active, perfect, bonus: bonusTotal } };
   }, [refresh]);
 
   return (
@@ -132,11 +140,18 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
             title={
               c.future
                 ? undefined
-                : `${c.date.toLocaleDateString("en", { day: "numeric", month: "short" })} — ${c.completed}${c.total ? `/${c.total}` : ""} aamal`
+                : `${c.date.toLocaleDateString("en", { day: "numeric", month: "short" })} — ${c.completed}${c.total ? `/${c.total}` : ""} aamal${c.bonus ? ` · +${c.bonus} morning` : ""}`
             }
-            className="aspect-square w-full rounded-[3px] transition-colors"
+            className="relative aspect-square w-full rounded-[3px] transition-colors"
             style={c.future ? { background: "transparent" } : LEVEL_STYLE[c.level]}
-          />
+          >
+            {!c.future && c.bonus > 0 && (
+              <span
+                className="absolute right-[1px] top-[1px] size-[3px] rounded-full"
+                style={{ background: "var(--color-cream)" }}
+              />
+            )}
+          </div>
         ))}
       </div>
 
@@ -149,12 +164,23 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
           ))}
           more
         </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="size-[3px] rounded-full" style={{ background: "var(--color-cream)" }} />
+          morning aamal kept
+        </span>
       </div>
       <p className="mt-3 text-[0.75rem] leading-relaxed text-cream-dim">
         This month:{" "}
         <span className="text-gold-bright">{stats.active}</span> active{" "}
         {stats.active === 1 ? "day" : "days"},{" "}
-        <span className="text-gold-bright">{stats.perfect}</span> fully completed.
+        <span className="text-gold-bright">{stats.perfect}</span> fully completed
+        {stats.bonus > 0 && (
+          <>
+            , <span className="text-gold-bright">+{stats.bonus}</span> morning{" "}
+            {stats.bonus === 1 ? "amal" : "aamal"} kept
+          </>
+        )}
+        .
       </p>
     </div>
   );

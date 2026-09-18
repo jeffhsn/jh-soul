@@ -28,8 +28,9 @@ export const allAamal: Amal[] = [
  * One-sitting recitation order for the session after Maghrib, every day:
  * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
  * with the before-sleep items and Salat al-Layl closing the list.
- * The owner has a single free block a day, so nothing is scheduled outside
- * the sitting (Ghusl al-Jumu'a is deliberately not a to-do).
+ * The owner has a single free block a day, so the sitting holds every to-do.
+ * The few morning-bound aamal (`morning` set) are kept out of it, in their own
+ * checklist — see `morningForDay`.
  */
 const SESSION_ORDER: string[][] = [
   ["fatiha"],
@@ -66,9 +67,22 @@ const RANK = new Map<string, number>(
   SESSION_ORDER.flatMap((group, i) => group.map((id) => [id, i] as const)),
 );
 
+const MORNING_ORDER = ["ghusl-jumua", "sadaqa", "dua-ahd", "dua-nudba"];
+
+/**
+ * The morning checklist: aamal whose blessing is lost if left to the evening.
+ * Never part of the sitting or of the day's required total — a tick is a bonus.
+ */
+export function morningForDay(weekday: Weekday): Amal[] {
+  return allAamal
+    .filter((a) => a.morning && (a.days === "daily" || a.days.includes(weekday)))
+    .sort((a, b) => MORNING_ORDER.indexOf(a.id) - MORNING_ORDER.indexOf(b.id));
+}
+
+/** The to-dos of the sitting after Maghrib (morning-bound aamal excluded). */
 export function aamalForDay(weekday: Weekday, date?: Date): Amal[] {
   const list = allAamal.filter(
-    (a) => a.days === "daily" || a.days.includes(weekday),
+    (a) => !a.morning && (a.days === "daily" || a.days.includes(weekday)),
   );
   // the year-long khatm portion is computed from the date, not stored
   if (date) list.push(quranPortionFor(date));

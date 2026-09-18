@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
+  BookOpenText,
   CalendarDays,
   ChevronLeft,
   Check,
@@ -15,7 +16,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { aamalForDay, type Weekday } from "@/data";
+import { aamalForDay, morningForDay, type Weekday } from "@/data";
 import { eventsFor } from "@/data/hijri-events";
 import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
 import {
@@ -27,11 +28,17 @@ import {
 import { CalendarPanel } from "./hijri-calendar";
 import { ContributionGraph } from "./contribution-graph";
 import { PrayerTimes } from "./prayer-times";
-import { computeStreak, recordDayTotal, useDone } from "@/lib/store";
+import {
+  computeStreak,
+  migrateMorningTicks,
+  recordDayTotal,
+  useDone,
+  useMorning,
+} from "@/lib/store";
 import { AmalCard } from "./amal-card";
 import { ProgressRing } from "./progress-ring";
 import { ResourcesPanel } from "./resources";
-import { SadaqaPanel } from "./sadaqa-entry";
+import { SadaqaField, SadaqaPanel } from "./sadaqa-entry";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
 
@@ -105,7 +112,10 @@ function DayContent({ now }: { now: Date }) {
   const isToday = offset === 0;
   const weekday = viewed.getDay() as Weekday;
   const aamal = useMemo(() => aamalForDay(weekday, viewed), [weekday, viewed]);
+  const morningAamal = useMemo(() => morningForDay(weekday), [weekday]);
   const [done, setDone] = useDone(date);
+  const [morning, setMorning] = useMorning(date);
+  const morningDone = morningAamal.filter((a) => morning[a.id]).length;
   const [openId, setOpenId] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   // phone navigation: the list is the app; calendar and progress are one tap away
@@ -127,6 +137,11 @@ function DayContent({ now }: { now: Date }) {
     // only stamp real today — browsing other days must not affect streaks
     if (isToday) recordDayTotal(date, total);
   }, [isToday, date, total]);
+  useEffect(() => {
+    // ticks made while the morning aamal still sat in the main list
+    if (isToday) migrateMorningTicks(date, morningAamal.map((a) => a.id));
+    // `done` is a dependency so ticks arriving later from cloud sync move too
+  }, [isToday, date, morningAamal, done]);
   useEffect(() => {
     setStreak(computeStreak());
   }, [done]);
@@ -175,8 +190,10 @@ function DayContent({ now }: { now: Date }) {
   const hp = hijriParts(viewed);
   const todaysEvents = eventsFor(hp.month, hp.day);
 
-  const open = openId ? aamal.find((a) => a.id === openId) ?? null : null;
-  const morningAamal = aamal.filter((a) => a.morning);
+  const open = openId
+    ? [...aamal, ...morningAamal].find((a) => a.id === openId) ?? null
+    : null;
+  const openIsMorning = !!open?.morning;
   const pending = aamal.filter((a) => !done[a.id]);
   const finished = aamal.filter((a) => done[a.id]);
   const ordered = [...pending, ...finished];
@@ -385,13 +402,16 @@ function DayContent({ now }: { now: Date }) {
             <span className="tabular-nums">
               {completed}/{total}
               {allDone ? " · complete" : completed > 0 ? ` · ~${remainingMinutes} min left` : ` · ~${totalMinutes} min`}
+              {morningDone > 0 && (
+                <span className="text-gold-bright"> · +{morningDone} morning</span>
+              )}
             </span>
           </p>
         </div>
       </header>
 
-      {/* 2 — the few aamal whose blessing belongs to the morning. They are in
-          the sitting's list below as well; this is so they are seen in time */}
+      {/* 2 — the few aamal whose blessing belongs to the morning: a checklist
+          of its own, never required, each tick a bonus on the day's progress */}
       {morningAamal.length > 0 && (
         <section className="mt-5">
           <div className="flex items-center gap-3">
@@ -400,28 +420,33 @@ function DayContent({ now }: { now: Date }) {
               In the morning
             </h2>
             <div className="hairline flex-1 opacity-40" />
+            <span className="text-[0.7rem] tabular-nums text-cream-faint">
+              {morningDone}/{morningAamal.length} · bonus
+            </span>
           </div>
           <ul className="mt-2 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/50">
             {morningAamal.map((amal, i) => {
-              const isDone = !!done[amal.id];
+              const isDone = !!morning[amal.id];
               return (
                 <li
                   key={amal.id}
                   className={cn(
-                    "flex items-center gap-3 px-3.5 py-2.5",
+                    "flex items-center gap-3 px-4 py-3",
                     i > 0 && "border-t border-night-line-soft/60",
                   )}
                 >
+                  {/* a plain checklist: the whole row is the tick — nothing opens */}
                   <button
                     aria-label={
                       isDone ? `Mark ${amal.title} as not done` : `Mark ${amal.title} as done`
                     }
-                    onClick={() => setDone(amal.id, !isDone)}
-                    className="-m-2 grid size-10 shrink-0 place-items-center transition-transform active:scale-90"
+                    aria-pressed={isDone}
+                    onClick={() => setMorning(amal.id, !isDone)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:scale-[0.99]"
                   >
                     <span
                       className={cn(
-                        "grid size-5 place-items-center rounded-full border transition-all",
+                        "grid size-5 shrink-0 place-items-center rounded-full border transition-all",
                         isDone
                           ? "border-gold bg-gold text-night"
                           : "border-cream-faint text-transparent",
@@ -429,32 +454,39 @@ function DayContent({ now }: { now: Date }) {
                     >
                       <Check className="size-3" strokeWidth={3.5} />
                     </span>
-                  </button>
-                  <button
-                    onClick={() => setOpenId(amal.id)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <span
-                      className={cn(
-                        "block font-display text-[0.95rem] leading-snug",
-                        isDone && "text-cream-dim line-through decoration-gold-dim/50",
-                      )}
-                    >
-                      {amal.title}
-                      <span className="ml-2 text-[0.7rem] text-cream-faint no-underline">
-                        {amal.minutes} min
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={cn(
+                          "block font-display text-[0.95rem] leading-snug",
+                          isDone && "text-cream-dim line-through decoration-gold-dim/50",
+                        )}
+                      >
+                        {amal.title}
+                      </span>
+                      <span className="mt-0.5 block text-[0.74rem] leading-snug text-cream-dim">
+                        {amal.morning}
                       </span>
                     </span>
-                    <span className="mt-0.5 block text-[0.74rem] leading-snug text-cream-dim">
-                      {amal.morning}
-                    </span>
                   </button>
+                  {/* the text is there if wanted, but never in the way */}
+                  {amal.lines && amal.lines.length > 1 && (
+                    <button
+                      aria-label={`Read ${amal.title}`}
+                      onClick={() => setOpenId(amal.id)}
+                      className="grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-faint transition hover:border-gold-dim hover:text-cream"
+                    >
+                      <BookOpenText className="size-4" />
+                    </button>
+                  )}
+                  {/* the amount given is written right on the row; the tick stays the owner's */}
+                  {amal.id === "sadaqa" && <SadaqaField date={date} />}
                 </li>
               );
             })}
           </ul>
           <p className="mt-1.5 text-center text-[0.68rem] italic text-cream-faint">
-            Also in tonight&rsquo;s list — ticking one here ticks it there.
+            Not part of tonight&rsquo;s to-dos — just tick what you kept. Each one lifts
+            the day&rsquo;s progress.
           </p>
         </section>
       )}
@@ -490,6 +522,12 @@ function DayContent({ now }: { now: Date }) {
                   ? "Tonight's session is complete. Rest with a light heart."
                   : "Today's session is complete. Go into your day with a light heart."}
             </p>
+            {morningDone > 0 && (
+              <p className="mt-2 flex items-center justify-center gap-1.5 text-[0.8rem] text-gold-bright">
+                <Sunrise className="size-3.5" />+{morningDone} morning{" "}
+                {morningDone === 1 ? "amal" : "aamal"} kept on top of it.
+              </p>
+            )}
             {streak > 0 && (
               <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-night-line px-3 py-1 text-xs text-gold-bright">
                 <Flame className="size-3.5" />
@@ -514,6 +552,12 @@ function DayContent({ now }: { now: Date }) {
                   ? `Nothing checked yet — the whole session is about ${totalMinutes} minutes.`
                   : `${completed} of ${total} done · ~${remainingMinutes} min to finish.`}
               </p>
+              {morningDone > 0 && (
+                <p className="mt-1 inline-flex items-center gap-1.5 text-[0.78rem] text-gold-bright">
+                  <Sunrise className="size-3.5" />+{morningDone} morning{" "}
+                  {morningDone === 1 ? "amal" : "aamal"} kept — a bonus on top.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -589,11 +633,17 @@ function DayContent({ now }: { now: Date }) {
           key={open.id}
           amal={open}
           date={date}
-          done={!!done[open.id]}
+          done={openIsMorning ? !!morning[open.id] : !!done[open.id]}
           step={{ index: openIdx, total: ordered.length, completed }}
           onStep={stepReader}
           onClose={() => setOpenId(null)}
           onDone={(v) => {
+            if (openIsMorning) {
+              // a morning amal is outside the sitting — tick it and step back out
+              setMorning(open.id, v);
+              if (v) setOpenId(null);
+              return;
+            }
             setDone(open.id, v);
             if (v) advanceAfterDone(open.id);
           }}
