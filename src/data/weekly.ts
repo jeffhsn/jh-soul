@@ -279,6 +279,7 @@ export const weekly: Amal[] = [
     title: "Dua al-Nudba",
     arabicTitle: "دُعَاءُ ٱلنُّدْبَة",
     subtitle: "The supplication of lamentation for the Imam of our time (aj)",
+    morning: "Its time is Friday morning — play the recitation on your way if you cannot sit",
     type: "dua",
     days: [5],
     timeOfDay: "morning",

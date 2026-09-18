@@ -17,7 +17,9 @@ The owner does the list in one sitting after Maghrib, every day of the week. The
 calendar day's list — do NOT shift it to the Islamic Maghrib-to-Maghrib day; the owner rejected that. The only adjustment
 (src/lib/aamal-day.ts) is that the active day turns over at Fajr instead of midnight, so a late sitting and Salat al-Layl are
 not split across two dates. That sitting is the owner's only free block
-of the day, so never schedule an amal outside it (the owner asked for Ghusl al-Jumu'a to be left off the list). Use `aamalDate()`/`aamalKey()` for the active list's "today".
+of the day, so never schedule an amal outside it (the owner asked for Ghusl al-Jumu'a to be left off the list). The few aamal whose blessing is
+tied to the morning carry a `morning` reason and are mirrored in an "In the morning" section above the list; keep that set
+strict (owner: only what is lost if not done in the morning). Use `aamalDate()`/`aamalKey()` for the active list's "today".
 When testing in a browser, block `/api/sync` — the sync key is baked in, so a test page reads and writes the owner's real data.
 Cloud sync: every `da:` key (except theme/calmode/location, the prayer-time and Quran-text caches, and sync meta) is
 mirrored to a private Vercel Blob store through `/api/sync` (src/app/api/sync/route.ts), guarded by the passphrase in env

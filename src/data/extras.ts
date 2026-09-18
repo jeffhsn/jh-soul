@@ -178,6 +178,7 @@ export const extras: Amal[] = [
     title: "Daily Sadaqa",
     arabicTitle: "ٱلصَّدَقَةُ",
     subtitle: "Give a little charity — even a coin set aside",
+    morning: "Given early, it shields the whole day — a coin set aside on waking is enough",
     type: "action",
     days: "daily",
     timeOfDay: "morning",

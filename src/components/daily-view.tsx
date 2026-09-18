@@ -6,10 +6,12 @@ import Link from "next/link";
 import {
   CalendarDays,
   ChevronLeft,
+  Check,
   ChevronRight,
   Flame,
   ListChecks,
   MoonStar,
+  Sunrise,
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -174,6 +176,7 @@ function DayContent({ now }: { now: Date }) {
   const todaysEvents = eventsFor(hp.month, hp.day);
 
   const open = openId ? aamal.find((a) => a.id === openId) ?? null : null;
+  const morningAamal = aamal.filter((a) => a.morning);
   const pending = aamal.filter((a) => !done[a.id]);
   const finished = aamal.filter((a) => done[a.id]);
   const ordered = [...pending, ...finished];
@@ -387,7 +390,76 @@ function DayContent({ now }: { now: Date }) {
         </div>
       </header>
 
-      {/* 2 — the session itself, in recitation order */}
+      {/* 2 — the few aamal whose blessing belongs to the morning. They are in
+          the sitting's list below as well; this is so they are seen in time */}
+      {morningAamal.length > 0 && (
+        <section className="mt-5">
+          <div className="flex items-center gap-3">
+            <h2 className="inline-flex items-center gap-1.5 font-display text-[0.72rem] uppercase tracking-[0.2em] text-gold-dim">
+              <Sunrise className="size-3.5" />
+              In the morning
+            </h2>
+            <div className="hairline flex-1 opacity-40" />
+          </div>
+          <ul className="mt-2 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/50">
+            {morningAamal.map((amal, i) => {
+              const isDone = !!done[amal.id];
+              return (
+                <li
+                  key={amal.id}
+                  className={cn(
+                    "flex items-center gap-3 px-3.5 py-2.5",
+                    i > 0 && "border-t border-night-line-soft/60",
+                  )}
+                >
+                  <button
+                    aria-label={
+                      isDone ? `Mark ${amal.title} as not done` : `Mark ${amal.title} as done`
+                    }
+                    onClick={() => setDone(amal.id, !isDone)}
+                    className="-m-2 grid size-10 shrink-0 place-items-center transition-transform active:scale-90"
+                  >
+                    <span
+                      className={cn(
+                        "grid size-5 place-items-center rounded-full border transition-all",
+                        isDone
+                          ? "border-gold bg-gold text-night"
+                          : "border-cream-faint text-transparent",
+                      )}
+                    >
+                      <Check className="size-3" strokeWidth={3.5} />
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setOpenId(amal.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span
+                      className={cn(
+                        "block font-display text-[0.95rem] leading-snug",
+                        isDone && "text-cream-dim line-through decoration-gold-dim/50",
+                      )}
+                    >
+                      {amal.title}
+                      <span className="ml-2 text-[0.7rem] text-cream-faint no-underline">
+                        {amal.minutes} min
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block text-[0.74rem] leading-snug text-cream-dim">
+                      {amal.morning}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-1.5 text-center text-[0.68rem] italic text-cream-faint">
+            Also in tonight&rsquo;s list — ticking one here ticks it there.
+          </p>
+        </section>
+      )}
+
+      {/* 3 — the session itself, in recitation order */}
       <section className="mt-4">
         <div className="space-y-2.5">
           {ordered.map((amal, i) => (
@@ -403,7 +475,7 @@ function DayContent({ now }: { now: Date }) {
         </div>
       </section>
 
-      {/* 3 — progress, the reward at the end */}
+      {/* 4 — progress, the reward at the end */}
       <section className="mt-10">
         {allDone ? (
           <div className="rounded-2xl border border-gold-dim/40 bg-night-card p-6 text-center animate-rise">

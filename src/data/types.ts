@@ -53,6 +53,12 @@ export interface Amal {
   /** which weekdays this appears on; "daily" = every day */
   days: Weekday[] | "daily";
   timeOfDay: TimeOfDay;
+  /**
+   * Set only when the amal's blessing is tied to the morning and is lost by
+   * evening: the one-line reason. Such items are also shown in the Morning
+   * section above the sitting (they stay in the sitting's list as well).
+   */
+  morning?: string;
   /** honest estimated minutes to complete */
   minutes: number;
   /** one-line merit/reward or source, e.g. "Taught by the Prophet (s) to Lady Fatima (a)" */
