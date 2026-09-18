@@ -518,7 +518,7 @@ function DayContent({ now }: { now: Date }) {
           amal={open}
           date={date}
           done={!!done[open.id]}
-          step={{ index: openIdx, total: ordered.length }}
+          step={{ index: openIdx, total: ordered.length, completed }}
           onStep={stepReader}
           onClose={() => setOpenId(null)}
           onDone={(v) => {

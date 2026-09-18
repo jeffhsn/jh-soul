@@ -24,8 +24,8 @@ export function FocusView({
   amal: Amal;
   date: string;
   done: boolean;
-  /** position of this amal in the day's list (0-based) and the list length */
-  step: { index: number; total: number };
+  /** position in the day's list (for the arrows) and how many are checked off (for the label) */
+  step: { index: number; total: number; completed: number };
   /** move to the previous/next amal without closing the reader */
   onStep: (delta: 1 | -1) => void;
   onClose: () => void;
@@ -228,7 +228,7 @@ export function FocusView({
             <ChevronUp className="size-5" strokeWidth={2.5} />
           </button>
           <span className="rounded-full bg-night/70 px-2 py-0.5 text-[0.7rem] tabular-nums text-gold-bright backdrop-blur">
-            {step.index + 1}/{step.total}
+            {step.completed}/{step.total}
           </span>
           <button
             aria-label="Next amal"
