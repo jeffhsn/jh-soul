@@ -109,7 +109,7 @@ export function recordDayTotal(date: string, total: number) {
 
 /**
  * Consecutive days (ending today or yesterday) where everything was completed.
- * "Today" is the active aamal day, which turns over at Maghrib.
+ * "Today" is the active aamal day, which turns over at Fajr rather than midnight.
  */
 export function computeStreak(): number {
   if (typeof window === "undefined") return 0;

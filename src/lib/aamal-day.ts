@@ -1,12 +1,11 @@
 import { todayKey } from "./dates";
 
 /**
- * The aamal day follows the Islamic day: it begins at Maghrib, not midnight.
- * Thursday after Maghrib is already the night of Friday, so the checklist,
- * the Hijri date and the occasions all move on at Maghrib. One checklist
- * (keyed by the Gregorian date of its daylight) therefore spans
- * Maghrib → next Maghrib: the evening sitting first, with the following
- * morning as the fallback if the night was missed.
+ * The aamal are done in one sitting — after Maghrib on weekdays, in the
+ * morning on Saturdays and Sundays. The list is the ordinary calendar day's list — the only
+ * adjustment is that it does not turn over at midnight but at Fajr, so a late
+ * sitting, the before-sleep surahs and Salat al-Layl all land on the day the
+ * sitting began instead of being split across two dates.
  */
 
 export interface DayMarks {
@@ -99,11 +98,6 @@ export function dayMarks(civil: Date): DayMarks {
 
 const minutesOf = (d: Date) => d.getHours() * 60 + d.getMinutes();
 
-/** Has Maghrib of the current civil day passed? */
-export function isAfterMaghrib(now: Date = new Date()): boolean {
-  return minutesOf(now) >= dayMarks(now).maghrib;
-}
-
 /** Between Maghrib and Fajr — the hours of the evening sitting. */
 export function isNight(now: Date = new Date()): boolean {
   const { fajr, maghrib } = dayMarks(now);
@@ -112,12 +106,12 @@ export function isNight(now: Date = new Date()): boolean {
 }
 
 /**
- * The Gregorian date whose checklist is active right now (at local noon, so
- * day arithmetic is DST-safe): tomorrow's once Maghrib has passed.
+ * The calendar date whose checklist is active right now (at local noon, so
+ * day arithmetic is DST-safe): still yesterday's between midnight and Fajr.
  */
 export function aamalDate(now: Date = new Date()): Date {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
-  if (isAfterMaghrib(now)) d.setDate(d.getDate() + 1);
+  if (minutesOf(now) < dayMarks(now).fajr) d.setDate(d.getDate() - 1);
   return d;
 }
 

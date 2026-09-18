@@ -21,7 +21,6 @@ import {
   aamalKey,
   dayMarks,
   formatMinutes,
-  isAfterMaghrib,
   isNight,
 } from "@/lib/aamal-day";
 import { CalendarPanel } from "./hijri-calendar";
@@ -84,18 +83,17 @@ export function DailyView() {
 
 function DayContent({ now }: { now: Date }) {
   // offset in days from the active day; 0 = the active day.
-  // The active day begins at Maghrib (the Islamic day), not at midnight: after
-  // Maghrib on Thursday the list is already Friday's, and it stays Friday's
-  // through the night and the next morning until Maghrib comes again.
+  // The active day is the calendar day, except that it turns over at Fajr
+  // rather than midnight, so a sitting after Maghrib that runs late (and
+  // Salat al-Layl before Fajr) still lands on the day it belongs to.
   const [offset, setOffset] = useState(0);
   const activeKey = aamalKey(now);
-  const afterMaghrib = isAfterMaghrib(now);
   const night = isNight(now);
   const viewed = useMemo(() => {
     const [y, m, d] = activeKey.split("-").map(Number);
     return new Date(y, m - 1, d + offset, 12);
   }, [activeKey, offset]);
-  // prayer times belong to the civil day: tonight's panel is still today's
+  // prayer times always follow the real calendar date, even before Fajr
   const civilViewed = useMemo(() => {
     if (offset === 0) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
     return viewed;
@@ -106,6 +104,8 @@ function DayContent({ now }: { now: Date }) {
   const isToday = offset === 0;
   const weekdayName = viewed.toLocaleDateString("en", { weekday: "long" });
   const weekday = viewed.getDay() as Weekday;
+  // the owner's rhythm: after Maghrib on weekdays, in the morning at weekends
+  const morningSitting = weekday === 0 || weekday === 6;
   const aamal = useMemo(() => aamalForDay(weekday, viewed), [weekday, viewed]);
   const [done, setDone] = useDone(date);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -126,12 +126,9 @@ function DayContent({ now }: { now: Date }) {
   const allDone = total > 0 && completed === total;
 
   useEffect(() => {
-    // only stamp the active day — browsing other days must not affect streaks.
-    // The one exception: a coming day begun early (a sitting done ahead of a
-    // busy night) needs its total so that it counts. Past days are never
-    // re-stamped, or a list that has since grown would break old streaks.
-    if (isToday || (offset > 0 && completed > 0)) recordDayTotal(date, total);
-  }, [isToday, offset, completed, date, total]);
+    // only stamp real today — browsing other days must not affect streaks
+    if (isToday) recordDayTotal(date, total);
+  }, [isToday, date, total]);
   useEffect(() => {
     setStreak(computeStreak());
   }, [done]);
@@ -181,19 +178,16 @@ function DayContent({ now }: { now: Date }) {
   const todaysEvents = eventsFor(hp.month, hp.day);
 
   const open = openId ? aamal.find((a) => a.id === openId) ?? null : null;
-  // daylight-bound items (Friday ghusl, Dua al-Nudba) cannot be done in the
-  // evening sitting: at night they wait in their own group below it
-  const splitDaytime = isToday ? night : true;
-  const pending = aamal.filter(
-    (a) => !done[a.id] && !(splitDaytime && a.daytime),
-  );
-  const daytimePending = aamal.filter(
-    (a) => !done[a.id] && splitDaytime && a.daytime,
-  );
+  // daylight-bound items (Friday ghusl, Dua al-Nudba) cannot wait for the
+  // sitting after Maghrib: they get their own group — first while it is still
+  // day, and out of the sitting's way once night has fallen
+  const pending = aamal.filter((a) => !done[a.id] && !a.daytime);
+  const daytimePending = aamal.filter((a) => !done[a.id] && a.daytime);
   const finished = aamal.filter((a) => done[a.id]);
-  const ordered = [...pending, ...daytimePending, ...finished];
-  const sittingDone =
-    isToday && night && pending.length === 0 && daytimePending.length > 0;
+  const daytimeLast = isToday && night;
+  const ordered = daytimeLast
+    ? [...pending, ...daytimePending, ...finished]
+    : [...daytimePending, ...pending, ...finished];
 
   // reader navigation: step through the day's list without closing it
   const openIdx = open ? ordered.findIndex((a) => a.id === open.id) : -1;
@@ -319,15 +313,11 @@ function DayContent({ now }: { now: Date }) {
           </button>
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <h1 className="font-display text-[1.6rem] leading-tight tracking-tight sm:text-[1.7rem]">
-              {isToday ? (afterMaghrib ? "Tonight" : "Today") : gregorianDate(viewed)}
+              {isToday ? (night ? "Tonight" : "Today") : gregorianDate(viewed)}
             </h1>
             <p className="mt-0.5 text-[0.84rem] italic text-cream-dim sm:text-sm">
               {isToday && (
-                <span className="whitespace-nowrap">
-                  {/* after Maghrib the Islamic day has already turned */}
-                  {afterMaghrib && "The eve of "}
-                  {gregorianDate(viewed)} ·{" "}
-                </span>
+                <span className="whitespace-nowrap">{gregorianDate(viewed)} · </span>
               )}
               <span className="whitespace-nowrap">{hijriDate(viewed)}</span>
             </p>
@@ -399,15 +389,16 @@ function DayContent({ now }: { now: Date }) {
           </div>
           <p className="mt-2 flex items-center justify-between gap-3 text-[0.75rem] text-cream-faint">
             <span className="inline-flex items-center gap-1.5">
-              {isToday && !night ? (
+              {morningSitting ? (
                 <>
                   <Sunrise className="size-3.5 shrink-0 text-gold-dim" />
-                  {weekdayName}&rsquo;s list until Maghrib · {maghribAt}
+                  One sitting, in the morning
                 </>
               ) : (
                 <>
                   <MoonStar className="size-3.5 shrink-0 text-gold-dim" />
                   One sitting, after Maghrib
+                  {isToday && !night && ` · ${maghribAt}`}
                 </>
               )}
             </span>
@@ -425,22 +416,27 @@ function DayContent({ now }: { now: Date }) {
           {ordered.map((amal, i) => (
             <Fragment key={amal.id}>
               {amal.id === daytimePending[0]?.id && (
-                <div className="pt-3">
-                  {sittingDone && (
-                    <p className="mb-4 rounded-2xl border border-gold-dim/40 bg-night-card px-4 py-3 text-center text-[0.84rem] italic text-cream-dim">
-                      Tonight&rsquo;s sitting is complete — what remains waits for
-                      daylight.
-                    </p>
-                  )}
+                <div className={cn(daytimeLast ? "pt-3" : "pt-1")}>
                   <div className="flex items-center gap-3">
                     <h2 className="inline-flex items-center gap-1.5 font-display text-[0.72rem] uppercase tracking-[0.2em] text-gold-dim">
                       <Sunrise className="size-3.5" />
-                      By day · {weekdayName} after Fajr
+                      By day · {weekdayName} before Maghrib
                     </h2>
                     <div className="hairline flex-1 opacity-40" />
                   </div>
                 </div>
               )}
+              {!daytimeLast &&
+                daytimePending.length > 0 &&
+                amal.id === pending[0]?.id && (
+                  <div className="flex items-center gap-3 pt-3">
+                    <h2 className="inline-flex items-center gap-1.5 font-display text-[0.72rem] uppercase tracking-[0.2em] text-gold-dim">
+                      <MoonStar className="size-3.5" />
+                      The sitting · after Maghrib
+                    </h2>
+                    <div className="hairline flex-1 opacity-40" />
+                  </div>
+                )}
               <AmalCard
                 amal={amal}
                 done={!!done[amal.id]}
@@ -463,24 +459,11 @@ function DayContent({ now }: { now: Date }) {
             <p className="mt-2 font-display text-lg">May Allah accept your deeds.</p>
             <p className="mt-1 text-sm italic text-cream-dim">
               {!isToday
-                ? offset > 0
-                  ? "This sitting is done ahead of its night."
-                  : "This day's session was completed."
+                ? "This day's session was completed."
                 : night
                   ? "Tonight's session is complete. Rest with a light heart."
                   : "Today's session is complete. Go into your day with a light heart."}
             </p>
-            {isToday && !afterMaghrib && (
-              <button
-                onClick={() => {
-                  setOffset(1);
-                  window.scrollTo(0, 0);
-                }}
-                className="mt-3 block w-full text-center text-xs text-cream-faint underline decoration-night-line underline-offset-4 transition hover:text-cream-dim"
-              >
-                Busy tonight? Begin tonight&rsquo;s sitting early →
-              </button>
-            )}
             {streak > 0 && (
               <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-night-line px-3 py-1 text-xs text-gold-bright">
                 <Flame className="size-3.5" />
@@ -498,7 +481,7 @@ function DayContent({ now }: { now: Date }) {
             </ProgressRing>
             <div className="min-w-0">
               <p className="font-display text-[1.05rem]">
-                {isToday ? (afterMaghrib ? "Tonight's progress" : "Today's progress") : "This day's progress"}
+                {isToday ? (night ? "Tonight's progress" : "Today's progress") : "This day's progress"}
               </p>
               <p className="mt-0.5 text-[0.84rem] leading-snug text-cream-dim">
                 {completed === 0

@@ -247,9 +247,9 @@ export const extras: Amal[] = [
     id: "dua-tawassul",
     title: "Dua al-Tawassul",
     arabicTitle: "دُعَاءُ ٱلتَّوَسُّلِ",
-    subtitle: "Tuesday night (the eve of Wednesday) — intercession through the Fourteen Infallibles",
+    subtitle: "Tuesday night — seeking intercession through the Fourteen Infallibles",
     type: "dua",
-    days: [3], // the Islamic day begins at Maghrib: Tuesday night is Wednesday
+    days: [2],
     timeOfDay: "night",
     minutes: 15,
     merit:

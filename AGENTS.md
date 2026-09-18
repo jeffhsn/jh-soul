@@ -13,10 +13,11 @@ Daily "Soul Work" checklist of Shia aamal — same structure as ../jh-body and .
 localStorage under `da:` keys (`da:done:<date>`, `da:total:<date>`, `da:count:<date>:<amal>`, `da:sadaqa:<date>` = euro
 given that day). Deployed to https://jh-soul.vercel.app (Vercel project `jh-soul`, team jeffhsns-projects, git
 github.com/jeffhsn/jh-soul). Deploy with `vercel deploy --prod --yes` after pushing.
-The day begins at Maghrib, not midnight (src/lib/aamal-day.ts): the owner does the list in one sitting after Maghrib, with
-the next morning as fallback, so a `<date>` key spans Maghrib of the evening before until Maghrib of that date. "Thursday
-night" aamal (Dua Kumayl) therefore belong to Friday; items flagged `daytime` (Friday ghusl, Dua al-Nudba) are grouped
-apart at night. Use `aamalDate()`/`aamalKey()` for "today", never `new Date()`/`todayKey()`.
+The owner does the list in one sitting: after Maghrib on weekdays, in the morning on Saturdays and Sundays. The list is the ordinary
+calendar day's list — do NOT shift it to the Islamic Maghrib-to-Maghrib day; the owner rejected that. The only adjustment
+(src/lib/aamal-day.ts) is that the active day turns over at Fajr instead of midnight, so a late sitting and Salat al-Layl are
+not split across two dates. Items flagged `daytime` (Friday ghusl, Dua al-Nudba) cannot wait for the evening and are grouped
+apart. Use `aamalDate()`/`aamalKey()` for the active list's "today".
 When testing in a browser, block `/api/sync` — the sync key is baked in, so a test page reads and writes the owner's real data.
 Cloud sync: every `da:` key (except theme/calmode/location, the prayer-time and Quran-text caches, and sync meta) is
 mirrored to a private Vercel Blob store through `/api/sync` (src/app/api/sync/route.ts), guarded by the passphrase in env

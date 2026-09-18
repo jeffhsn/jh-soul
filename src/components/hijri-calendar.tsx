@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowLeftRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { aamalDate } from "@/lib/aamal-day";
 import { hijriMonthDays, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
 import { ThemeToggle } from "./theme-toggle";
@@ -52,8 +51,7 @@ export function CalendarPanel() {
   // which day numbers the grid shows; the hover tooltip shows the other
   const [calMode, setCalMode] = useState<"hijri" | "gregorian">("hijri");
   useEffect(() => {
-    // the Hijri day begins at Maghrib, so "today" moves on then
-    const d = aamalDate();
+    const d = new Date();
     setNow(d);
     setAnchor(d);
     try {

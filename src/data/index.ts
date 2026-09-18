@@ -25,8 +25,8 @@ export const allAamal: Amal[] = [
 });
 
 /**
- * One-sitting recitation order for the session after Maghrib (or the next
- * morning, when the night was missed — the same Islamic day, so the same list):
+ * One-sitting recitation order — the session is after Maghrib on weekdays
+ * and in the morning on Saturdays and Sundays:
  * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
  * with the before-sleep items and Salat al-Layl closing the list.
  * Items flagged `daytime` (Friday ghusl, Dua al-Nudba) are shown apart by the

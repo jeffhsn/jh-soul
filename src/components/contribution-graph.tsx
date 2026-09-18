@@ -45,7 +45,7 @@ function readDay(key: string): { completed: number; total: number } {
 export function ContributionGraph({ refresh }: { refresh?: unknown }) {
   const { cells, monthLabels, stats } = useMemo(() => {
     void refresh; // recompute when today's done-map changes
-    const today = aamalDate(); // the active day turns over at Maghrib
+    const today = aamalDate(); // the active day turns over at Fajr, not midnight
     // last column = current week; align grid start to that week's Sunday
     const end = new Date(today);
     end.setDate(end.getDate() + (6 - end.getDay())); // Saturday of this week

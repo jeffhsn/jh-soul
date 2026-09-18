@@ -8,7 +8,7 @@ export const dailyCore: Amal[] = [
     id: "dua-ahd",
     title: "Dua al-Ahd",
     arabicTitle: "دُعَاءُ الْعَهْدِ",
-    subtitle: "Renew your covenant with Imam al-Mahdi (aj) — best after Fajr",
+    subtitle: "Renew your covenant with Imam al-Mahdi (aj)",
     type: "dua",
     days: "daily",
     timeOfDay: "morning",
