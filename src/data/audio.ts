@@ -8,6 +8,35 @@
 import type { AudioSource } from "./types";
 
 export const audioOverrides: Record<string, AudioSource[]> = {
+  // Dua of Apology (Sahifa 38): Ali Fani has not recorded it — his channel only has
+  // the 7th supplication (searched 2026-09-18). All ids verified via oembed that day.
+  "dua-itidhar": [
+    {
+      title: "Dua of Apology — Ali al-Anbar (Al-Aqila TV, 2025)",
+      reciter: "Ali al-Anbar",
+      kind: "youtube",
+      url: "xS3VZ5QWQwg",
+    },
+    {
+      title: "Dua of Apology — Mu'ammal Kashkul (Al-Aqila TV, 2025)",
+      reciter: "Mu'ammal Kashkul",
+      kind: "youtube",
+      url: "stGZB7BtY-g",
+    },
+    {
+      title: "Dua of Apology — Sayyid Muhammad Husayn Fadlallah",
+      reciter: "Sayyid Muhammad Husayn Fadlallah",
+      kind: "youtube",
+      url: "qMNLKCcVIJI",
+    },
+    {
+      title: "Dua of Apology — Mohammed Jabar",
+      reciter: "Mohammed Jabar",
+      kind: "youtube",
+      url: "5C1n03CTyFM",
+    },
+  ],
+
   // ——— Core duas ———
 
   "dua-faraj": [
