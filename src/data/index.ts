@@ -29,10 +29,9 @@ export const allAamal: Amal[] = [
  * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
  * with the before-sleep items and Salat al-Layl closing the list.
  * The owner has a single free block a day, so nothing is scheduled outside
- * the sitting: Friday ghusl is just the day's shower with the intention.
+ * the sitting (Ghusl al-Jumu'a is deliberately not a to-do).
  */
 const SESSION_ORDER: string[][] = [
-  ["ghusl-jumua"],
   ["fatiha"],
   ["ayat-kursi"],
   ["muawwidhat"],

@@ -192,31 +192,6 @@ export const extras: Amal[] = [
     ],
   },
   {
-    id: "ghusl-jumua",
-    title: "Ghusl al-Jumu'a",
-    arabicTitle: "غُسْلُ ٱلْجُمُعَةِ",
-    subtitle: "Make your Friday shower the ghusl — it only needs the intention",
-    type: "action",
-    days: [5],
-    timeOfDay: "morning",
-    minutes: 10,
-    merit:
-      "No free time needed: whenever you shower on Friday, make the intention of Ghusl al-Jumu'a, qurbatan ilallah, and tick it off in tonight's sitting. Its time runs from Fajr to sunset on Friday, best before noon; if it was missed it can be made up on Saturday before sunset.",
-    lines: [
-      {
-        ar: "أَغْتَسِلُ غُسْلَ ٱلْجُمُعَةِ قُرْبَةً إِلَى ٱللَّهِ",
-        tr: "Aghtasilu ghusl al-Jumu'a, qurbatan ilallah",
-        en: "I perform the Friday ghusl, seeking nearness to Allah.",
-      },
-    ],
-    links: [
-      {
-        label: "Friday aamal — Duas.org",
-        url: "https://www.duas.org/friday.htm",
-      },
-    ],
-  },
-  {
     id: "surah-waqiah",
     title: "Surah al-Waqi'ah",
     arabicTitle: "سُورَةُ ٱلْوَاقِعَةِ",
