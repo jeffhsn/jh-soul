@@ -1,9 +1,8 @@
-// Daily Quran portion — the 604-page Madani mushaf spread over the calendar
-// year (1-2 pages a day), so one full khatm completes every year on Dec 31.
-// The portion is derived purely from the date: whatever day it is, the app
-// always knows exactly which pages AND which verses are due. What was actually
-// read is tallied from the ticked days by the Quran tracker panel. The app plays the exact verses aloud (Alafasy, per-ayah
-// mp3s from everyayah.com) and links the passage on Al-Islam.org for reading.
+// Daily Quran portion — the 604-page Madani mushaf, read in order. Which pages
+// fall on which day is decided by src/lib/khatm.ts from what has actually been
+// read (so at least one khatm completes every year); this file turns a page
+// range into the checklist item: exact verses, per-ayah audio (Alafasy, from
+// everyayah.com) and the Al-Islam.org links.
 // Page/verse boundaries generated from api.alquran.cloud/v1/meta (Madani 604).
 import type { Amal, AudioSource } from "./types";
 
@@ -61,19 +60,29 @@ const pad3 = (n: number) => String(n).padStart(3, "0");
 
 export const QURAN_PAGES = TOTAL_PAGES;
 
-/** How many mushaf pages the portion of `date` covers (1 or 2). */
-export function quranPagesFor(date: Date): number {
-  const { day, days } = dayOfYear(date);
-  const start = Math.floor(((day - 1) * TOTAL_PAGES) / days) + 1;
-  const end = Math.floor((day * TOTAL_PAGES) / days);
-  return end - start + 1;
+export interface PageRange {
+  /** first and last mushaf page of a day's portion, inclusive (1–604) */
+  from: number;
+  to: number;
 }
 
-/** Today's slice of the year-long khatm as a checklist item. */
-export function quranPortionFor(date: Date): Amal {
+/**
+ * The old date-derived slice (page 1 on 1 January … page 604 on 31 December).
+ * Still the meaning of every day ticked before portions became progress-based,
+ * and of any day that has no stored portion of its own.
+ */
+export function legacyRange(date: Date): PageRange {
   const { day, days } = dayOfYear(date);
-  const start = Math.floor(((day - 1) * TOTAL_PAGES) / days) + 1;
-  const end = Math.floor((day * TOTAL_PAGES) / days);
+  return {
+    from: Math.floor(((day - 1) * TOTAL_PAGES) / days) + 1,
+    to: Math.floor((day * TOTAL_PAGES) / days),
+  };
+}
+
+/** The day's Quran reading as a checklist item, for an explicit page range. */
+export function quranPortionFor(range: PageRange, note?: string): Amal {
+  const start = range.from;
+  const end = range.to;
   const pages = end - start + 1;
   const juz = juzAtPage(start);
   const pageLabel = pages === 1 ? `page ${start}` : `pages ${start}–${end}`;
@@ -127,7 +136,7 @@ export function quranPortionFor(date: Date): Amal {
     timeOfDay: "any",
     minutes: pages * 3,
     merit:
-      `Read what is easy of the Quran each day — this pace completes the whole Book every year. Press play below and the exact verses (${from} → ${to}) are recited to you one by one, or read them on Al-Islam.org.`,
+      `${note ? note + " " : ""}Your portion continues from where you stopped, and is sized so the whole Quran is completed within a year of starting it — a missed day is made up, never skipped. Press play below and the exact verses (${from} → ${to}) are recited to you one by one, or read them on Al-Islam.org.`,
     lines: [
       {
         ar: "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيْطَانِ ٱلرَّجِيمِ",

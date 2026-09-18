@@ -23,8 +23,9 @@ the "In the morning" checklist, ticks go to `da:morning:<date>` (never `da:done`
 and count as a bonus in the progress views. Rows there are plain ticks (no reader opens) and are never pre-ticked by code. Keep that set strict (owner: only what is lost if not done in the morning).
 Hijri-dated occasion aamal live in src/data/occasions.ts: a `night` one joins the to-dos of the evening BEFORE its Hijri date
 (the Islamic night precedes its day), a `day` one joins that date's morning checklist. They carry `steps` plus a verified
-Duas.org link instead of full text — check every new link returns 200. The Quran panel derives khatm progress from the
-ticked `quran-daily` days; nothing extra is stored. Counters take Space (count) and Backspace (undo).
+Duas.org link instead of full text — check every new link returns 200. Quran portions are progress-based (src/lib/khatm.ts): the next unread pages, paced so a khatm completes within a year of
+its first day; missed days are made up. `da:quran:<date>` = {from,to} pins a day's portion (written when the day becomes
+active or is ticked); ticked days without one count as the old date-derived slice. The Quran panel derives from the same. Counters take Space (count) and Backspace (undo).
 Sadaqa amounts are euro to the cent: sum in cents, display €5 or €0.70 (never €0.7), never round the average. Use `aamalDate()`/`aamalKey()` for the active list's "today".
 When testing in a browser, block `/api/sync` — the sync key is baked in, so a test page reads and writes the owner's real data.
 Cloud sync: every `da:` key (except theme/calmode/location, the prayer-time and Quran-text caches, and sync meta) is

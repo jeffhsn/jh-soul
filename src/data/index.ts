@@ -5,7 +5,7 @@ import { weekly } from "./weekly";
 import { extras } from "./extras";
 import { extras2 } from "./extras2";
 import { audioOverrides } from "./audio";
-import { quranPortionFor } from "./quran-daily";
+import { legacyRange, quranPortionFor, type PageRange } from "./quran-daily";
 import { occasionsFor } from "./occasions";
 import { hijriParts } from "@/lib/dates";
 
@@ -90,13 +90,13 @@ export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
 }
 
 /** The to-dos of the sitting after Maghrib (morning-bound aamal excluded). */
-export function aamalForDay(weekday: Weekday, date?: Date): Amal[] {
+export function aamalForDay(weekday: Weekday, date?: Date, quran?: PageRange): Amal[] {
   const list = allAamal.filter(
     (a) => !a.morning && (a.days === "daily" || a.days.includes(weekday)),
   );
-  // the year-long khatm portion is computed from the date, not stored
   if (date) {
-    list.push(quranPortionFor(date));
+    // the portion comes from real reading progress (src/lib/khatm.ts)
+    list.push(quranPortionFor(quran ?? legacyRange(date)));
     // tonight, after Maghrib, is already the night of TOMORROW's Hijri date
     const tomorrow = dayAfter(date);
     list.push(

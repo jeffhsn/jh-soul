@@ -2,43 +2,43 @@
 
 import { useSyncExternalStore } from "react";
 import { BookOpenText } from "lucide-react";
-import { QURAN_PAGES, quranPagesFor } from "@/data/quran-daily";
+import { QURAN_PAGES } from "@/data/quran-daily";
+import { aamalKey } from "@/lib/aamal-day";
+import { khatmDeadline, khatmState, paceFor } from "@/lib/khatm";
 import { subscribe } from "@/lib/store";
 
 interface QuranProgress {
-  /** mushaf pages read in total — the sum of every ticked daily portion */
+  khatms: number;
+  /** pages read in the current khatm */
+  into: number;
+  /** pages read overall, and the days they were read on */
   pages: number;
-  /** days on which the portion was ticked */
   days: number;
+  /** pages a day that finish the current khatm inside its year */
+  pace: number;
+  /** when that year ends, as text — empty before the first day */
+  deadline: string;
 }
 
-const EMPTY: QuranProgress = { pages: 0, days: 0 };
+const EMPTY: QuranProgress = { khatms: 0, into: 0, pages: 0, days: 0, pace: 2, deadline: "" };
 let cache: QuranProgress = EMPTY;
+let cacheSig = "";
 
-/**
- * Nothing extra is stored: every `da:done:<date>` that holds "quran-daily" is
- * a day's portion read, and the portion's size follows from the date.
- */
+/** Derived entirely from the ticked days — see src/lib/khatm.ts. */
 function compute(): QuranProgress {
   if (typeof window === "undefined") return EMPTY;
-  let pages = 0;
-  let days = 0;
-  const prefix = "da:done:";
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const key = window.localStorage.key(i);
-    if (!key || !key.startsWith(prefix)) continue;
-    const m = key.slice(prefix.length).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) continue;
-    try {
-      const done = JSON.parse(window.localStorage.getItem(key) ?? "{}");
-      if (!done["quran-daily"]) continue;
-    } catch {
-      continue;
-    }
-    pages += quranPagesFor(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
-    days++;
-  }
-  return { pages, days };
+  const state = khatmState();
+  const deadline = khatmDeadline(state);
+  return {
+    khatms: state.khatms,
+    into: state.read.size,
+    pages: state.pages,
+    days: state.days,
+    pace: paceFor(state, aamalKey()),
+    deadline: deadline
+      ? deadline.toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })
+      : "",
+  };
 }
 
 function useQuranProgress(): QuranProgress {
@@ -46,18 +46,26 @@ function useQuranProgress(): QuranProgress {
     subscribe,
     () => {
       const next = compute();
-      if (next.pages !== cache.pages || next.days !== cache.days) cache = next;
+      const sig = JSON.stringify(next);
+      if (sig !== cacheSig) {
+        cacheSig = sig;
+        cache = next;
+      }
       return cache;
     },
     () => EMPTY,
   );
 }
 
+/** Changes whenever reading progress does — lets the day view re-derive its portion. */
+export function useQuranVersion(): string {
+  const p = useQuranProgress();
+  return `${p.khatms}:${p.into}:${p.days}`;
+}
+
 /** How many times the Quran has been completed — sibling of the Sadaqa panel. */
 export function QuranPanel() {
-  const { pages, days } = useQuranProgress();
-  const khatms = Math.floor(pages / QURAN_PAGES);
-  const into = pages % QURAN_PAGES;
+  const { khatms, into, pages, days, pace, deadline } = useQuranProgress();
   const percent = (into / QURAN_PAGES) * 100;
 
   return (
@@ -118,9 +126,9 @@ export function QuranPanel() {
         </div>
 
         <p className="mt-4 text-[0.72rem] italic leading-snug text-cream-dim">
-          {days === 0
-            ? "Tick the Daily Quran Portion — every page adds up here."
-            : "The best of you is the one who learns the Quran and teaches it."}
+          {days === 0 || !deadline
+            ? "Tick the Daily Quran Portion — it continues from where you stop, and every page adds up here."
+            : `At ${pace} ${pace === 1 ? "page" : "pages"} a day this khatm completes by ${deadline}. A missed day is made up, never skipped.`}
         </p>
       </div>
     </section>

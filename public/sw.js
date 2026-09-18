@@ -1,5 +1,5 @@
 /* Soul Work service worker — offline-first shell, always-fresh HTML. */
-const VERSION = "da-v31";
+const VERSION = "da-v32";
 const SHELL = ["/", "/calendar"];
 
 self.addEventListener("install", (event) => {

@@ -28,11 +28,14 @@ import {
 import { CalendarPanel } from "./hijri-calendar";
 import { ContributionGraph } from "./contribution-graph";
 import { PrayerTimes } from "./prayer-times";
-import { QuranPanel } from "./quran-tracker";
+import { QuranPanel, useQuranVersion } from "./quran-tracker";
+import { portionFor } from "@/lib/khatm";
+import { useSyncStatus } from "@/lib/sync";
 import {
   computeStreak,
   migrateMorningTicks,
   recordDayTotal,
+  recordQuranPortion,
   useDone,
   useMorning,
 } from "@/lib/store";
@@ -112,9 +115,25 @@ function DayContent({ now }: { now: Date }) {
   const date = todayKey(viewed);
   const isToday = offset === 0;
   const weekday = viewed.getDay() as Weekday;
-  const aamal = useMemo(() => aamalForDay(weekday, viewed), [weekday, viewed]);
+  // Quran portion: continues from real progress, sized to finish within the year.
+  // `quranTick` re-derives it when another day's tick or a synced portion arrives.
+  const quranTick = useQuranVersion();
+  const quranRange = useMemo(() => {
+    void quranTick;
+    return portionFor(date, activeKey);
+  }, [date, activeKey, quranTick]);
+  const aamal = useMemo(
+    () => aamalForDay(weekday, viewed, quranRange),
+    [weekday, viewed, quranRange],
+  );
   const morningAamal = useMemo(() => morningForDay(weekday, viewed), [weekday, viewed]);
-  const [done, setDone] = useDone(date);
+  const [done, setDoneRaw] = useDone(date);
+  // ticking the Quran portion first pins down exactly which pages were shown,
+  // so what was read is what gets counted — on any day, from any path
+  const setDone = (id: string, value: boolean) => {
+    if (id === "quran-daily" && value) recordQuranPortion(date, quranRange);
+    setDoneRaw(id, value);
+  };
   const [morning, setMorning] = useMorning(date);
   const morningDone = morningAamal.filter((a) => morning[a.id]).length;
   const [openId, setOpenId] = useState<string | null>(null);
@@ -138,6 +157,14 @@ function DayContent({ now }: { now: Date }) {
     // only stamp real today — browsing other days must not affect streaks
     if (isToday) recordDayTotal(date, total);
   }, [isToday, date, total]);
+  const syncStatus = useSyncStatus();
+  useEffect(() => {
+    // never fix a portion while the first cloud pull is still in flight: on a
+    // fresh device the history is not here yet and the portion would be page 1
+    // nor for a day already ticked under the old date-based portions
+    if (isToday && syncStatus !== "syncing" && !done["quran-daily"])
+      recordQuranPortion(date, quranRange);
+  }, [isToday, date, quranRange, syncStatus, done]);
   useEffect(() => {
     // ticks made while the morning aamal still sat in the main list
     if (isToday) migrateMorningTicks(date, morningAamal.map((a) => a.id));

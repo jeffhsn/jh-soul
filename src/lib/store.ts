@@ -151,6 +151,17 @@ export function migrateMorningTicks(date: string, morningIds: string[]) {
   write(doneKey(date), nextDone);
 }
 
+/**
+ * Fix the active day's Quran portion the first time it is seen, so that it
+ * cannot move once the day is ticked (see src/lib/khatm.ts).
+ */
+export function recordQuranPortion(date: string, range: { from: number; to: number }) {
+  if (typeof window === "undefined") return;
+  const key = `da:quran:${date}`;
+  if (window.localStorage.getItem(key) !== null) return;
+  write(key, range);
+}
+
 /** Record how many aamal existed today so streaks can be computed later. */
 export function recordDayTotal(date: string, total: number) {
   if (typeof window === "undefined") return;
