@@ -1,8 +1,7 @@
 import { todayKey } from "./dates";
 
 /**
- * The aamal are done in one sitting — after Maghrib on weekdays, in the
- * morning on Saturdays and Sundays. The list is the ordinary calendar day's list — the only
+ * The aamal are done in one sitting after Maghrib, every day of the week. The list is the ordinary calendar day's list — the only
  * adjustment is that it does not turn over at midnight but at Fajr, so a late
  * sitting, the before-sleep surahs and Salat al-Layl all land on the day the
  * sitting began instead of being split across two dates.

@@ -195,14 +195,13 @@ export const extras: Amal[] = [
     id: "ghusl-jumua",
     title: "Ghusl al-Jumu'a",
     arabicTitle: "غُسْلُ ٱلْجُمُعَةِ",
-    subtitle: "The Friday bath — between Fajr and noon on Friday",
+    subtitle: "Make your Friday shower the ghusl — it only needs the intention",
     type: "action",
     days: [5],
-    daytime: true,
     timeOfDay: "morning",
     minutes: 10,
     merit:
-      "A strongly recommended sunnah from dawn until noon on Friday; make the intention of Ghusl al-Jumu'a, qurbatan ilallah",
+      "No free time needed: whenever you shower on Friday, make the intention of Ghusl al-Jumu'a, qurbatan ilallah, and tick it off in tonight's sitting. Its time runs from Fajr to sunset on Friday, best before noon; if it was missed it can be made up on Saturday before sunset.",
     lines: [
       {
         ar: "أَغْتَسِلُ غُسْلَ ٱلْجُمُعَةِ قُرْبَةً إِلَى ٱللَّهِ",

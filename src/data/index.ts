@@ -25,12 +25,11 @@ export const allAamal: Amal[] = [
 });
 
 /**
- * One-sitting recitation order — the session is after Maghrib on weekdays
- * and in the morning on Saturdays and Sundays:
+ * One-sitting recitation order for the session after Maghrib, every day:
  * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
  * with the before-sleep items and Salat al-Layl closing the list.
- * Items flagged `daytime` (Friday ghusl, Dua al-Nudba) are shown apart by the
- * view, since they cannot be done at night.
+ * The owner has a single free block a day, so nothing is scheduled outside
+ * the sitting: Friday ghusl is just the day's shower with the intention.
  */
 const SESSION_ORDER: string[][] = [
   ["ghusl-jumua"],

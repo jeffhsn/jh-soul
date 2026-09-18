@@ -53,11 +53,6 @@ export interface Amal {
   /** which weekdays this appears on; "daily" = every day */
   days: Weekday[] | "daily";
   timeOfDay: TimeOfDay;
-  /**
-   * Bound to daylight hours (e.g. Ghusl al-Jumu'a, Dua al-Nudba): listed apart
-   * from the evening sitting, to be done earlier that same day.
-   */
-  daytime?: boolean;
   /** honest estimated minutes to complete */
   minutes: number;
   /** one-line merit/reward or source, e.g. "Taught by the Prophet (s) to Lady Fatima (a)" */

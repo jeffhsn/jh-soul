@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -10,7 +10,6 @@ import {
   Flame,
   ListChecks,
   MoonStar,
-  Sunrise,
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,10 +101,7 @@ function DayContent({ now }: { now: Date }) {
 
   const date = todayKey(viewed);
   const isToday = offset === 0;
-  const weekdayName = viewed.toLocaleDateString("en", { weekday: "long" });
   const weekday = viewed.getDay() as Weekday;
-  // the owner's rhythm: after Maghrib on weekdays, in the morning at weekends
-  const morningSitting = weekday === 0 || weekday === 6;
   const aamal = useMemo(() => aamalForDay(weekday, viewed), [weekday, viewed]);
   const [done, setDone] = useDone(date);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -178,16 +174,9 @@ function DayContent({ now }: { now: Date }) {
   const todaysEvents = eventsFor(hp.month, hp.day);
 
   const open = openId ? aamal.find((a) => a.id === openId) ?? null : null;
-  // daylight-bound items (Friday ghusl, Dua al-Nudba) cannot wait for the
-  // sitting after Maghrib: they get their own group — first while it is still
-  // day, and out of the sitting's way once night has fallen
-  const pending = aamal.filter((a) => !done[a.id] && !a.daytime);
-  const daytimePending = aamal.filter((a) => !done[a.id] && a.daytime);
+  const pending = aamal.filter((a) => !done[a.id]);
   const finished = aamal.filter((a) => done[a.id]);
-  const daytimeLast = isToday && night;
-  const ordered = daytimeLast
-    ? [...pending, ...daytimePending, ...finished]
-    : [...daytimePending, ...pending, ...finished];
+  const ordered = [...pending, ...finished];
 
   // reader navigation: step through the day's list without closing it
   const openIdx = open ? ordered.findIndex((a) => a.id === open.id) : -1;
@@ -199,10 +188,7 @@ function DayContent({ now }: { now: Date }) {
   function advanceAfterDone(fromId: string) {
     const i = ordered.findIndex((a) => a.id === fromId);
     const rest = [...ordered.slice(i + 1), ...ordered.slice(0, i)];
-    // at night the sitting ends with its last item — daylight items wait
-    const next = rest.find(
-      (a) => !done[a.id] && !(isToday && night && a.daytime),
-    );
+    const next = rest.find((a) => !done[a.id]);
     setOpenId(next ? next.id : null);
   }
 
@@ -389,18 +375,9 @@ function DayContent({ now }: { now: Date }) {
           </div>
           <p className="mt-2 flex items-center justify-between gap-3 text-[0.75rem] text-cream-faint">
             <span className="inline-flex items-center gap-1.5">
-              {morningSitting ? (
-                <>
-                  <Sunrise className="size-3.5 shrink-0 text-gold-dim" />
-                  One sitting, in the morning
-                </>
-              ) : (
-                <>
-                  <MoonStar className="size-3.5 shrink-0 text-gold-dim" />
-                  One sitting, after Maghrib
-                  {isToday && !night && ` · ${maghribAt}`}
-                </>
-              )}
+              <MoonStar className="size-3.5 shrink-0 text-gold-dim" />
+              One sitting, after Maghrib
+              {isToday && !night && ` · ${maghribAt}`}
             </span>
             <span className="tabular-nums">
               {completed}/{total}
@@ -414,37 +391,14 @@ function DayContent({ now }: { now: Date }) {
       <section className="mt-4">
         <div className="space-y-2.5">
           {ordered.map((amal, i) => (
-            <Fragment key={amal.id}>
-              {amal.id === daytimePending[0]?.id && (
-                <div className={cn(daytimeLast ? "pt-3" : "pt-1")}>
-                  <div className="flex items-center gap-3">
-                    <h2 className="inline-flex items-center gap-1.5 font-display text-[0.72rem] uppercase tracking-[0.2em] text-gold-dim">
-                      <Sunrise className="size-3.5" />
-                      By day · {weekdayName} before Maghrib
-                    </h2>
-                    <div className="hairline flex-1 opacity-40" />
-                  </div>
-                </div>
-              )}
-              {!daytimeLast &&
-                daytimePending.length > 0 &&
-                amal.id === pending[0]?.id && (
-                  <div className="flex items-center gap-3 pt-3">
-                    <h2 className="inline-flex items-center gap-1.5 font-display text-[0.72rem] uppercase tracking-[0.2em] text-gold-dim">
-                      <MoonStar className="size-3.5" />
-                      The sitting · after Maghrib
-                    </h2>
-                    <div className="hairline flex-1 opacity-40" />
-                  </div>
-                )}
-              <AmalCard
-                amal={amal}
-                done={!!done[amal.id]}
-                index={i}
-                onOpen={() => setOpenId(amal.id)}
-                onToggle={(v) => setDone(amal.id, v)}
-              />
-            </Fragment>
+            <AmalCard
+              key={amal.id}
+              amal={amal}
+              done={!!done[amal.id]}
+              index={i}
+              onOpen={() => setOpenId(amal.id)}
+              onToggle={(v) => setDone(amal.id, v)}
+            />
           ))}
         </div>
       </section>
