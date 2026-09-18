@@ -50,9 +50,18 @@ export interface Amal {
   /** one short line shown under the title in the checklist */
   subtitle?: string;
   type: AmalType;
-  /** which weekdays this appears on; "daily" = every day */
+  /**
+   * which weekdays this appears on; "daily" = every day. The day runs
+   * Maghrib → Maghrib, so an amal of "Thursday night" (the eve of Friday)
+   * belongs to Friday [5].
+   */
   days: Weekday[] | "daily";
   timeOfDay: TimeOfDay;
+  /**
+   * Bound to daylight hours (e.g. Ghusl al-Jumu'a, Dua al-Nudba): listed apart
+   * from the evening sitting, to be done after Fajr of the same Islamic day.
+   */
+  daytime?: boolean;
   /** honest estimated minutes to complete */
   minutes: number;
   /** one-line merit/reward or source, e.g. "Taught by the Prophet (s) to Lady Fatima (a)" */

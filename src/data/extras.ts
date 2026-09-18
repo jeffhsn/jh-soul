@@ -195,9 +195,10 @@ export const extras: Amal[] = [
     id: "ghusl-jumua",
     title: "Ghusl al-Jumu'a",
     arabicTitle: "غُسْلُ ٱلْجُمُعَةِ",
-    subtitle: "The Friday bath — purification for the week",
+    subtitle: "The Friday bath — between Fajr and noon on Friday",
     type: "action",
     days: [5],
+    daytime: true,
     timeOfDay: "morning",
     minutes: 10,
     merit:
@@ -246,9 +247,9 @@ export const extras: Amal[] = [
     id: "dua-tawassul",
     title: "Dua al-Tawassul",
     arabicTitle: "دُعَاءُ ٱلتَّوَسُّلِ",
-    subtitle: "Tuesday night — seeking intercession through the Fourteen Infallibles",
+    subtitle: "Tuesday night (the eve of Wednesday) — intercession through the Fourteen Infallibles",
     type: "dua",
-    days: [2],
+    days: [3], // the Islamic day begins at Maghrib: Tuesday night is Wednesday
     timeOfDay: "night",
     minutes: 15,
     merit:
@@ -327,7 +328,7 @@ export const extras: Amal[] = [
     id: "muawwidhat",
     title: "The Three Quls",
     arabicTitle: "ٱلْمُعَوِّذَاتُ",
-    subtitle: "Al-Ikhlas, al-Falaq and al-Nas — the morning shield",
+    subtitle: "Al-Ikhlas, al-Falaq and al-Nas — the shield of morning and evening",
     type: "quran",
     days: "daily",
     timeOfDay: "morning",

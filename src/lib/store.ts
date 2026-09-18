@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { daysAgoKey, todayKey } from "./dates";
+import { aamalDate, aamalKey } from "./aamal-day";
+import { daysAgoKey } from "./dates";
 
 /**
  * Progress lives in localStorage:
@@ -76,7 +77,7 @@ function getDone(date: string): Record<string, boolean> {
   return parsed;
 }
 
-export function useDone(date: string = todayKey()) {
+export function useDone(date: string = aamalKey()) {
   const done = useSyncExternalStore(
     subscribe,
     () => getDone(date),
@@ -106,12 +107,16 @@ export function recordDayTotal(date: string, total: number) {
   }
 }
 
-/** Consecutive days (ending today or yesterday) where everything was completed. */
+/**
+ * Consecutive days (ending today or yesterday) where everything was completed.
+ * "Today" is the active aamal day, which turns over at Maghrib.
+ */
 export function computeStreak(): number {
   if (typeof window === "undefined") return 0;
   let streak = 0;
+  const today = aamalDate();
   for (let i = 0; i < 366; i++) {
-    const date = daysAgoKey(i);
+    const date = daysAgoKey(i, today);
     const total = Number(window.localStorage.getItem(`da:total:${date}`) ?? 0);
     const done = read<Record<string, boolean>>(doneKey(date), {});
     const completed = Object.keys(done).length;
@@ -142,7 +147,7 @@ function countKey(date: string, amalId: string) {
   return `da:count:${date}:${amalId}`;
 }
 
-export function useCountState(amalId: string, date: string = todayKey()) {
+export function useCountState(amalId: string, date: string = aamalKey()) {
   const key = countKey(date, amalId);
   const state = useSyncExternalStore(
     subscribe,
@@ -180,7 +185,7 @@ function readSadaqa(date: string): number | null {
 }
 
 /** Amount given on one day; `null` means nothing was written down. */
-export function useSadaqaAmount(date: string = todayKey()) {
+export function useSadaqaAmount(date: string = aamalKey()) {
   const amount = useSyncExternalStore(
     subscribe,
     () => readSadaqa(date),

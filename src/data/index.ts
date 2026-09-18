@@ -25,9 +25,12 @@ export const allAamal: Amal[] = [
 });
 
 /**
- * One-sitting recitation order for the post-Fajr session:
+ * One-sitting recitation order for the session after Maghrib (or the next
+ * morning, when the night was missed — the same Islamic day, so the same list):
  * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
- * with the before-sleep items closing the list.
+ * with the before-sleep items and Salat al-Layl closing the list.
+ * Items flagged `daytime` (Friday ghusl, Dua al-Nudba) are shown apart by the
+ * view, since they cannot be done at night.
  */
 const SESSION_ORDER: string[][] = [
   ["ghusl-jumua"],

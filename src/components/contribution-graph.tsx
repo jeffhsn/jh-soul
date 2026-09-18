@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { aamalDate } from "@/lib/aamal-day";
 import { daysAgoKey, todayKey } from "@/lib/dates";
 
 const WEEKS = 17; // ~4 months
@@ -44,7 +45,7 @@ function readDay(key: string): { completed: number; total: number } {
 export function ContributionGraph({ refresh }: { refresh?: unknown }) {
   const { cells, monthLabels, stats } = useMemo(() => {
     void refresh; // recompute when today's done-map changes
-    const today = new Date();
+    const today = aamalDate(); // the active day turns over at Maghrib
     // last column = current week; align grid start to that week's Sunday
     const end = new Date(today);
     end.setDate(end.getDate() + (6 - end.getDay())); // Saturday of this week
