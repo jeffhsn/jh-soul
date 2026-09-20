@@ -8,11 +8,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Soul Work (repo, folder and Vercel project: jh-soul)
-Daily "Soul Work" checklist of Shia aamal — same structure as ../jh-body and ../jh-mind. All progress lives in
+# Daily Aamal (repo, folder and Vercel project: dailyaamal)
+Daily checklist of Shia aamal — same structure as ../jh-body and ../jh-mind. All progress lives in
 localStorage under `da:` keys (`da:done:<date>`, `da:total:<date>`, `da:count:<date>:<amal>`, `da:sadaqa:<date>` = euro
-given that day). Deployed to https://jh-soul.vercel.app (Vercel project `jh-soul`, team jeffhsns-projects, git
-github.com/jeffhsn/jh-soul). Deploy with `vercel deploy --prod --yes` after pushing.
+given that day). Deployed to https://dailyaamal.vercel.app (Vercel project `dailyaamal`, team jeffhsns-projects, git
+github.com/jeffhsn/dailyaamal). Deploy with `vercel deploy --prod --yes` after pushing.
 The owner does the list in one sitting after Maghrib, every day of the week. The list is the ordinary
 calendar day's list — do NOT shift it to the Islamic Maghrib-to-Maghrib day; the owner rejected that. The only adjustment
 (src/lib/aamal-day.ts) is that the active day turns over at Fajr instead of midnight, so a late sitting and Salat al-Layl are
