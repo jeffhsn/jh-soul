@@ -261,44 +261,105 @@ export function FocusView({
   );
 }
 
-/** A reading/watching shelf: links in titled sections, each a row with a short note. */
+/**
+ * A reading/watching shelf in titled sections: books as cover tiles, channels
+ * as avatar cards (numbered in their ranked order), anything else as a row.
+ */
 function GroupedLinks({ links }: { links: ExternalLink[] }) {
   const groups = [...new Set(links.map((l) => l.group ?? ""))];
   return (
-    <div className="mt-8 space-y-7 pr-12 sm:pr-0">
-      {groups.map((group) => (
-        <section key={group}>
-          {group && (
-            <h3 className="mb-2.5 text-[0.7rem] uppercase tracking-[0.18em] text-gold-dim">
-              {group}
-            </h3>
-          )}
-          <ul className="overflow-hidden rounded-2xl border border-night-line-soft">
-            {links
-              .filter((l) => (l.group ?? "") === group)
-              .map((l) => (
-                <li key={l.url} className="border-t border-night-line-soft first:border-t-0">
+    <div className="mt-8 space-y-8 pr-12 sm:pr-0">
+      {groups.map((group) => {
+        const items = links.filter((l) => (l.group ?? "") === group);
+        const books = items.filter((l) => l.kind === "book");
+        const channels = items.filter((l) => l.kind === "channel");
+        const rows = items.filter((l) => !l.kind);
+        return (
+          <section key={group}>
+            {group && (
+              <h3 className="mb-3 text-[0.7rem] uppercase tracking-[0.18em] text-gold-dim">
+                {group}
+              </h3>
+            )}
+            {books.length > 0 && (
+              <div className="grid grid-cols-3 gap-2.5">
+                {books.map((l) => (
+                  <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="group block">
+                    <span className="relative flex aspect-[2/3] flex-col justify-between overflow-hidden rounded-xl border border-gold-dim/40 bg-gradient-to-b from-night-card to-night-raise p-2.5 shadow-[inset_4px_0_0_var(--color-gold-dim)] transition group-hover:border-gold">
+                      <span className="font-display text-[0.9rem] leading-tight text-cream">{l.label}</span>
+                      <span className="text-[0.62rem] leading-snug text-gold-dim">{l.by}</span>
+                    </span>
+                    <span className="mt-1.5 line-clamp-2 block text-[0.68rem] leading-snug text-cream-faint">
+                      {l.note}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            )}
+            {channels.length > 0 && (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {channels.map((l, i) => (
                   <a
+                    key={l.url}
                     href={l.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="group flex items-center justify-between gap-3 bg-night-raise/40 px-4 py-3 transition hover:bg-night-raise"
+                    className="group relative flex flex-col items-center rounded-2xl border border-night-line-soft bg-night-raise/40 px-2.5 pt-4 pb-3 text-center transition hover:border-gold-dim/60 hover:bg-night-raise"
                   >
-                    <span className="min-w-0">
-                      <span className="block text-[0.9rem] text-cream">{l.label}</span>
-                      {l.note && (
-                        <span className="mt-0.5 block text-[0.75rem] leading-snug text-cream-faint">
-                          {l.note}
-                        </span>
-                      )}
+                    <span className="absolute top-2 left-2 grid size-5 place-items-center rounded-full bg-night text-[0.62rem] tabular-nums text-gold-dim">
+                      {i + 1}
                     </span>
-                    <ArrowUpRight className="size-3.5 shrink-0 text-cream-faint transition group-hover:text-gold-bright" />
+                    {l.image && (
+                      // eslint-disable-next-line @next/next/no-img-element -- tiny local avatars
+                      <img
+                        src={l.image}
+                        alt=""
+                        width={56}
+                        height={56}
+                        loading="lazy"
+                        className="size-14 rounded-full ring-1 ring-gold-dim/40 transition group-hover:ring-gold"
+                      />
+                    )}
+                    <span className="mt-2.5 line-clamp-2 text-[0.8rem] leading-tight text-cream">{l.label}</span>
+                    <span className="mt-1 line-clamp-2 text-[0.66rem] leading-snug text-cream-faint">
+                      {l.note}
+                    </span>
                   </a>
-                </li>
-              ))}
-          </ul>
-        </section>
-      ))}
+                ))}
+              </div>
+            )}
+            {rows.length > 0 && (
+              <ul
+                className={cn(
+                  "overflow-hidden rounded-2xl border border-night-line-soft",
+                  (books.length > 0 || channels.length > 0) && "mt-3",
+                )}
+              >
+                {rows.map((l) => (
+                  <li key={l.url} className="border-t border-night-line-soft first:border-t-0">
+                    <a
+                      href={l.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex items-center justify-between gap-3 bg-night-raise/40 px-4 py-3 transition hover:bg-night-raise"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-[0.9rem] text-cream">{l.label}</span>
+                        {l.note && (
+                          <span className="mt-0.5 block text-[0.75rem] leading-snug text-cream-faint">
+                            {l.note}
+                          </span>
+                        )}
+                      </span>
+                      <ArrowUpRight className="size-3.5 shrink-0 text-cream-faint transition group-hover:text-gold-bright" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

@@ -44,6 +44,12 @@ export interface ExternalLink {
   group?: string;
   /** one short line under the label in a grouped list */
   note?: string;
+  /** grouped lists show books and channels as cards; anything else as a row */
+  kind?: "book" | "channel";
+  /** a book's author, shown on its cover tile */
+  by?: string;
+  /** a channel's avatar, served from /public */
+  image?: string;
 }
 
 export interface Amal {
