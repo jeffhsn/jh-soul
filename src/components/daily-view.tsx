@@ -38,7 +38,6 @@ import {
 } from "@/lib/store";
 import { AmalCard } from "./amal-card";
 import { ProgressRing } from "./progress-ring";
-import { ResourcesPanel } from "./resources";
 import { SadaqaField, SadaqaPanel } from "./sadaqa-entry";
 import type { Amal } from "@/data";
 import { Splash } from "./splash";
@@ -272,9 +271,6 @@ function DayContent({ now }: { now: Date }) {
           </div>
           <div className="mt-10">
             <ContributionGraph refresh={done} />
-          </div>
-          <div className="mt-10">
-            <ResourcesPanel />
           </div>
         </div>
       )}
@@ -565,10 +561,6 @@ function DayContent({ now }: { now: Date }) {
         </div>
         <div className="hidden xl:block">
           <ContributionGraph refresh={done} />
-        </div>
-        {/* optional reading — desktop keeps it in the rail, off the checklist */}
-        <div className="mt-10">
-          <ResourcesPanel />
         </div>
       </aside>
 

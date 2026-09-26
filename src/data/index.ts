@@ -43,6 +43,8 @@ const SESSION_ORDER: string[][] = [
   ["surah-waqiah"],
   ["surah-mulk"],
   ["amana-rasul"],
+  // reading on the self and the day's self-accounting, before sleep
+  ["tazkiya"],
   // before sleep, in the seasons when Fajr is too early to wake for
   ["salat-layl", "salat-layl-night"],
 ];

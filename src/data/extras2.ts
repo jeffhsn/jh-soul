@@ -122,4 +122,40 @@ export const extras2: Amal[] = [
       },
     ],
   },
+  {
+    id: "tazkiya",
+    title: "Tend the Soul",
+    arabicTitle: "تَزْكِيَةُ ٱلنَّفْسِ",
+    subtitle: "A few quiet pages on the self, then account for your day",
+    type: "action",
+    days: "daily",
+    timeOfDay: "evening",
+    minutes: 15,
+    merit:
+      "He is not of us who does not take account of himself every day: if he did good, he asks Allah for more, and if he did wrong, he seeks His forgiveness and repents — Imam al-Kadhim (a), al-Kafi",
+    steps: [
+      "Read slowly for about ten minutes from one of the books below, carrying on where you stopped last time. Read to be changed, not to finish.",
+      "Stop at the one line that touches you and stay with it for a moment.",
+      "Account for today: what you did well, thank Allah and ask Him for more; what went wrong, seek His forgiveness and turn back to Him.",
+      "Choose one small thing to do better tomorrow.",
+    ],
+    links: [
+      {
+        label: "Self Building — Ayatullah Amini",
+        url: "https://al-islam.org/self-building-ibrahim-amini",
+      },
+      {
+        label: "Jihad al-Akbar: Combat with the Self — Imam Khomeini",
+        url: "https://al-islam.org/jihad-al-akbar-greatest-jihad-combat-self-sayyid-ruhullah-musawi-khomeini",
+      },
+      {
+        label: "Forty Hadith — Imam Khomeini",
+        url: "https://al-islam.org/forty-hadith-exposition-second-revised-edition-sayyid-ruhullah-musawi-khomeini",
+      },
+      { label: "Al-Islam.org library", url: "https://al-islam.org/" },
+      { label: "Quran with commentary — Al-Islam.org", url: "https://al-islam.org/quran" },
+      { label: "Duas.org", url: "https://duas.org/" },
+      { label: "Sistani.org — laws and Q&A", url: "https://www.sistani.org/english/" },
+    ],
+  },
 ];
