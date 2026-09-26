@@ -8,6 +8,7 @@ import { audioOverrides } from "./audio";
 import { legacyRange, quranPortionFor, type PageRange } from "./quran-daily";
 import { occasionsFor } from "./occasions";
 import { hijriParts } from "@/lib/dates";
+import { dayMarks, formatMinutes } from "@/lib/aamal-day";
 
 /** All aamal with researched audio merged in (Ali Fani first, then fallbacks). */
 export const allAamal: Amal[] = [
@@ -42,8 +43,8 @@ const SESSION_ORDER: string[][] = [
   ["surah-waqiah"],
   ["surah-mulk"],
   ["amana-rasul"],
-  // the last part of the night, before Fajr — the day only turns over at Fajr
-  ["salat-layl"],
+  // before sleep, in the seasons when Fajr is too early to wake for
+  ["salat-layl", "salat-layl-night"],
 ];
 
 const OCCASION_RANK = SESSION_ORDER.findIndex((g) => g.includes("dua-kumayl")) + 0.5;
@@ -58,6 +59,7 @@ const RANK = new Map<string, number>(
  * Ashura, and Friday's Nudba and Kahf.
  */
 const MORNING_ORDER = [
+  "salat-layl",
   "ghusl-jumua",
   "sadaqa",
   "dua-ahd",
@@ -81,13 +83,42 @@ const MORNING_ORDER = [
 const dayAfter = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12);
 
 /**
+ * Salat al-Layl follows the seasons. Its time ends at Fajr, and the owner
+ * wakes around WAKE_AT: when Fajr comes at least 30 minutes after that (in
+ * Witten roughly October to mid-February), it is prayed on waking, before
+ * Fajr, and opens the Morning list. Otherwise it closes the Evening list,
+ * prayed before sleep.
+ */
+const WAKE_AT = 5 * 60 + 30;
+const LAYL_MINUTES = 30;
+const fajrOf = (d: Date) => dayMarks(d).fajr;
+const laylAtDawn = (d: Date) => fajrOf(d) >= WAKE_AT + LAYL_MINUTES;
+const layl = () => allAamal.find((a) => a.id === "salat-layl")!;
+
+function laylMorning(d: Date): Amal {
+  return {
+    ...layl(),
+    subtitle: `On waking, before Fajr at ${formatMinutes(fajrOf(d))} — 11 rak'ahs`,
+    morning: "Fajr is late this season, so it is prayed on waking, in its best time before dawn",
+  };
+}
+
+function laylEvening(d: Date): Amal {
+  return {
+    ...layl(),
+    subtitle: `Before sleep this season — Fajr is at ${formatMinutes(fajrOf(d))}, too early to wake for`,
+  };
+}
+
+/**
  * The morning session, after Fajr: every amal whose time is the morning
  * (`morning` set). Real to-dos, ticked into the same `da:done` as the evening.
  */
 export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
   const list = allAamal
-    .filter((a) => a.morning && (a.days === "daily" || a.days.includes(weekday)))
-    .sort((a, b) => MORNING_ORDER.indexOf(a.id) - MORNING_ORDER.indexOf(b.id));
+    .filter((a) => a.morning && (a.days === "daily" || a.days.includes(weekday)));
+  if (date && laylAtDawn(date)) list.push(laylMorning(date));
+  list.sort((a, b) => MORNING_ORDER.indexOf(a.id) - MORNING_ORDER.indexOf(b.id));
   // aamal of the daylight of today's Hijri date (Ghadir, Arafah, Arba'in…)
   if (date)
     list.push(...occasionsFor("day", hijriParts(date), date, hijriParts(dayAfter(date))));
@@ -97,8 +128,19 @@ export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
 /** The evening session's to-dos, after Maghrib (morning aamal excluded). */
 export function aamalForDay(weekday: Weekday, date?: Date, quran?: PageRange): Amal[] {
   const list = allAamal.filter(
-    (a) => !a.morning && (a.days === "daily" || a.days.includes(weekday)),
+    (a) =>
+      !a.morning &&
+      a.id !== "salat-layl" &&
+      (a.days === "daily" || a.days.includes(weekday)),
   );
+  if (!date) list.push(layl());
+  // tonight's Salat al-Layl, unless tomorrow's Fajr is late enough to wake for.
+  // On a changeover day this morning's list already holds one (prayed before
+  // today's dawn), so tonight's takes its own id.
+  else if (!laylAtDawn(dayAfter(date))) {
+    const night = laylEvening(dayAfter(date));
+    list.push(laylAtDawn(date) ? { ...night, id: "salat-layl-night" } : night);
+  }
   if (date) {
     // the portion comes from real reading progress (src/lib/khatm.ts)
     list.push(quranPortionFor(quran ?? legacyRange(date)));

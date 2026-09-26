@@ -71,6 +71,19 @@ function solarMinutes(
 }
 
 /**
+ * Midsummer at high latitudes the sun never sinks 16° below the horizon. The
+ * usual angle-based rule then sets Fajr 16/60 of the night before sunrise.
+ */
+function twilightFajr(civil: Date, loc: { lat: number; lon: number }): number {
+  const prev = new Date(civil.getFullYear(), civil.getMonth(), civil.getDate() - 1, 12);
+  const sunrise = solarMinutes(civil, loc.lat, loc.lon, 90.833, true);
+  const sunset = solarMinutes(prev, loc.lat, loc.lon, 90.833, false);
+  if (sunrise === null || sunset === null) return FALLBACK.fajr;
+  const night = (sunrise - sunset + 1440) % 1440;
+  return Math.round(sunrise - (night * 16) / 60);
+}
+
+/**
  * Fajr and Maghrib for one civil date: the cached Jafari timings the prayer
  * panel already fetched when present, else computed from the saved location
  * (Jafari angles: Fajr 16°, Maghrib 4° below the horizon), else a fixed guess.
@@ -90,7 +103,7 @@ export function dayMarks(civil: Date): DayMarks {
     if (fajr !== null && maghrib !== null) return { fajr, maghrib };
   } catch {}
   return {
-    fajr: solarMinutes(civil, loc.lat, loc.lon, 106, true) ?? FALLBACK.fajr,
+    fajr: solarMinutes(civil, loc.lat, loc.lon, 106, true) ?? twilightFajr(civil, loc),
     maghrib: solarMinutes(civil, loc.lat, loc.lon, 94, false) ?? FALLBACK.maghrib,
   };
 }

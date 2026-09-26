@@ -17,7 +17,9 @@ The owner does the day in two sessions, both from this site: a Morning session a
 Maghrib, every day of the week. The list is the ordinary
 calendar day's list — do NOT shift it to the Islamic Maghrib-to-Maghrib day; the owner rejected that. The only adjustment
 (src/lib/aamal-day.ts) is that the active day turns over at Fajr instead of midnight, so a late sitting and Salat al-Layl
-(last in the Evening list) are not split across two dates. Morning aamal (`morning` reason set, listed by `morningForDay`):
+are not split across two dates. Salat al-Layl follows the seasons (WAKE_AT in src/data/index.ts, owner wakes ~5:30): when that
+morning's Fajr is ≥ WAKE_AT + 30 min it opens the Morning list (prayed on waking, before Fajr — in Witten ~Oct→mid-Feb),
+otherwise it closes the Evening list (before sleep). On a changeover day both appear; the evening one is `salat-layl-night`. Morning aamal (`morning` reason set, listed by `morningForDay`):
 Friday ghusl, sadaqa, Dua al-Ahd, Fatiha, Ayat al-Kursi, the Mu'awwidhat, Tasbihat al-Arba'a, the weekday's Sahifa dua, the
 weekday's ziyarat, Ziyarat Ashura, Friday Dua al-Nudba, Friday Surah al-Kahf. Both sessions are real to-dos (same cards,
 reader, next-item flow — the reader steps within the open amal's session), ticked into `da:done` and counted in `da:total`.
