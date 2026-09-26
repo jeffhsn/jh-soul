@@ -27,12 +27,15 @@ export function AmalCard({
   onOpen,
   onToggle,
   index,
+  extra,
 }: {
   amal: Amal;
   done: boolean;
   onOpen: () => void;
   onToggle: (value: boolean) => void;
   index: number;
+  /** a small control on the card's right, e.g. the sadaqa amount */
+  extra?: React.ReactNode;
 }) {
   const Icon = TYPE_ICON[amal.type];
   const hasAudio = !!amal.audio?.length;
@@ -109,6 +112,7 @@ export function AmalCard({
           </div>
         </div>
       </button>
+      {extra}
     </div>
   );
 }

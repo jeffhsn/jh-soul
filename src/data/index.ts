@@ -27,12 +27,9 @@ export const allAamal: Amal[] = [
 });
 
 /**
- * One-sitting recitation order for the session after Maghrib, every day:
- * dhikr counters → daily duas → weekly night duas → Quran,
- * with the before-sleep items closing the list.
- * The owner has a single free block a day, so the sitting holds every to-do.
- * The morning aamal (`morning` set) are kept out of it, in their own
- * checklist — see `morningForDay`.
+ * The evening session, after Maghrib: dhikr → duas → weekly night duas →
+ * Quran, the before-sleep surahs, and Salat al-Layl last.
+ * The morning aamal (`morning` set) are the other session — see `morningForDay`.
  */
 const SESSION_ORDER: string[][] = [
   ["tasbih-zahra"],
@@ -45,6 +42,8 @@ const SESSION_ORDER: string[][] = [
   ["surah-waqiah"],
   ["surah-mulk"],
   ["amana-rasul"],
+  // the last part of the night, before Fajr — the day only turns over at Fajr
+  ["salat-layl"],
 ];
 
 const OCCASION_RANK = SESSION_ORDER.findIndex((g) => g.includes("dua-kumayl")) + 0.5;
@@ -53,15 +52,19 @@ const RANK = new Map<string, number>(
   SESSION_ORDER.flatMap((group, i) => group.map((id) => [id, i] as const)),
 );
 
+/**
+ * After Fajr: the deeds first (Friday ghusl, sadaqa given early), then Dua
+ * al-Ahd, the morning Quran and dhikr, the day's own dua and ziyarat, Ziyarat
+ * Ashura, and Friday's Nudba and Kahf.
+ */
 const MORNING_ORDER = [
-  "salat-layl",
   "ghusl-jumua",
   "sadaqa",
+  "dua-ahd",
   "fatiha",
   "ayat-kursi",
   "muawwidhat",
   "tasbihat-arbaa",
-  "dua-ahd",
   "sun-dua", "mon-dua", "tue-dua", "wed-dua", "thu-dua", "fri-dua", "sat-dua",
   "ziyarat-prophet",
   "ziyarat-ali-fatima",
@@ -78,8 +81,8 @@ const MORNING_ORDER = [
 const dayAfter = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12);
 
 /**
- * The morning checklist: every amal whose time is the morning (`morning` set).
- * Never part of the sitting or of the day's required total — a tick is a bonus.
+ * The morning session, after Fajr: every amal whose time is the morning
+ * (`morning` set). Real to-dos, ticked into the same `da:done` as the evening.
  */
 export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
   const list = allAamal
@@ -91,7 +94,7 @@ export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
   return list;
 }
 
-/** The to-dos of the sitting after Maghrib (morning-bound aamal excluded). */
+/** The evening session's to-dos, after Maghrib (morning aamal excluded). */
 export function aamalForDay(weekday: Weekday, date?: Date, quran?: PageRange): Amal[] {
   const list = allAamal.filter(
     (a) => !a.morning && (a.days === "daily" || a.days.includes(weekday)),

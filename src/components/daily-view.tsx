@@ -4,10 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-  BookOpenText,
   CalendarDays,
   ChevronLeft,
-  Check,
   ChevronRight,
   Flame,
   ListChecks,
@@ -33,16 +31,16 @@ import { portionFor } from "@/lib/khatm";
 import { useSyncStatus } from "@/lib/sync";
 import {
   computeStreak,
-  migrateMorningTicks,
+  absorbMorningTicks,
   recordDayTotal,
   recordQuranPortion,
   useDone,
-  useMorning,
 } from "@/lib/store";
 import { AmalCard } from "./amal-card";
 import { ProgressRing } from "./progress-ring";
 import { ResourcesPanel } from "./resources";
 import { SadaqaField, SadaqaPanel } from "./sadaqa-entry";
+import type { Amal } from "@/data";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
 
@@ -110,7 +108,9 @@ function DayContent({ now }: { now: Date }) {
     if (offset === 0) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
     return viewed;
   }, [now, offset, viewed]);
-  const maghribAt = formatMinutes(dayMarks(now).maghrib);
+  const marks = dayMarks(now);
+  const maghribAt = formatMinutes(marks.maghrib);
+  const fajrAt = formatMinutes(marks.fajr);
 
   const date = todayKey(viewed);
   const isToday = offset === 0;
@@ -122,11 +122,13 @@ function DayContent({ now }: { now: Date }) {
     void quranTick;
     return portionFor(date, activeKey);
   }, [date, activeKey, quranTick]);
-  const aamal = useMemo(
+  // two sessions a day: the morning one after Fajr, the evening one after Maghrib
+  const morningAamal = useMemo(() => morningForDay(weekday, viewed), [weekday, viewed]);
+  const eveningAamal = useMemo(
     () => aamalForDay(weekday, viewed, quranRange),
     [weekday, viewed, quranRange],
   );
-  const morningAamal = useMemo(() => morningForDay(weekday, viewed), [weekday, viewed]);
+  const aamal = useMemo(() => [...morningAamal, ...eveningAamal], [morningAamal, eveningAamal]);
   const [done, setDoneRaw] = useDone(date);
   // ticking the Quran portion first pins down exactly which pages were shown,
   // so what was read is what gets counted — on any day, from any path
@@ -134,8 +136,6 @@ function DayContent({ now }: { now: Date }) {
     if (id === "quran-daily" && value) recordQuranPortion(date, quranRange);
     setDoneRaw(id, value);
   };
-  const [morning, setMorning] = useMorning(date);
-  const morningDone = morningAamal.filter((a) => morning[a.id]).length;
   const [openId, setOpenId] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   // phone navigation: the list is the app; calendar and progress are one tap away
@@ -166,10 +166,10 @@ function DayContent({ now }: { now: Date }) {
       recordQuranPortion(date, quranRange);
   }, [isToday, date, quranRange, syncStatus, done]);
   useEffect(() => {
-    // ticks made while the morning aamal still sat in the main list
-    if (isToday) migrateMorningTicks(date, morningAamal.map((a) => a.id));
-    // `done` is a dependency so ticks arriving later from cloud sync move too
-  }, [isToday, date, morningAamal, done]);
+    // ticks from the old bonus morning checklist become real ticks
+    if (isToday) absorbMorningTicks(date);
+    // `done` is a dependency so old ticks arriving later from cloud sync move too
+  }, [isToday, date, done]);
   useEffect(() => {
     setStreak(computeStreak());
   }, [done]);
@@ -218,21 +218,23 @@ function DayContent({ now }: { now: Date }) {
   const hp = hijriParts(viewed);
   const todaysEvents = eventsFor(hp.month, hp.day);
 
-  const open = openId
-    ? [...aamal, ...morningAamal].find((a) => a.id === openId) ?? null
-    : null;
-  const openIsMorning = !!open?.morning;
-  const pending = aamal.filter((a) => !done[a.id]);
-  const finished = aamal.filter((a) => done[a.id]);
-  const ordered = [...pending, ...finished];
-
-  // reader navigation: step through the day's list without closing it
+  const open = openId ? aamal.find((a) => a.id === openId) ?? null : null;
+  // each session lists what is left first, what is done after
+  const pendingFirst = (list: Amal[]) => [
+    ...list.filter((a) => !done[a.id]),
+    ...list.filter((a) => done[a.id]),
+  ];
+  const morningOrdered = pendingFirst(morningAamal);
+  const eveningOrdered = pendingFirst(eveningAamal);
+  // the reader steps through the session of the open amal, never across both
+  const ordered = open?.morning ? morningOrdered : eveningOrdered;
+  const sessionCompleted = ordered.filter((a) => done[a.id]).length;
   const openIdx = open ? ordered.findIndex((a) => a.id === open.id) : -1;
   function stepReader(delta: 1 | -1) {
     const target = ordered[openIdx + delta];
     if (target) setOpenId(target.id);
   }
-  /** After checking an item off, open the next unfinished one (wrapping); close when the day is done. */
+  /** After checking an item off, open the next unfinished one of its session (wrapping); close when the session is done. */
   function advanceAfterDone(fromId: string) {
     const i = ordered.findIndex((a) => a.id === fromId);
     const rest = [...ordered.slice(i + 1), ...ordered.slice(0, i)];
@@ -426,117 +428,68 @@ function DayContent({ now }: { now: Date }) {
           </div>
           <p className="mt-2 flex items-center justify-between gap-3 text-[0.75rem] text-cream-faint">
             <span className="inline-flex items-center gap-1.5">
-              <MoonStar className="size-3.5 shrink-0 text-gold-dim" />
-              One sitting, after Maghrib
-              {isToday && !night && ` · ${maghribAt}`}
+              <Sunrise className="size-3.5 shrink-0 text-gold-dim" />
+              Morning &amp; evening
             </span>
             <span className="tabular-nums">
               {completed}/{total}
               {allDone ? " · complete" : completed > 0 ? ` · ~${remainingMinutes} min left` : ` · ~${totalMinutes} min`}
-              {morningDone > 0 && (
-                <span className="text-gold-bright"> · +{morningDone} morning</span>
-              )}
             </span>
           </p>
         </div>
       </header>
 
-      {/* 2 — the aamal whose time is the morning: a checklist
-          of its own, never required, each tick a bonus on the day's progress */}
-      {morningAamal.length > 0 && (
-        <section className="mt-5">
-          <div className="flex items-center gap-3">
-            <h2 className="inline-flex items-center gap-1.5 font-display text-[0.72rem] uppercase tracking-[0.2em] text-gold-dim">
-              <Sunrise className="size-3.5" />
-              In the morning
-            </h2>
-            <div className="hairline flex-1 opacity-40" />
-            <span className="text-[0.7rem] tabular-nums text-cream-faint">
-              {morningDone}/{morningAamal.length} · bonus
-            </span>
-          </div>
-          <ul className="mt-2 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/50">
-            {morningAamal.map((amal, i) => {
-              const isDone = !!morning[amal.id];
-              return (
-                <li
-                  key={amal.id}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3",
-                    i > 0 && "border-t border-night-line-soft/60",
-                  )}
-                >
-                  {/* a plain checklist: the whole row is the tick — nothing opens */}
-                  <button
-                    aria-label={
-                      isDone ? `Mark ${amal.title} as not done` : `Mark ${amal.title} as done`
-                    }
-                    aria-pressed={isDone}
-                    onClick={() => setMorning(amal.id, !isDone)}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:scale-[0.99]"
-                  >
-                    <span
-                      className={cn(
-                        "grid size-5 shrink-0 place-items-center rounded-full border transition-all",
-                        isDone
-                          ? "border-gold bg-gold text-night"
-                          : "border-cream-faint text-transparent",
-                      )}
-                    >
-                      <Check className="size-3" strokeWidth={3.5} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={cn(
-                          "block font-display text-[0.95rem] leading-snug",
-                          isDone && "text-cream-dim line-through decoration-gold-dim/50",
-                        )}
-                      >
-                        {amal.title}
-                      </span>
-                      <span className="mt-0.5 block text-[0.74rem] leading-snug text-cream-dim">
-                        {amal.morning}
-                      </span>
-                    </span>
-                  </button>
-                  {/* the text is there if wanted, but never in the way */}
-                  {((amal.lines && amal.lines.length > 1) || amal.steps || amal.type === "counter") && (
-                    <button
-                      aria-label={`Read ${amal.title}`}
-                      onClick={() => setOpenId(amal.id)}
-                      className="grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-faint transition hover:border-gold-dim hover:text-cream"
-                    >
-                      <BookOpenText className="size-4" />
-                    </button>
-                  )}
-                  {/* the amount given is written right on the row; the tick stays the owner's */}
-                  {amal.id === "sadaqa" && <SadaqaField date={date} />}
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-1.5 text-center text-[0.68rem] italic text-cream-faint">
-            Not part of tonight&rsquo;s to-dos — just tick what you kept. Each one lifts
-            the day&rsquo;s progress.
-          </p>
-        </section>
-      )}
-
-      {/* 3 — the session itself, in recitation order */}
-      <section className="mt-4">
-        <div className="space-y-2.5">
-          {ordered.map((amal, i) => (
-            <AmalCard
-              key={amal.id}
-              amal={amal}
-              done={!!done[amal.id]}
-              index={i}
-              onOpen={() => setOpenId(amal.id)}
-              onToggle={(v) => setDone(amal.id, v)}
-            />
-          ))}
-        </div>
-      </section>
+      {/* 2 — the two sessions of the day, each its own list of to-dos */}
+      {[
+        {
+          key: "morning",
+          title: "Morning",
+          when: isToday ? `after Fajr · ${fajrAt}` : "after Fajr",
+          Icon: Sunrise,
+          list: morningOrdered,
+        },
+        {
+          key: "evening",
+          title: "Evening",
+          when: isToday ? `after Maghrib · ${maghribAt}` : "after Maghrib",
+          Icon: MoonStar,
+          list: eveningOrdered,
+        },
+      ]
+        .filter((s) => s.list.length > 0)
+        .map(({ key, title, when, Icon, list }) => {
+          const left = list.filter((a) => !done[a.id]);
+          const mins = left.reduce((m, a) => m + a.minutes, 0);
+          return (
+            <section key={key} className="mt-7 first-of-type:mt-5">
+              <div className="flex items-baseline gap-3">
+                <h2 className="inline-flex items-center gap-2 font-display text-[1.15rem] text-cream">
+                  <Icon className="size-4 self-center text-gold" />
+                  {title}
+                </h2>
+                <span className="text-[0.75rem] italic text-cream-dim">{when}</span>
+                <div className="hairline flex-1 self-center opacity-40" />
+                <span className="text-[0.72rem] tabular-nums text-cream-faint">
+                  {list.length - left.length}/{list.length}
+                  {left.length > 0 ? ` · ~${mins} min` : " · done"}
+                </span>
+              </div>
+              <div className="mt-2.5 space-y-2.5">
+                {list.map((amal, i) => (
+                  <AmalCard
+                    key={amal.id}
+                    amal={amal}
+                    done={!!done[amal.id]}
+                    index={i}
+                    onOpen={() => setOpenId(amal.id)}
+                    onToggle={(v) => setDone(amal.id, v)}
+                    extra={amal.id === "sadaqa" ? <SadaqaField date={date} /> : undefined}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
 
       {/* 4 — progress, the reward at the end */}
       <section className="mt-10">
@@ -549,16 +502,8 @@ function DayContent({ now }: { now: Date }) {
             <p className="mt-1 text-sm italic text-cream-dim">
               {!isToday
                 ? "This day's session was completed."
-                : night
-                  ? "Tonight's session is complete. Rest with a light heart."
-                  : "Today's session is complete. Go into your day with a light heart."}
+                : "Morning and evening are complete. Rest with a light heart."}
             </p>
-            {morningDone > 0 && (
-              <p className="mt-2 flex items-center justify-center gap-1.5 text-[0.8rem] text-gold-bright">
-                <Sunrise className="size-3.5" />+{morningDone} morning{" "}
-                {morningDone === 1 ? "amal" : "aamal"} kept on top of it.
-              </p>
-            )}
             {streak > 0 && (
               <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-night-line px-3 py-1 text-xs text-gold-bright">
                 <Flame className="size-3.5" />
@@ -580,15 +525,9 @@ function DayContent({ now }: { now: Date }) {
               </p>
               <p className="mt-0.5 text-[0.84rem] leading-snug text-cream-dim">
                 {completed === 0
-                  ? `Nothing checked yet — the whole session is about ${totalMinutes} minutes.`
+                  ? `Nothing checked yet — both sessions together are about ${totalMinutes} minutes.`
                   : `${completed} of ${total} done · ~${remainingMinutes} min to finish.`}
               </p>
-              {morningDone > 0 && (
-                <p className="mt-1 inline-flex items-center gap-1.5 text-[0.78rem] text-gold-bright">
-                  <Sunrise className="size-3.5" />+{morningDone} morning{" "}
-                  {morningDone === 1 ? "amal" : "aamal"} kept — a bonus on top.
-                </p>
-              )}
             </div>
           </div>
         )}
@@ -667,17 +606,11 @@ function DayContent({ now }: { now: Date }) {
           key={open.id}
           amal={open}
           date={date}
-          done={openIsMorning ? !!morning[open.id] : !!done[open.id]}
-          step={{ index: openIdx, total: ordered.length, completed }}
+          done={!!done[open.id]}
+          step={{ index: openIdx, total: ordered.length, completed: sessionCompleted }}
           onStep={stepReader}
           onClose={() => setOpenId(null)}
           onDone={(v) => {
-            if (openIsMorning) {
-              // a morning amal is outside the sitting — tick it and step back out
-              setMorning(open.id, v);
-              if (v) setOpenId(null);
-              return;
-            }
             setDone(open.id, v);
             if (v) advanceAfterDone(open.id);
           }}

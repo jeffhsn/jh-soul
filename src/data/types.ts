@@ -55,9 +55,7 @@ export interface Amal {
   timeOfDay: TimeOfDay;
   /**
    * Set when the amal's time is the morning (or the daylight of its day): the
-   * one-line, honest reason. Such items live in the separate Morning
-   * checklist, NOT in the sitting after Maghrib: they are never required, and
-   * ticking one is a bonus on top of the day's progress.
+   * one-line, honest reason. Such aamal form the morning session, after Fajr.
    */
   morning?: string;
   /** honest estimated minutes to complete */

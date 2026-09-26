@@ -31,7 +31,7 @@ function cleanMoney(raw: string): string {
 }
 
 /**
- * Compact inline amount field — lives in the morning checklist row and in the
+ * Compact inline amount field — lives on the sadaqa card and in the
  * Sadaqa panel. Every copy is bound to the same stored amount, so they agree.
  * While focused it shows what is being typed; otherwise the stored amount,
  * written as money (0.70).

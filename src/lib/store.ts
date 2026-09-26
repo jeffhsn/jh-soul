@@ -95,60 +95,25 @@ export function useDone(date: string = aamalKey()) {
   return [done, setDone] as const;
 }
 
-// ---------- morning checklist (bonus, never required) ----------
-// `da:morning:<date>` → JSON Record<amalId, true>. Kept apart from `da:done` on
-// purpose: streaks and the heatmap count the keys of `da:done` against
-// `da:total`, so bonus ticks stored there would pass for required ones.
-
-const morningCache = new Map<string, Record<string, boolean>>();
-
-function morningKey(date: string) {
-  return `da:morning:${date}`;
-}
-
-function getMorning(date: string): Record<string, boolean> {
-  const key = morningKey(date);
-  const raw = typeof window === "undefined" ? null : window.localStorage.getItem(key);
-  const cached = morningCache.get(key);
-  if (cached && (cached as { __raw?: string }).__raw === raw) return cached;
-  const parsed = read<Record<string, boolean>>(key, {});
-  Object.defineProperty(parsed, "__raw", { value: raw, enumerable: false });
-  morningCache.set(key, parsed);
-  return parsed;
-}
-
-export function useMorning(date: string = aamalKey()) {
-  const morning = useSyncExternalStore(
-    subscribe,
-    () => getMorning(date),
-    () => ({}) as Record<string, boolean>,
-  );
-  const setMorning = useCallback(
-    (amalId: string, value: boolean) => {
-      const next = { ...getMorning(date) } as Record<string, boolean>;
-      if (value) next[amalId] = true;
-      else delete next[amalId];
-      write(morningKey(date), next);
-    },
-    [date],
-  );
-  return [morning, setMorning] as const;
-}
+// ---------- legacy morning checklist ----------
+// Morning aamal used to be bonus ticks in `da:morning:<date>`. They are now
+// to-dos like the evening ones, ticked into `da:done`. Old days keep their
+// `da:morning` keys (the heatmap still reads them as a bonus).
 
 /**
- * One-off per day: ticks made on morning aamal while they were still part of
- * the main list are dropped from it (or they would count as required to-dos).
- * They are deliberately NOT carried into the morning checklist — nothing there
- * is ever ticked except by the owner's own hand.
+ * The active day only: ticks already made in the old morning checklist are
+ * carried into `da:done`, then the old key is emptied so an untick sticks.
  */
-export function migrateMorningTicks(date: string, morningIds: string[]) {
+export function absorbMorningTicks(date: string) {
   if (typeof window === "undefined") return;
-  const done = getDone(date);
-  const moved = morningIds.filter((id) => done[id]);
-  if (!moved.length) return;
-  const nextDone = { ...done } as Record<string, boolean>;
-  for (const id of moved) delete nextDone[id];
-  write(doneKey(date), nextDone);
+  const key = `da:morning:${date}`;
+  const old = read<Record<string, boolean>>(key, {});
+  const ids = Object.keys(old);
+  if (!ids.length) return;
+  const next = { ...getDone(date) } as Record<string, boolean>;
+  for (const id of ids) next[id] = true;
+  write(doneKey(date), next);
+  write(key, {});
 }
 
 /**
