@@ -28,7 +28,7 @@ export const allAamal: Amal[] = [
 
 /**
  * One-sitting recitation order for the session after Maghrib, every day:
- * Quran → dhikr counters → daily duas → sadaqa → ziyarat → weekly specials,
+ * Quran → dhikr counters → daily duas → Ziyarat Ashura → weekly night duas,
  * with the before-sleep items closing the list.
  * The owner has a single free block a day, so the sitting holds every to-do.
  * The few morning-bound aamal (`morning` set) are kept out of it, in their own
@@ -40,38 +40,40 @@ const SESSION_ORDER: string[][] = [
   ["muawwidhat"],
   ["tasbih-zahra"],
   ["tasbihat-arbaa"],
-  ["sun-dua", "mon-dua", "tue-dua", "wed-dua", "thu-dua", "fri-dua", "sat-dua"],
-  ["dua-ahd"],
   ["dua-faraj"],
   ["salawat"],
   ["istighfar"],
   ["dua-itidhar"],
-  ["sadaqa"],
-  [
-    "ziyarat-prophet",
-    "ziyarat-ali-fatima",
-    "ziyarat-hasanayn",
-    "ziyarat-sajjad-baqir-sadiq",
-    "ziyarat-kadhim-ridha-jawad-hadi",
-    "ziyarat-askari",
-    "ziyarat-mahdi",
-  ],
   ["ziyarat-ashura"],
-  ["dua-kumayl", "dua-nudba", "dua-tawassul"],
-  ["surah-kahf"],
+  ["dua-kumayl", "dua-tawassul"],
   ["quran-daily"],
   ["surah-waqiah"],
   ["surah-mulk"],
   ["amana-rasul"],
 ];
 
-const OCCASION_RANK = SESSION_ORDER.findIndex((g) => g.includes("surah-kahf")) + 0.5;
+const OCCASION_RANK = SESSION_ORDER.findIndex((g) => g.includes("dua-kumayl")) + 0.5;
 
 const RANK = new Map<string, number>(
   SESSION_ORDER.flatMap((group, i) => group.map((id) => [id, i] as const)),
 );
 
-const MORNING_ORDER = ["salat-layl", "ghusl-jumua", "sadaqa", "dua-ahd", "dua-nudba"];
+const MORNING_ORDER = [
+  "salat-layl",
+  "ghusl-jumua",
+  "sadaqa",
+  "dua-ahd",
+  "sun-dua", "mon-dua", "tue-dua", "wed-dua", "thu-dua", "fri-dua", "sat-dua",
+  "ziyarat-prophet",
+  "ziyarat-ali-fatima",
+  "ziyarat-hasanayn",
+  "ziyarat-sajjad-baqir-sadiq",
+  "ziyarat-kadhim-ridha-jawad-hadi",
+  "ziyarat-askari",
+  "ziyarat-mahdi",
+  "dua-nudba",
+  "surah-kahf",
+];
 
 const dayAfter = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12);
 
