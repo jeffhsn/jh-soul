@@ -51,6 +51,7 @@ export const dailyCore: Amal[] = [
     title: "Ayat al-Kursi",
     arabicTitle: "آيَةُ الْكُرْسِيِّ",
     subtitle: "The Verse of the Throne — protection for your day",
+    morning: "Recited in the morning as protection for the day ahead",
     type: "quran",
     days: "daily",
     timeOfDay: "morning",

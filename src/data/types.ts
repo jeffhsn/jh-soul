@@ -54,8 +54,8 @@ export interface Amal {
   days: Weekday[] | "daily";
   timeOfDay: TimeOfDay;
   /**
-   * Set only when the amal's blessing is tied to the morning and is lost by
-   * evening: the one-line reason. Such items live in the separate Morning
+   * Set when the amal's time is the morning (or the daylight of its day): the
+   * one-line, honest reason. Such items live in the separate Morning
    * checklist, NOT in the sitting after Maghrib: they are never required, and
    * ticking one is a bonus on top of the day's progress.
    */

@@ -441,7 +441,7 @@ function DayContent({ now }: { now: Date }) {
         </div>
       </header>
 
-      {/* 2 — the few aamal whose blessing belongs to the morning: a checklist
+      {/* 2 — the aamal whose time is the morning: a checklist
           of its own, never required, each tick a bonus on the day's progress */}
       {morningAamal.length > 0 && (
         <section className="mt-5">
@@ -500,7 +500,7 @@ function DayContent({ now }: { now: Date }) {
                     </span>
                   </button>
                   {/* the text is there if wanted, but never in the way */}
-                  {((amal.lines && amal.lines.length > 1) || amal.steps) && (
+                  {((amal.lines && amal.lines.length > 1) || amal.steps || amal.type === "counter") && (
                     <button
                       aria-label={`Read ${amal.title}`}
                       onClick={() => setOpenId(amal.id)}

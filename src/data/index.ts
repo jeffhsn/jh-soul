@@ -28,23 +28,18 @@ export const allAamal: Amal[] = [
 
 /**
  * One-sitting recitation order for the session after Maghrib, every day:
- * Quran → dhikr counters → daily duas → Ziyarat Ashura → weekly night duas,
+ * dhikr counters → daily duas → weekly night duas → Quran,
  * with the before-sleep items closing the list.
  * The owner has a single free block a day, so the sitting holds every to-do.
- * The few morning-bound aamal (`morning` set) are kept out of it, in their own
+ * The morning aamal (`morning` set) are kept out of it, in their own
  * checklist — see `morningForDay`.
  */
 const SESSION_ORDER: string[][] = [
-  ["fatiha"],
-  ["ayat-kursi"],
-  ["muawwidhat"],
   ["tasbih-zahra"],
-  ["tasbihat-arbaa"],
   ["dua-faraj"],
   ["salawat"],
   ["istighfar"],
   ["dua-itidhar"],
-  ["ziyarat-ashura"],
   ["dua-kumayl", "dua-tawassul"],
   ["quran-daily"],
   ["surah-waqiah"],
@@ -62,6 +57,10 @@ const MORNING_ORDER = [
   "salat-layl",
   "ghusl-jumua",
   "sadaqa",
+  "fatiha",
+  "ayat-kursi",
+  "muawwidhat",
+  "tasbihat-arbaa",
   "dua-ahd",
   "sun-dua", "mon-dua", "tue-dua", "wed-dua", "thu-dua", "fri-dua", "sat-dua",
   "ziyarat-prophet",
@@ -71,6 +70,7 @@ const MORNING_ORDER = [
   "ziyarat-kadhim-ridha-jawad-hadi",
   "ziyarat-askari",
   "ziyarat-mahdi",
+  "ziyarat-ashura",
   "dua-nudba",
   "surah-kahf",
 ];
@@ -78,7 +78,7 @@ const MORNING_ORDER = [
 const dayAfter = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12);
 
 /**
- * The morning checklist: aamal whose blessing is lost if left to the evening.
+ * The morning checklist: every amal whose time is the morning (`morning` set).
  * Never part of the sitting or of the day's required total — a tick is a bonus.
  */
 export function morningForDay(weekday: Weekday, date?: Date): Amal[] {

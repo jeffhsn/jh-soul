@@ -19,9 +19,9 @@ calendar day's list — do NOT shift it to the Islamic Maghrib-to-Maghrib day; t
 not split across two dates. That sitting is the owner's only free block
 of the day, so never schedule an amal outside it. The few aamal whose blessing is
 tied to the morning or to the daylight of that very day (`morning` reason set: Salat al-Layl, Friday ghusl, sadaqa, Dua al-Ahd,
-the weekday's Sahifa dua, the weekday's ziyarat, Friday Dua al-Nudba, Friday Surah al-Kahf — by Maghrib that day is over) are NOT to-dos: they live in
+Fatiha, Ayat al-Kursi, the Mu'awwidhat, Tasbihat al-Arba'a, Ziyarat Ashura, the weekday's Sahifa dua, the weekday's ziyarat, Friday Dua al-Nudba, Friday Surah al-Kahf — by Maghrib that day is over) are NOT to-dos: they live in
 the "In the morning" checklist, ticks go to `da:morning:<date>` (never `da:done`, whose key count is compared with `da:total`)
-and count as a bonus in the progress views. Rows there are plain ticks (no reader opens) and are never pre-ticked by code. Keep that set strict (owner: only what is lost if not done in the morning / before Maghrib; anything also fine at night stays in the sitting).
+and count as a bonus in the progress views. Rows there tick directly (a book button opens the text or counter) and are never pre-ticked by code. Owner's rule: whatever is a morning amal goes to the morning checklist; night/evening/any-time aamal stay in the sitting. `morning` reasons must be honest — never claim a reward is lost unless the source says so.
 Hijri-dated occasion aamal live in src/data/occasions.ts: a `night` one joins the to-dos of the evening BEFORE its Hijri date
 (the Islamic night precedes its day), a `day` one joins that date's morning checklist. They carry `steps` plus a verified
 Duas.org link instead of full text — check every new link returns 200. Quran portions are progress-based (src/lib/khatm.ts): the next unread pages, paced so a khatm completes within a year of
