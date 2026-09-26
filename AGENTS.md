@@ -9,7 +9,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 <!-- END:nextjs-agent-rules -->
 
 # Daily Aamal (repo, folder and Vercel project: dailyaamal)
-Daily checklist of Shia aamal — same structure as ../jh-body and ../jh-mind. All progress lives in
+Daily checklist of Shia aamal. All progress lives in
 localStorage under `da:` keys (`da:done:<date>`, `da:total:<date>`, `da:count:<date>:<amal>`, `da:sadaqa:<date>` = euro
 given that day). Deployed to https://dailyaamal.vercel.app (Vercel project `dailyaamal`, team jeffhsns-projects, git
 github.com/jeffhsn/dailyaamal). Deploy with `vercel deploy --prod --yes` after pushing.
