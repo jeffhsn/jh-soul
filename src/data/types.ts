@@ -40,6 +40,10 @@ export interface CounterPhase {
 export interface ExternalLink {
   label: string;
   url: string;
+  /** when set, the reader lists links as sections (in first-seen order) of titled rows */
+  group?: string;
+  /** one short line under the label in a grouped list */
+  note?: string;
 }
 
 export interface Amal {

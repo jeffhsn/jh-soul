@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Dialog } from "radix-ui";
 import { ArrowUpRight, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { Amal } from "@/data";
+import type { ExternalLink } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "./audio-player";
 import { LinesReader } from "./lines-reader";
@@ -192,7 +193,9 @@ export function FocusView({
                   </ol>
                 )}
                 {amal.lines && <LinesReader lines={amal.lines} />}
-                {amal.links?.map((link) => (
+                {amal.links?.some((l) => l.group) ? (
+                  <GroupedLinks links={amal.links} />
+                ) : amal.links?.map((link) => (
                   <a
                     key={link.url}
                     href={link.url}
@@ -255,5 +258,47 @@ export function FocusView({
         </div>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+/** A reading/watching shelf: links in titled sections, each a row with a short note. */
+function GroupedLinks({ links }: { links: ExternalLink[] }) {
+  const groups = [...new Set(links.map((l) => l.group ?? ""))];
+  return (
+    <div className="mt-8 space-y-7 pr-12 sm:pr-0">
+      {groups.map((group) => (
+        <section key={group}>
+          {group && (
+            <h3 className="mb-2.5 text-[0.7rem] uppercase tracking-[0.18em] text-gold-dim">
+              {group}
+            </h3>
+          )}
+          <ul className="overflow-hidden rounded-2xl border border-night-line-soft">
+            {links
+              .filter((l) => (l.group ?? "") === group)
+              .map((l) => (
+                <li key={l.url} className="border-t border-night-line-soft first:border-t-0">
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex items-center justify-between gap-3 bg-night-raise/40 px-4 py-3 transition hover:bg-night-raise"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[0.9rem] text-cream">{l.label}</span>
+                      {l.note && (
+                        <span className="mt-0.5 block text-[0.75rem] leading-snug text-cream-faint">
+                          {l.note}
+                        </span>
+                      )}
+                    </span>
+                    <ArrowUpRight className="size-3.5 shrink-0 text-cream-faint transition group-hover:text-gold-bright" />
+                  </a>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }
