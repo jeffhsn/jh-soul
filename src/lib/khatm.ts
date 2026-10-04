@@ -22,12 +22,14 @@ const KHATM_DAYS = 30;
 /** a sane ceiling (two juz) so one long absence cannot produce an impossible day */
 const MAX_PAGES_A_DAY = 40;
 /**
- * Khatms used to be paced over a year. A khatm already under way when the
- * pace became monthly gets its month from this day, not from its first day —
- * otherwise it would be "overdue" and demand two juz a day.
+ * Khatms used to be paced over a year (about two pages a day). On this day the
+ * pace became monthly and a fresh khatm began from page 1: the khatm that was
+ * under way is set aside (its pages still count in the totals), and portions
+ * pinned for this day or later under the old logic are recomputed unless
+ * already ticked. New pins carry `v: 2`.
  */
-const MONTHLY_FROM = "2026-10-04";
-const paceStart = (startKey: string) => (startKey > MONTHLY_FROM ? startKey : MONTHLY_FROM);
+export const KHATM_RESET = "2026-10-04";
+const paceStart = (startKey: string) => (startKey > KHATM_RESET ? startKey : KHATM_RESET);
 
 export interface KhatmState {
   /** completed readings of the whole Quran */
@@ -65,7 +67,10 @@ function valid(r: unknown): ReadRange | null {
 
 function storedRange(key: string): ReadRange | null {
   try {
-    return valid(JSON.parse(window.localStorage.getItem(`da:quran:${key}`) ?? "null"));
+    const raw = JSON.parse(window.localStorage.getItem(`da:quran:${key}`) ?? "null");
+    // pinned on or after the fresh start by the old logic, and not read yet: recompute it
+    if (raw && !raw.v && key >= KHATM_RESET && !tickedOn(key)) return null;
+    return valid(raw);
   } catch {}
   return null;
 }
@@ -162,10 +167,19 @@ export function khatmState(beforeKey?: string): KhatmState {
     const m = window.localStorage.key(i)?.match(/^da:quranx:(\d{4}-\d{2}-\d{2})$/);
     if (m && !(beforeKey && m[1] >= beforeKey) && m[1] > after && !keys.includes(m[1])) keys.push(m[1]);
   }
-  for (const key of keys.sort()) {
+  const sorted = keys.sort();
+  const run = (key: string) => {
     if (tickedOn(key)) apply(state, key, rangeOfDay(key));
     for (const x of extrasOn(key)) apply(state, key, x, !tickedOn(key));
+  };
+  for (const key of sorted) if (key < KHATM_RESET) run(key);
+  // the fresh start: the khatm under way is set aside, its pages stay in the totals
+  if (!beforeKey || beforeKey >= KHATM_RESET) {
+    state.read = new Set();
+    state.startKey = null;
+    state.startPage = 1;
   }
+  for (const key of sorted) if (key >= KHATM_RESET) run(key);
   return state;
 }
 
@@ -298,16 +312,23 @@ export interface Owed {
   skipped: [number, number][];
   /** the reading "Read more now" opens, or null when nothing is owed */
   next: PageRange | null;
+  /** owed because days were missed (not only because pages were unticked) */
+  missedDays: boolean;
 }
 
 /** What `key`'s reader still owes this khatm, beyond the day's own portion. */
 export function owedOn(key: string): Owed {
-  if (typeof window === "undefined") return { pages: 0, skipped: [], next: null };
+  if (typeof window === "undefined") return { pages: 0, skipped: [], next: null, missedDays: false };
   const state = khatmState();
   const today = tickedOn(key) ? null : storedRange(key);
   const behind = behindBy(state, key, today);
   const skipped = skippedRuns(state);
   const skippedPages = skipped.reduce((n, [a, b]) => n + b - a + 1, 0);
   const pages = Math.max(behind, skippedPages);
-  return { pages, skipped, next: pages > 0 ? catchUpPortion(state, behind, today?.to) : null };
+  return {
+    pages,
+    skipped,
+    next: pages > 0 ? catchUpPortion(state, behind, today?.to) : null,
+    missedDays: behind > skippedPages,
+  };
 }

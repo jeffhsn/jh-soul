@@ -45,7 +45,7 @@ export function AmalCard({
   return (
     <div
       className={cn(
-        "group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all duration-300 animate-rise",
+        "group relative flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border px-4 py-3.5 transition-all duration-300 animate-rise",
         done
           ? "border-night-line-soft bg-night-raise/50 opacity-75"
           : "border-night-line bg-night-card hover:-translate-y-[1px] hover:border-gold-dim/60 hover:bg-night-card/80 hover:shadow-[0_10px_28px_rgba(0,0,0,0.35)] active:scale-[0.99]",
@@ -114,7 +114,8 @@ export function AmalCard({
           </div>
         </div>
       </button>
-      {extra}
+      {/* on narrow phones the control drops under the text instead of covering it */}
+      {extra && <div className="w-full ps-[3.25rem] min-[480px]:w-auto min-[480px]:ps-0">{extra}</div>}
     </div>
   );
 }

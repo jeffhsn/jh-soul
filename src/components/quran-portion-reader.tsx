@@ -280,7 +280,7 @@ function CatchUpHint() {
   if (!owed.next || owed.pages <= 0) return null;
   const n = owed.next.to - owed.next.from + 1;
   // the owed count is highlighted wherever the language puts it in the sentence
-  const [before, after = ""] = t("reader.portion.owedText").split("{owed}");
+  const [before, after = ""] = t(owed.missedDays ? "reader.portion.owedText" : "reader.portion.owedTextSkipped").split("{owed}");
   return (
     <div className="mt-4 rounded-2xl border border-gold-dim/40 bg-night-card px-4 py-4">
       <p className="text-[0.85rem] leading-snug text-cream-dim">

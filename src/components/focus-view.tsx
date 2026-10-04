@@ -313,11 +313,11 @@ function GroupedLinks({ links }: { links: ExternalLink[] }) {
               <div className="grid grid-cols-3 gap-2.5">
                 {books.map((l) => (
                   <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="group block">
-                    <span className="relative flex aspect-[2/3] flex-col justify-between overflow-hidden rounded-xl border border-gold-dim/40 bg-gradient-to-b from-night-card to-night-raise p-2.5 shadow-[inset_4px_0_0_var(--color-gold-dim)] transition group-hover:border-gold">
-                      <span className="font-display text-[0.9rem] leading-tight text-cream">{l.label}</span>
+                    <span className="relative flex aspect-[2/3] flex-col justify-between gap-2 rounded-xl border border-gold-dim/40 bg-gradient-to-b from-night-card to-night-raise p-2.5 shadow-[inset_4px_0_0_var(--color-gold-dim)] transition group-hover:border-gold">
+                      <span className="font-display text-[0.9rem] leading-tight text-cream hyphens-auto [overflow-wrap:anywhere]">{l.label}</span>
                       <span className="text-[0.62rem] leading-snug text-gold-dim">{l.by}</span>
                     </span>
-                    <span className="mt-1.5 line-clamp-2 block text-[0.68rem] leading-snug text-cream-faint">
+                    <span className="mt-1.5 block text-[0.68rem] leading-snug text-cream-faint">
                       {l.note}
                     </span>
                   </a>
@@ -348,8 +348,8 @@ function GroupedLinks({ links }: { links: ExternalLink[] }) {
                         className="size-14 rounded-full ring-1 ring-gold-dim/40 transition group-hover:ring-gold"
                       />
                     )}
-                    <span className="mt-2.5 line-clamp-2 text-[0.8rem] leading-tight text-cream">{l.label}</span>
-                    <span className="mt-1 line-clamp-2 text-[0.66rem] leading-snug text-cream-faint">
+                    <span className="mt-2.5 text-[0.8rem] leading-tight text-cream [overflow-wrap:anywhere]">{l.label}</span>
+                    <span className="mt-1 text-[0.66rem] leading-snug text-cream-faint">
                       {l.note}
                     </span>
                   </a>

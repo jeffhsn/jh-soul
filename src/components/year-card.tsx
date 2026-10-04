@@ -53,7 +53,7 @@ export function YearCard({ refresh }: { refresh?: unknown }) {
   const sadaqa = s.sadaqaCents / 100;
 
   return (
-    <section id="your-year" className="scroll-mt-6">
+    <section id="your-year" className="@container scroll-mt-6">
       <div className="mb-3 flex items-center gap-3">
         <h3 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">{t("day.year.title")}</h3>
         <div className="hairline flex-1 opacity-40" />
@@ -96,7 +96,7 @@ export function YearCard({ refresh }: { refresh?: unknown }) {
 
         {s.present > 0 && (
           <>
-            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 border-t border-night-line-soft pt-4 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 border-t border-night-line-soft pt-4 @[24rem]:grid-cols-3">
               <Stat label={t("day.year.wholeDays")} value={s.perfect.toLocaleString(intl)} />
               <Stat
                 label={t("day.year.longestRun")}
@@ -131,7 +131,7 @@ export function YearCard({ refresh }: { refresh?: unknown }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-[0.6rem] uppercase tracking-[0.14em] text-cream-faint">{label}</p>
+      <p className="text-[0.6rem] leading-snug uppercase tracking-[0.14em] text-cream-faint [overflow-wrap:anywhere]">{label}</p>
       <p className="mt-0.5 truncate font-display text-[1rem] tabular-nums text-cream">{value}</p>
     </div>
   );

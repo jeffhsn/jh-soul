@@ -53,8 +53,10 @@ deleted — keeps each person's storage bounded. khatm.ts, computeStreak and the
 summaries (src/lib/folded.ts); the sync script drops/ignores dated fields ≤ `through`.
 Quran catch-up: page ticks in the portion reader (`skip` on `da:quran:<date>`) and optional catch-up readings
 (`da:quranx:<date>` = ranges, not in da:done/totals) opened from the Quran panel or under the portion; owedOn() in khatm.ts =
-missed-day deficit vs an even monthly pace, or skipped pages. Quran khatm is MONTHLY: portions paced so a khatm completes within 30 days of its first day (~1 juz/day, max 40 pages);
-a khatm already running on 2026-10-04 (MONTHLY_FROM) gets its month from that day.
+missed-day deficit vs an even monthly pace, or skipped pages. Quran khatm is MONTHLY: portions paced so a khatm completes within 30 days of its first day (~1 juz/day, max 40 pages).
+On KHATM_RESET (2026-10-04, owner's request) a fresh khatm began from page 1: the old yearly-paced khatm is set aside (its
+pages stay in the totals) and pins dated ≥ that day without `v: 2` are recomputed unless ticked. The Quran panel shows a
+30-juz map (read / today / missed — tap to read) and one status: on track, or N pages to catch up with a gold button.
 Tend the Soul reading: the three classical al-Mahdi (aj) books (al-Saduq's Kamal al-Din, al-Nu'mani's and al-Tusi's Ghayba)
 on Al-Islam.org, the Imams' lives as Sayed Ammar Nakshawani's Thaqlain lecture series on YouTube
 (al-islam.org is behind Cloudflare — curl gets 403; verify those links in a real browser), plus Look-up links to Sistani,

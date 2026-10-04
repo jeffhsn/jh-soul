@@ -4,6 +4,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { aamalDate, aamalKey } from "./aamal-day";
 import { daysAgoKey } from "./dates";
 import { lastFolded, yearSummaries } from "./folded";
+import { KHATM_RESET } from "./khatm";
 
 /**
  * Progress lives in localStorage:
@@ -124,8 +125,12 @@ export function absorbMorningTicks(date: string) {
 export function recordQuranPortion(date: string, range: { from: number; to: number }) {
   if (typeof window === "undefined") return;
   const key = `da:quran:${date}`;
-  if (window.localStorage.getItem(key) !== null) return;
-  write(key, range);
+  try {
+    const cur = JSON.parse(window.localStorage.getItem(key) ?? "null");
+    // keep a pin from the current logic (v: 2), or any pin of an older day
+    if (cur && (cur.v || date < KHATM_RESET)) return;
+  } catch {}
+  write(key, { from: range.from, to: range.to, v: 2 });
 }
 
 /**
@@ -135,9 +140,10 @@ export function recordQuranPortion(date: string, range: { from: number; to: numb
 export function setQuranSkip(date: string, range: { from: number; to: number }, skip: number[]) {
   if (typeof window === "undefined") return;
   const key = `da:quran:${date}`;
-  const pinned = read<{ from: number; to: number } | null>(key, null) ?? range;
+  const cur = read<{ from: number; to: number; v?: number } | null>(key, null);
+  const pinned = cur && (cur.v || date < KHATM_RESET) ? cur : range;
   const kept = skip.filter((p) => p >= pinned.from && p <= pinned.to).sort((a, b) => a - b);
-  write(key, kept.length ? { from: pinned.from, to: pinned.to, skip: kept } : { from: pinned.from, to: pinned.to });
+  write(key, kept.length ? { from: pinned.from, to: pinned.to, skip: kept, v: 2 } : { from: pinned.from, to: pinned.to, v: 2 });
 }
 
 /** Catch-up reading finished on `date`, beyond its portion. */

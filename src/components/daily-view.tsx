@@ -416,7 +416,7 @@ function DayContent({ now }: { now: Date }) {
               {isToday && (
                 <span className="whitespace-nowrap">{gregorianDate(viewed, intl)} · </span>
               )}
-              <span className="whitespace-nowrap">{hijriDate(viewed, intl)}</span>
+              <span>{hijriDate(viewed, intl)}</span>
             </p>
           </div>
           <button
@@ -525,14 +525,14 @@ function DayContent({ now }: { now: Date }) {
           const mins = left.reduce((m, a) => m + a.minutes, 0);
           return (
             <section key={key} className="mt-7 first-of-type:mt-5">
-              <div className="flex items-baseline gap-3">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h2 className="inline-flex items-center gap-2 font-display text-[1.15rem] text-cream">
                   <Icon className="size-4 self-center text-gold" />
                   {title}
                 </h2>
-                <span className="text-[0.75rem] italic text-cream-dim">{when}</span>
-                <div className="hairline flex-1 self-center opacity-40" />
-                <span className="text-[0.72rem] tabular-nums text-cream-faint">
+                <span className="whitespace-nowrap text-[0.75rem] italic text-cream-dim">{when}</span>
+                <div className="hairline min-w-4 flex-1 self-center opacity-40" />
+                <span className="whitespace-nowrap text-[0.72rem] tabular-nums text-cream-faint">
                   {list.length - left.length}/{list.length}
                   {" · "}
                   {left.length > 0 ? t("day.minAbout", { count: mins }) : t("day.done")}
