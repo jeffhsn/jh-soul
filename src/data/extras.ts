@@ -272,6 +272,46 @@ export const extras: Amal[] = [
     ],
   },
   {
+    id: "qada-salat",
+    title: "Qada prayers",
+    arabicTitle: "قَضَاءُ ٱلصَّلَاةِ",
+    subtitle: "Make up one day of missed prayers — 17 rak'ahs",
+    type: "action",
+    days: "daily",
+    timeOfDay: "any",
+    minutes: 20,
+    merit:
+      "Someone with outstanding qada prayers must not be negligent about performing them, though they need not be prayed immediately — Sayyid al-Sistani, ruling 1357",
+    lines: [
+      {
+        ar: "صَلَاةُ ٱلصُّبْحِ قَضَاءً",
+        tr: "Fajr — 2 rak'ahs",
+        en: "Pray it as you pray Fajr, with the intention: the qada of a Fajr prayer I missed, qurbatan ila Allah.",
+      },
+      {
+        ar: "صَلَاةُ ٱلظُّهْرِ ثُمَّ ٱلْعَصْرِ قَضَاءً",
+        tr: "Dhuhr, then Asr — 4 rak'ahs each",
+        en: "Dhuhr before Asr, as on any day; the recitation may be silent or aloud as in the original prayer.",
+      },
+      {
+        ar: "صَلَاةُ ٱلْمَغْرِبِ ثُمَّ ٱلْعِشَاءِ قَضَاءً",
+        tr: "Maghrib, then Isha — 3 and 4 rak'ahs",
+        en: "Maghrib before Isha. A prayer missed while travelling is made up shortened, as 2 rak'ahs.",
+      },
+      {
+        ar: "مَا تَيَقَّنْتَ فَوْتَهُ",
+        tr: "How many you owe",
+        en: "If you are unsure how many you missed, making up the number you are certain of is enough; more, as a precaution, is better.",
+      },
+    ],
+    links: [
+      {
+        label: "Rulings on qada prayers — Sistani.org",
+        url: "https://www.sistani.org/english/book/48/2266/",
+      },
+    ],
+  },
+  {
     id: "salat-layl",
     title: "Salat al-Layl",
     arabicTitle: "صَلَاةُ ٱللَّيْلِ",

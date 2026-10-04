@@ -32,13 +32,19 @@ Duas.org link instead of full text — check every new link returns 200. Quran p
 its first day; missed days are made up. `da:quran:<date>` = {from,to} pins a day's portion (written when the day becomes
 active or is ticked); ticked days without one count as the old date-derived slice. The Quran panel derives from the same. Counters take Space (count) and Backspace (undo).
 Sadaqa amounts are euro to the cent: sum in cents, display €5 or €0.70 (never €0.7), never round the average. Use `aamalDate()`/`aamalKey()` for the active list's "today".
-When testing in a browser, block `/api/sync` — the sync key is baked in, so a test page reads and writes the owner's real data.
-Cloud sync: every `da:` key (except theme/calmode/location, the prayer-time and Quran-text caches, and sync meta) is
-mirrored to a private Vercel Blob store through `/api/sync` (src/app/api/sync/route.ts), guarded by the passphrase in env
-`DA_SYNC_KEY` sent as `x-da-key` (also baked into the client as NEXT_PUBLIC_DA_SYNC_KEY so sync is automatic — single-user
-app, zero setup, deliberately no sync UI). Client engine: src/lib/sync.ts (per-key last-write-wins via `da:meta:updated`
-timestamps stamped by store.write/stamp). Env: BLOB_READ_WRITE_TOKEN, BLOB_ACCESS=private, DA_SYNC_KEY — pull with
-`vercel env pull .env.local`. Sync starts from pwa.tsx on every load. The service worker never caches /api/.
+When testing in a browser, set localStorage `da:sync:off` (or block `/api/sync`) unless testing sync itself; never open a page with the owner's `#id=` link.
+Shared site, no accounts: every browser makes up a random secret id (`da:sync:id`, 22 chars) on first visit, so each
+visitor's progress is their own. Everything lives in localStorage first; the cloud copy is per person in Upstash Redis
+(free plan, autoUpgrade off — never billed, it throttles instead) through `/api/sync` (src/app/api/sync/route.ts):
+header `x-da-id`, key `da:u:<sha256>` with a 400-day TTL refreshed on save, plus a dated `NX` copy per day kept 14 days.
+The server MERGES each PUT per key (newest `da:meta:updated` timestamp wins; a stamped key absent from data = deletion)
+and answers with the merged copy. Opening `https://…/#id=<id>` makes a device join that person's copy (its own progress
+is merged in) — the "Use on another device" button in the footer (src/components/sync-note.tsx) copies that link.
+Client engine: src/lib/sync.ts (pull on load/visible/every 5 min while visible; debounced push). Command budget matters
+(500K/month free): don't add polling. Env: KV_REST_API_URL / KV_REST_API_TOKEN (UPSTASH_REDIS_REST_* also accepted) —
+pull with `vercel env pull .env.local`. The old single-user Vercel Blob copy (DA_SYNC_KEY) is no longer used; it is kept
+as a backup only. Sync starts from pwa.tsx on every load. The service worker never caches /api/.
+Qada prayers (`qada-salat`, one day = 17 rak'ahs) open the Evening session — an obligation before the recommended aamal.
 The owner wants anything worth keeping saved in the cloud this way, never only in the browser.
 Old address: the phone PWA was installed from https://dailyaamal.vercel.app (pre-rename). Keep it pointing at production —
 if it is not a project domain, run `vercel alias set <new-deployment-url> dailyaamal.vercel.app` after every prod deploy.

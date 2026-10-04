@@ -42,6 +42,7 @@ import { SadaqaField, SadaqaPanel } from "./sadaqa-entry";
 import type { Amal } from "@/data";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
+import { SyncNote } from "./sync-note";
 
 // the reader dialog (audio players, tasbih beads, counters) is only needed
 // once an item is tapped — keep it out of the initial bundle
@@ -536,6 +537,7 @@ function DayContent({ now }: { now: Date }) {
 
       <footer className="mt-14 text-center text-xs text-cream-faint">
         <div className="hairline mb-6 opacity-40" />
+        <SyncNote />
         <p className="italic">
           &ldquo;Verily in the remembrance of Allah do hearts find rest.&rdquo; — Qur&rsquo;an 13:28
         </p>

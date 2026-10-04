@@ -28,11 +28,13 @@ export const allAamal: Amal[] = [
 });
 
 /**
- * The evening session, after Maghrib: dhikr → duas → weekly night duas →
+ * The evening session, after Maghrib: a day of qada prayers → dhikr → duas → weekly night duas →
  * Quran, the before-sleep surahs, and Salat al-Layl last.
  * The morning aamal (`morning` set) are the other session — see `morningForDay`.
  */
 const SESSION_ORDER: string[][] = [
+  // an obligation before anything recommended: one day of missed prayers made up
+  ["qada-salat"],
   ["tasbih-zahra"],
   ["dua-faraj"],
   ["salawat"],

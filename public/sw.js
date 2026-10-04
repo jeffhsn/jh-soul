@@ -1,5 +1,5 @@
 /* Daily Aamal service worker — offline-first shell, always-fresh HTML. */
-const VERSION = "da-v40";
+const VERSION = "da-v41";
 const SHELL = ["/", "/calendar"];
 
 self.addEventListener("install", (event) => {
