@@ -5,6 +5,7 @@ import { Dialog } from "radix-ui";
 import { ArrowUpRight, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { Amal } from "@/data";
 import type { ExternalLink } from "@/data/types";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "./audio-player";
 import { LinesReader } from "./lines-reader";
@@ -40,13 +41,17 @@ export function FocusView({
     onSkip: (skip: number[]) => void;
     catchUpHint?: boolean;
   };
-  /** the done button's wording, when "I have completed this" does not fit */
+  /** the done button's wording (already translated), when "I have completed this" does not fit */
   doneLabel?: string;
 }) {
+  const { t, rtl } = useT();
   const interactive = amal.type === "tasbih" || amal.type === "counter";
 
-  // ← / → step through the day's aamal; Enter checks the open one as done
+  // ← / → step through the day's aamal in reading direction (mirrored in
+  // Arabic), ↑ / ↓ always back / forward; Enter checks the open one as done
   useEffect(() => {
+    const forward = rtl ? "ArrowLeft" : "ArrowRight";
+    const back = rtl ? "ArrowRight" : "ArrowLeft";
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement | null;
       if (
@@ -54,10 +59,10 @@ export function FocusView({
         (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)
       )
         return;
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      if (e.key === forward || e.key === "ArrowDown") {
         e.preventDefault();
         onStep(1);
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      } else if (e.key === back || e.key === "ArrowUp") {
         e.preventDefault();
         onStep(-1);
       } else if (e.key === "Enter" && !interactive) {
@@ -74,7 +79,7 @@ export function FocusView({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onStep, onDone, done, interactive]);
+  }, [onStep, onDone, done, interactive, rtl]);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -115,7 +120,7 @@ export function FocusView({
               )}
             </div>
             <Dialog.Close
-              aria-label="Close"
+              aria-label={t("reader.close")}
               className="mt-1 grid size-9 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
             >
               <X className="size-4" />
@@ -239,21 +244,27 @@ export function FocusView({
                 )}
               >
                 <Check className="size-4" strokeWidth={3} />
-                {done ? "Marked as done — undo" : (doneLabel ?? "I have completed this")}
+                {done ? t("reader.done.undo") : (doneLabel ?? t("reader.done.mark"))}
               </button>
             </div>
           )}
         </Dialog.Content>
 
-        {/* vertical stepper — floats outside the panel (right edge on phones),
+        {/* vertical stepper — floats outside the panel (end edge on phones;
+            beside the panel's end side on wider screens, mirrored in Arabic),
             gold so it reads as "move through the day", not part of the amal */}
         {step.total > 1 && (
         <div
           data-step-nav
-          className="pointer-events-auto fixed bottom-[7.5rem] end-2.5 z-50 flex flex-col items-center gap-2 sm:bottom-auto sm:right-auto sm:left-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))] sm:top-1/2 sm:-translate-y-1/2"
+          className={cn(
+            "pointer-events-auto fixed bottom-[7.5rem] end-2.5 z-50 flex flex-col items-center gap-2 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2",
+            rtl
+              ? "sm:left-auto sm:right-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))]"
+              : "sm:right-auto sm:left-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))]",
+          )}
         >
           <button
-            aria-label="Previous amal"
+            aria-label={t("reader.step.prev")}
             disabled={step.index <= 0}
             onClick={() => onStep(-1)}
             className={stepButton}
@@ -264,7 +275,7 @@ export function FocusView({
             {step.completed}/{step.total}
           </span>
           <button
-            aria-label="Next amal"
+            aria-label={t("reader.step.next")}
             disabled={step.index >= step.total - 1}
             onClick={() => onStep(1)}
             className={stepButton}
@@ -294,7 +305,7 @@ function GroupedLinks({ links }: { links: ExternalLink[] }) {
         return (
           <section key={group}>
             {group && (
-              <h3 className="mb-3 text-[0.7rem] uppercase tracking-[0.18em] text-gold-dim">
+              <h3 className="mb-3 text-[0.7rem] uppercase tracking-[0.18em] text-gold-dim rtl:normal-case rtl:tracking-normal">
                 {group}
               </h3>
             )}

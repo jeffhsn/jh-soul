@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { AudioSource } from "@/data";
+import { useT, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { PlaylistPlayer } from "./audio-player";
 import { openCatchUp, useQuranOwed } from "./quran-tracker";
@@ -18,16 +19,25 @@ interface VerseText {
   en: string;
 }
 
+/** The translation shown under the Arabic, per language (none in Arabic). */
+const TRANSLATION: Record<Exclude<Locale, "ar">, string> = {
+  en: "en.sahih",
+  it: "it.piccardo",
+  de: "de.aburida",
+};
+
 /**
- * Fetch the portion's verses (Uthmani Arabic, transliteration, Sahih
- * International) from api.alquran.cloud — the app's Quran text source —
- * and cache the assembled lines per day.
+ * Fetch the portion's verses (Uthmani Arabic, transliteration, and a
+ * translation in the reader's language) from api.alquran.cloud — the app's
+ * Quran text source — and cache the assembled lines per day and language.
+ * In Arabic only the Uthmani text is fetched.
  */
 async function fetchPortionText(
   refs: VerseRef[],
   dateKey: string,
+  locale: Locale,
 ): Promise<VerseText[]> {
-  const cacheKey = `da:qtext:${dateKey}`;
+  const cacheKey = `da:qtext:${dateKey}:${locale}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -37,9 +47,9 @@ async function fetchPortionText(
   const bySurah = new Map<number, Record<number, VerseText>>();
   await Promise.all(
     surahs.map(async (s) => {
-      const res = await fetch(
-        `https://api.alquran.cloud/v1/surah/${s}/editions/quran-uthmani,en.transliteration,en.sahih`,
-      );
+      const editions =
+        locale === "ar" ? "quran-uthmani" : `quran-uthmani,en.transliteration,${TRANSLATION[locale]}`;
+      const res = await fetch(`https://api.alquran.cloud/v1/surah/${s}/editions/${editions}`);
       const json = await res.json();
       if (json.code !== 200) throw new Error("bad response");
       const [ar, tr, en] = json.data;
@@ -48,8 +58,8 @@ async function fetchPortionText(
       (ar.ayahs as ApiAyah[]).forEach((a, i) => {
         map[a.numberInSurah] = {
           ar: a.text,
-          tr: tr.ayahs[i]?.text ?? "",
-          en: en.ayahs[i]?.text ?? "",
+          tr: tr?.ayahs[i]?.text ?? "",
+          en: en?.ayahs[i]?.text ?? "",
         };
       });
       bySurah.set(s, map);
@@ -89,6 +99,7 @@ export function QuranPortionReader({
   /** the day's own portion: offer the catch-up when pages are owed */
   catchUpHint?: boolean;
 }) {
+  const { t, locale } = useT();
   const [verses, setVerses] = useState<VerseText[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -99,13 +110,18 @@ export function QuranPortionReader({
 
   useEffect(() => {
     let cancelled = false;
-    fetchPortionText(refs, date)
+    fetchPortionText(refs, date, locale)
       .then((v) => !cancelled && setVerses(v))
       .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [refs, date]);
+  }, [refs, date, locale]);
+
+  // Arabic shows the Arabic alone: no transliteration/translation to toggle
+  const hasTr = !!verses?.some((v) => v.tr);
+  const hasEn = !!verses?.some((v) => v.en);
+  const toggles = locale !== "ar" && (!verses || hasTr || hasEn);
 
   // keep the recited ayah in view (but don't yank the scroll on open)
   useEffect(() => {
@@ -129,24 +145,30 @@ export function QuranPortionReader({
         <PlaylistPlayer sources={audio} index={current} onIndexChange={setCurrent} />
       </div>
 
-      <div className="mb-5 mt-3 flex items-center justify-end gap-2 text-[0.72rem]">
-        <TogglePill on={showTr} onClick={() => setShowTr((v) => !v)}>
-          transliteration
-        </TogglePill>
-        <TogglePill on={showEn} onClick={() => setShowEn((v) => !v)}>
-          translation
-        </TogglePill>
-      </div>
+      {toggles ? (
+        <div className="mb-5 mt-3 flex items-center justify-end gap-2 text-[0.72rem]">
+          {(hasTr || !verses) && (
+            <TogglePill on={showTr} onClick={() => setShowTr((v) => !v)}>
+              {t("reader.toggle.transliteration")}
+            </TogglePill>
+          )}
+          {(hasEn || !verses) && (
+            <TogglePill on={showEn} onClick={() => setShowEn((v) => !v)}>
+              {t("reader.toggle.translation")}
+            </TogglePill>
+          )}
+        </div>
+      ) : (
+        <div className="mt-5" />
+      )}
 
       {failed ? (
         <p className="rounded-2xl border border-night-line-soft bg-night-raise/50 px-4 py-3 text-[0.9rem] text-cream-dim">
-          Couldn&rsquo;t load the verses right now — check your connection. The
-          recitation above still plays, and the Al-Islam.org links below open
-          the passage to read.
+          {t("reader.portion.failed")}
         </p>
       ) : !verses ? (
         <p className="py-6 text-center text-[0.85rem] italic text-cream-faint">
-          loading today&rsquo;s verses…
+          {t("reader.portion.loading")}
         </p>
       ) : (
         <ol ref={listRef} className="space-y-3">
@@ -163,7 +185,7 @@ export function QuranPortionReader({
               >
                 <p
                   className={cn(
-                    "text-[0.7rem] uppercase tracking-wider",
+                    "text-[0.7rem] uppercase tracking-wider rtl:normal-case rtl:tracking-normal",
                     i === current ? "text-gold-bright" : "text-gold-dim",
                   )}
                 >
@@ -209,6 +231,7 @@ function PageTicks({
   skip: number[];
   onSkip: (skip: number[]) => void;
 }) {
+  const { t } = useT();
   const list: number[] = [];
   for (let p = pages.from; p <= pages.to; p++) list.push(p);
   const off = new Set(skip);
@@ -216,14 +239,15 @@ function PageTicks({
   return (
     <div className="mt-8 rounded-2xl border border-night-line-soft px-4 py-4">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[0.72rem] uppercase tracking-[0.16em] text-gold-dim">Pages read</p>
+        <p className="text-[0.72rem] uppercase tracking-[0.16em] text-gold-dim rtl:normal-case rtl:tracking-normal">
+          {t("reader.portion.pagesRead")}
+        </p>
         <p className="text-[0.75rem] tabular-nums text-cream-faint">
-          {read} of {list.length}
+          {t("reader.portion.readOf", { read, total: list.length })}
         </p>
       </div>
       <p className="mt-1.5 text-[0.78rem] leading-snug text-cream-faint">
-        Didn&rsquo;t get through all of it? Untick the pages you didn&rsquo;t read — they wait for you as
-        pages owed, nothing is lost.
+        {t("reader.portion.untickHint")}
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {list.map((p) => {
@@ -251,20 +275,24 @@ function PageTicks({
 
 /** Under the day's portion: pages owed from missed days, read now if there is time. */
 function CatchUpHint() {
+  const { t } = useT();
   const owed = useQuranOwed();
   if (!owed.next || owed.pages <= 0) return null;
   const n = owed.next.to - owed.next.from + 1;
+  // the owed count is highlighted wherever the language puts it in the sentence
+  const [before, after = ""] = t("reader.portion.owedText").split("{owed}");
   return (
     <div className="mt-4 rounded-2xl border border-gold-dim/40 bg-night-card px-4 py-4">
       <p className="text-[0.85rem] leading-snug text-cream-dim">
-        <span className="text-gold-bright">{owed.pages} {owed.pages === 1 ? "page" : "pages"} owed</span> from
-        days you missed. Have more time today? Read on — the coming portions shrink as you catch up.
+        {before}
+        <span className="text-gold-bright">{t("reader.portion.owed", { count: owed.pages })}</span>
+        {after}
       </p>
       <button
         onClick={() => openCatchUp(owed.next!)}
         className="mt-3 w-full rounded-xl border border-gold-dim/60 py-2.5 text-[0.85rem] text-gold-bright transition hover:border-gold active:scale-[0.99]"
       >
-        Read {n} more {n === 1 ? "page" : "pages"} now
+        {t("reader.portion.readMore", { count: n })}
       </button>
     </div>
   );
@@ -283,7 +311,7 @@ function TogglePill({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1 uppercase tracking-wider transition",
+        "rounded-full border px-3 py-1 uppercase tracking-wider transition rtl:normal-case rtl:tracking-normal",
         on
           ? "border-gold-dim/70 text-gold-bright"
           : "border-night-line text-cream-faint hover:text-cream-dim",

@@ -4,6 +4,7 @@
 // range into the checklist item: exact verses, per-ayah audio (Alafasy, from
 // everyayah.com) and the Al-Islam.org links.
 // Page/verse boundaries generated from api.alquran.cloud/v1/meta (Madani 604).
+import { translate, type Locale } from "@/lib/i18n";
 import type { Amal, AudioSource } from "./types";
 
 const TOTAL_PAGES = 604;
@@ -82,21 +83,33 @@ export function legacyRange(date: Date): PageRange {
   };
 }
 
-/** The day's Quran reading as a checklist item, for an explicit page range. */
-export function quranPortionFor(range: PageRange, note?: string): Amal {
+/** A surah's name in the reader's language (Arabic: "سورة …"). */
+function surahName(s: number, locale: Locale): string {
+  return locale === "ar" ? `سورة ${SURAH_NAMES_AR[s - 1]}` : SURAH_NAMES[s - 1];
+}
+
+/**
+ * The day's Quran reading as a checklist item, for an explicit page range,
+ * with its generated texts in `locale` (`note` is shown as given).
+ */
+export function quranPortionFor(range: PageRange, note?: string, locale: Locale = "en"): Amal {
+  const t = (key: string, vars?: Record<string, string | number>) => translate(locale, key, vars);
   const start = range.from;
   const end = range.to;
   const pages = end - start + 1;
   const juz = juzAtPage(start);
-  const pageLabel = pages === 1 ? `page ${start}` : `pages ${start}–${end}`;
+  const pageLabel =
+    pages === 1 ? t("reader.portion.page", { n: start }) : t("reader.portion.pages", { from: start, to: end });
 
   // exact verse range: first ayah of the first page through the last ayah
   // before the next day's first page (or the end of the Quran on page 604)
   const [s1, a1] = PAGE_STARTS[start - 1];
   const [s2, a2] =
     end >= TOTAL_PAGES ? ([114, 6] as [number, number]) : prevAyah(PAGE_STARTS[end]);
-  const from = `${SURAH_NAMES[s1 - 1]} ${a1}`;
-  const to = `${SURAH_NAMES[s2 - 1]} ${a2}`;
+  const from = t("reader.portion.ref", { surah: surahName(s1, locale), ayah: a1 });
+  const to = t("reader.portion.ref", { surah: surahName(s2, locale), ayah: a2 });
+  const span = t("reader.portion.span", { from, to });
+  const reciter = t("reader.portion.reciter");
 
   // one mp3 per ayah so the app reads the exact portion aloud, in order;
   // verseRefs stays 1:1 with the audio so the reader can follow along
@@ -105,10 +118,14 @@ export function quranPortionFor(range: PageRange, note?: string): Amal {
   for (let s = s1; s <= s2; s++) {
     const first = s === s1 ? a1 : 1;
     const last = s === s2 ? a2 : VERSE_COUNTS[s - 1];
+    const name = surahName(s, locale);
     for (let a = first; a <= last; a++) {
-      verseRefs.push({ surah: s, ayah: a, name: SURAH_NAMES[s - 1] });
+      verseRefs.push({ surah: s, ayah: a, name });
       audio.push({
-        title: `${SURAH_NAMES[s - 1]} ${a} — Mishary Alafasy`,
+        title: t("reader.portion.audioTitle", {
+          ref: t("reader.portion.ref", { surah: name, ayah: a }),
+          reciter,
+        }),
         reciter: "Mishary Rashid Alafasy",
         kind: "mp3",
         url: `https://everyayah.com/data/Alafasy_128kbps/${pad3(s)}${pad3(a)}.mp3`,
@@ -118,38 +135,37 @@ export function quranPortionFor(range: PageRange, note?: string): Amal {
 
   const links = [
     {
-      label: `Read Surah ${SURAH_NAMES[s1 - 1]} (from verse ${a1}) — Al-Islam.org`,
+      label: t("reader.portion.linkRead", { surah: surahName(s1, locale), ayah: a1 }),
       url: `https://al-islam.org/quran/${s1}`,
     },
   ];
   if (s2 !== s1) {
     links.push({
-      label: `…continue to Surah ${SURAH_NAMES[s2 - 1]} (to verse ${a2}) — Al-Islam.org`,
+      label: t("reader.portion.linkContinue", { surah: surahName(s2, locale), ayah: a2 }),
       url: `https://al-islam.org/quran/${s2}`,
     });
   }
 
   return {
     id: "quran-daily",
-    title: "Daily Quran Portion",
+    title: t("reader.portion.title"),
     arabicTitle: "وِرْدُ ٱلْقُرْآنِ",
-    subtitle: `Today: ${from} → ${to} · ${pageLabel} · Juz ${juz}`,
+    subtitle: t("reader.portion.subtitle", { span, pages: pageLabel, juz }),
     type: "quran",
     days: "daily",
     timeOfDay: "any",
     minutes: pages * 2,
-    merit:
-      `${note ? note + " " : ""}Your portion continues from where you stopped, and is sized so the whole Quran is completed within a month of starting it — about a juz a day — a missed day is made up, never skipped. Press play below and the exact verses (${from} → ${to}) are recited to you one by one, or read them on Al-Islam.org.`,
+    merit: `${note ? note + " " : ""}${t("reader.portion.merit", { span })}`,
     lines: [
       {
-        ar: "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيْطَانِ ٱلرَّجِيمِ",
+        ar: "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيْطَانِ ٱلرَّجِيمِ",
         tr: "A'udhu billahi minash-shaytanir-rajim",
-        en: "I seek refuge in Allah from Satan, the accursed.",
+        en: t("reader.portion.audhu"),
       },
       {
-        ar: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        ar: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
         tr: "Bismillahir-Rahmanir-Rahim",
-        en: `In the name of Allah, the Entirely Merciful, the Especially Merciful. — today's reading is ${from} through ${to}.`,
+        en: t("reader.portion.bismillah", { from, to }),
       },
     ],
     audio,

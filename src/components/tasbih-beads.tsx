@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import type { CounterPhase } from "@/data";
 import { useCountState } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { useCountKeys } from "@/lib/use-count-keys";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function TasbihBeads({
   phases: CounterPhase[];
   onComplete: () => void;
 }) {
+  const { t } = useT();
   const [state, setState] = useCountState(amalId, date);
   const doneRef = useRef(false);
   const phase = phases[Math.min(state.phase, phases.length - 1)];
@@ -75,14 +77,18 @@ export function TasbihBeads({
               تَقَبَّلَ اللَّهُ
             </p>
             <p className="mt-2 text-sm italic text-cream-dim">
-              Tasbih complete — may it be accepted.
+              {t("reader.tasbih.complete")}
             </p>
           </>
         ) : (
           <>
             <p className="arabic-text animate-rise text-4xl text-cream">{phase.phrase.ar}</p>
-            <p className="mt-2 text-sm italic text-sage/85">{phase.phrase.tr}</p>
-            <p className="mt-0.5 text-[0.82rem] text-cream-dim">{phase.phrase.en}</p>
+            {phase.phrase.tr && (
+              <p className="mt-2 text-sm italic text-sage/85">{phase.phrase.tr}</p>
+            )}
+            {phase.phrase.en && (
+              <p className="mt-0.5 text-[0.82rem] text-cream-dim">{phase.phrase.en}</p>
+            )}
           </>
         )}
       </div>
@@ -91,7 +97,7 @@ export function TasbihBeads({
       <button
         onClick={tap}
         disabled={finished}
-        aria-label="Pass one bead"
+        aria-label={t("reader.tasbih.pass")}
         className="relative mt-2 block h-[230px] w-full max-w-md touch-manipulation overflow-hidden outline-none"
       >
         <Strand
@@ -115,8 +121,8 @@ export function TasbihBeads({
       </button>
 
       {!finished && (
-        <p className="mt-3 text-[0.78rem] uppercase tracking-[0.2em] text-cream-faint">
-          tap to pass a bead
+        <p className="mt-3 text-[0.78rem] uppercase tracking-[0.2em] text-cream-faint rtl:normal-case rtl:tracking-normal">
+          {t("reader.tasbih.tap")}
         </p>
       )}
 
@@ -140,11 +146,7 @@ export function TasbihBeads({
         {Math.min(doneAll, totalAll)} / {totalAll}
       </p>
 
-      <p className="mt-4 hidden text-center text-[0.68rem] tracking-wide text-cream-faint md:block">
-        <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Space</kbd> to
-        count · <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Backspace</kbd>{" "}
-        to undo
-      </p>
+      <CountKeysHint />
       <button
         onClick={() => {
           doneRef.current = false;
@@ -153,9 +155,29 @@ export function TasbihBeads({
         className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-faint transition hover:text-cream-dim"
       >
         <RotateCcw className="size-3" />
-        start over
+        {t("reader.counter.startOver")}
       </button>
     </div>
+  );
+}
+
+/** "Space to count · Backspace to undo", with the keys drawn as keys (desktop only). */
+export function CountKeysHint() {
+  const { t } = useT();
+  const kbd = (key: string) => (
+    <kbd key={key} className="rounded border border-night-line px-1.5 py-0.5 font-sans">
+      {t(key)}
+    </kbd>
+  );
+  const parts = t("reader.keys.hint")
+    .split(/(\{space\}|\{backspace\})/)
+    .map((part) =>
+      part === "{space}" ? kbd("reader.keys.space") : part === "{backspace}" ? kbd("reader.keys.backspace") : part,
+    );
+  return (
+    <p className="mt-4 hidden text-center text-[0.68rem] tracking-wide text-cream-faint md:block rtl:tracking-normal">
+      {parts}
+    </p>
   );
 }
 

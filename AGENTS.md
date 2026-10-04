@@ -63,3 +63,11 @@ Qada prayers (`qada-salat`, one day = 17 rak'ahs) open the Evening session — a
 The owner wants anything worth keeping saved in the cloud this way, never only in the browser.
 Old address: the phone PWA was installed from https://dailyaamal.vercel.app (pre-rename). Keep it pointing at production —
 if it is not a project domain, run `vercel alias set <new-deployment-url> dailyaamal.vercel.app` after every prod deploy.
+Languages: English, Italian, Arabic (RTL) and German. src/lib/i18n.ts (`useT()` → t, locale, intl, rtl; `da:lang`, device-local;
+<html lang dir> set before paint by src/lib/locale-boot.ts). Screen text lives in src/i18n/ui/{core,day,reader,calendar}.ts —
+every key in all four languages (Arabic gets full plural forms). Content is translated BY ITS ENGLISH TEXT:
+src/i18n/content/<locale>/*.json, lazy-loaded (src/lib/content-i18n.ts: useContent().tx, localizeAmal). After adding or
+changing any English content string in src/data, run `npx tsx --tsconfig tsconfig.json scripts/i18n-extract.mts` and add
+translations for the new strings (read-*.json = translations of recited Arabic, it/de only; Arabic shows the Arabic alone).
+Layout uses logical classes only (ps/pe/ms/me/start/end/text-start/border-s) and `rtl:-scale-x-100` on directional icons;
+swipe and ←/→ invert in RTL. Quran verse translations: it.piccardo, de.aburida, en.sahih (api.alquran.cloud).

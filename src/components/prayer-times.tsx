@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, LocateFixed, MapPin, Pencil } from "lucide-react";
 import { todayKey } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 interface Timings {
   Fajr: string;
@@ -21,14 +22,19 @@ interface Loc {
   source: "geo" | "ip" | "manual";
 }
 
-const SHOWN: { key: keyof Timings; label: string }[] = [
-  { key: "Fajr", label: "Fajr" },
-  { key: "Sunrise", label: "Sunrise" },
-  { key: "Dhuhr", label: "Dhuhr" },
-  { key: "Sunset", label: "Sunset" },
-  { key: "Maghrib", label: "Maghrib" },
-  { key: "Midnight", label: "Midnight" },
+// labels come from the dictionary: t(`prayer.${key}`)
+const SHOWN: { key: keyof Timings }[] = [
+  { key: "Fajr" },
+  { key: "Sunrise" },
+  { key: "Dhuhr" },
+  { key: "Sunset" },
+  { key: "Maghrib" },
+  { key: "Midnight" },
 ];
+
+/** Fallback labels stored in English (older saves too) — shown translated. */
+const YOUR_LOCATION = "your location";
+const APPROXIMATE_LOCATION = "approximate location";
 
 const LOC_KEY = "da:location";
 
@@ -57,7 +63,7 @@ async function labelFor(lat: number, lon: number): Promise<string> {
     const city = j.city || j.locality || j.principalSubdivision;
     if (city) return j.countryCode ? `${city}, ${j.countryCode}` : city;
   } catch {}
-  return "your location";
+  return YOUR_LOCATION;
 }
 
 /**
@@ -101,7 +107,7 @@ async function detectLoc(useBrowserGeo = false): Promise<Loc> {
         return {
           lat,
           lon,
-          label: city ? `${city}${cc ? `, ${cc}` : ""}` : "approximate location",
+          label: city ? `${city}${cc ? `, ${cc}` : ""}` : APPROXIMATE_LOCATION,
           source: "ip",
         };
       }
@@ -116,10 +122,10 @@ interface Suggestion extends Loc {
 }
 
 /** Search place names → suggestions (Nominatim). */
-async function searchPlaces(query: string): Promise<Suggestion[]> {
+async function searchPlaces(query: string, lang: string): Promise<Suggestion[]> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=en`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=${lang}`,
     );
     const j = await res.json();
     if (!Array.isArray(j)) return [];
@@ -158,6 +164,13 @@ type State =
  * for a location that is detected once, shown, and manually changeable.
  */
 export function PrayerTimes({ date }: { date: Date }) {
+  const { t, locale } = useT();
+  const placeLabel = (label: string) =>
+    label === YOUR_LOCATION
+      ? t("prayer.yourLocation")
+      : label === APPROXIMATE_LOCATION
+        ? t("prayer.approximateLocation")
+        : label;
   const [state, setState] = useState<State>({ status: "loading" });
   const [loc, setLoc] = useState<Loc | null>(null);
   // phones show the full grid by default; the summary line collapses it
@@ -181,14 +194,14 @@ export function PrayerTimes({ date }: { date: Date }) {
       return;
     }
     setSearching(true);
-    const t = setTimeout(async () => {
-      const found = await searchPlaces(q);
+    const timer = setTimeout(async () => {
+      const found = await searchPlaces(q, locale);
       setSuggestions(found);
       setHighlight(0);
       setSearching(false);
     }, 350);
-    return () => clearTimeout(t);
-  }, [query, editing]);
+    return () => clearTimeout(timer);
+  }, [query, editing, locale]);
 
   // resolve location once (stored > detected)
   useEffect(() => {
@@ -236,9 +249,9 @@ export function PrayerTimes({ date }: { date: Date }) {
         );
         const json = await res.json();
         if (json.code !== 200) throw new Error("bad response");
-        const t = json.data.timings as Timings;
+        const raw = json.data.timings as Timings;
         const timings = Object.fromEntries(
-          SHOWN.map(({ key }) => [key, (t[key] ?? "").slice(0, 5)]),
+          SHOWN.map(({ key }) => [key, (raw[key] ?? "").slice(0, 5)]),
         ) as unknown as Timings;
         try {
           localStorage.setItem(cacheKey, JSON.stringify(timings));
@@ -278,7 +291,7 @@ export function PrayerTimes({ date }: { date: Date }) {
     return (
       <p className="mt-4 flex items-center justify-center gap-1.5 text-[0.75rem] text-cream-faint">
         <MapPin className="size-3" />
-        Prayer times unavailable — check your connection
+        {t("prayer.unavailable")}
       </p>
     );
   }
@@ -311,13 +324,13 @@ export function PrayerTimes({ date }: { date: Date }) {
           <MapPin className="size-3.5 shrink-0 text-gold-dim" />
           {nextKey && timings ? (
             <span className="truncate">
-              Next ·{" "}
+              {t("prayer.next")} ·{" "}
               <span className="text-cream">
-                {nextKey} {timings[nextKey]}
+                {t(`prayer.${nextKey}`)} {timings[nextKey]}
               </span>
             </span>
           ) : (
-            <span className="truncate">Prayer times{loc ? ` · ${loc.label}` : ""}</span>
+            <span className="truncate">{t("prayer.title")}{loc ? ` · ${placeLabel(loc.label)}` : ""}</span>
           )}
         </span>
         <ChevronDown
@@ -327,7 +340,7 @@ export function PrayerTimes({ date }: { date: Date }) {
 
       <div className={cn(open ? "mt-2 block" : "hidden", "sm:mt-0 sm:block")}>
       <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-night-line-soft bg-night-raise/60 sm:grid-cols-6">
-        {SHOWN.map(({ key, label }) => (
+        {SHOWN.map(({ key }) => (
           <div
             key={key}
             className={cn(
@@ -337,11 +350,11 @@ export function PrayerTimes({ date }: { date: Date }) {
           >
             <span
               className={cn(
-                "text-[0.62rem] uppercase tracking-wider",
+                "text-center text-[0.62rem] uppercase tracking-wider",
                 nextKey === key ? "text-gold-bright" : "text-cream-faint",
               )}
             >
-              {label}
+              {t(`prayer.${key}`)}
             </span>
             <span
               className={cn(
@@ -360,15 +373,15 @@ export function PrayerTimes({ date }: { date: Date }) {
         <div className="mt-1.5 flex items-center justify-center gap-2 text-[0.7rem] text-cream-faint">
           <span className="inline-flex items-center gap-1">
             <MapPin className="size-3" />
-            {loc ? loc.label : "locating…"}
-            {loc?.source === "ip" && " (approximate)"}
+            {loc ? placeLabel(loc.label) : t("prayer.locating")}
+            {loc?.source === "ip" && ` ${t("prayer.approximate")}`}
           </span>
           <button
             onClick={() => setEditing(true)}
             className="inline-flex items-center gap-1 rounded-full border border-night-line px-2 py-0.5 transition hover:border-gold-dim hover:text-cream-dim"
           >
             <Pencil className="size-2.5" />
-            change
+            {t("prayer.change")}
           </button>
         </div>
       ) : (
@@ -391,14 +404,14 @@ export function PrayerTimes({ date }: { date: Date }) {
                   setEditing(false);
                 }
               }}
-              placeholder="Start typing a city… e.g. Najaf, Qom, London"
+              placeholder={t("prayer.placeholder")}
               className="w-full rounded-2xl border border-night-line bg-night-card px-4 py-2.5 text-[16px] text-cream placeholder:text-cream-faint focus:border-gold-dim focus:outline-none"
             />
             {(suggestions.length > 0 || searching) && (
               <ul className="absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-2xl border border-night-line bg-night-card shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
                 {searching && suggestions.length === 0 && (
                   <li className="px-4 py-3 text-[0.78rem] italic text-cream-faint">
-                    searching…
+                    {t("prayer.searching")}
                   </li>
                 )}
                 {suggestions.map((s, i) => (
@@ -433,7 +446,7 @@ export function PrayerTimes({ date }: { date: Date }) {
               className="inline-flex items-center gap-1 rounded-full border border-night-line px-3 py-1.5 text-[0.72rem] text-cream-dim transition hover:border-gold-dim hover:text-cream disabled:opacity-60"
             >
               <LocateFixed className="size-3" />
-              {detecting ? "detecting…" : "use my location"}
+              {detecting ? t("prayer.detecting") : t("prayer.useMyLocation")}
             </button>
             <button
               onClick={() => {
@@ -442,17 +455,17 @@ export function PrayerTimes({ date }: { date: Date }) {
               }}
               className="rounded-full px-3 py-1.5 text-[0.72rem] text-cream-faint hover:text-cream-dim"
             >
-              cancel
+              {t("prayer.cancel")}
             </button>
           </div>
           {editError && (
             <p className="mt-1.5 text-center text-[0.7rem] text-[#c0666e]">
-              Couldn&rsquo;t detect your location — try typing a city instead
+              {t("prayer.detectFailed")}
             </p>
           )}
           {query.trim().length >= 2 && !searching && suggestions.length === 0 && (
             <p className="mt-1.5 text-center text-[0.7rem] text-cream-faint">
-              No places found — keep typing or try another spelling
+              {t("prayer.noPlaces")}
             </p>
           )}
         </div>

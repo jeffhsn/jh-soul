@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { aamalForDay, morningForDay, type Weekday } from "@/data";
 import { eventsFor } from "@/data/hijri-events";
 import { gregorianDate, hijriDate, hijriParts, todayKey } from "@/lib/dates";
+import { useT } from "@/lib/i18n";
+import { localizeAmal, useContent } from "@/lib/content-i18n";
 import {
   aamalKey,
   dayMarks,
@@ -55,8 +57,6 @@ const FocusView = dynamic(
   () => import("./focus-view").then((m) => m.FocusView),
   { ssr: false },
 );
-
-const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function DailyView() {
   // resolve "today" on the client only, to avoid SSR/client date mismatch
@@ -97,6 +97,8 @@ export function DailyView() {
 }
 
 function DayContent({ now }: { now: Date }) {
+  const { t, locale, intl, rtl } = useT();
+  const { tx } = useContent();
   // offset in days from the active day; 0 = the active day.
   // The active day is the calendar day, except that it turns over at Fajr
   // rather than midnight, so a sitting after Maghrib that runs late (and
@@ -128,10 +130,14 @@ function DayContent({ now }: { now: Date }) {
     return portionFor(date, activeKey);
   }, [date, activeKey, quranTick]);
   // two sessions a day: the morning one after Fajr, the evening one after Maghrib
-  const morningAamal = useMemo(() => morningForDay(weekday, viewed), [weekday, viewed]);
+  // every amal shown is in the chosen language (titles, subtitles, merits, steps…)
+  const morningAamal = useMemo(
+    () => morningForDay(weekday, viewed, locale).map((a) => localizeAmal(a, tx, locale)),
+    [weekday, viewed, locale, tx],
+  );
   const eveningAamal = useMemo(
-    () => aamalForDay(weekday, viewed, quranRange),
-    [weekday, viewed, quranRange],
+    () => aamalForDay(weekday, viewed, quranRange, locale).map((a) => localizeAmal(a, tx, locale)),
+    [weekday, viewed, quranRange, locale, tx],
   );
   const aamal = useMemo(() => [...morningAamal, ...eveningAamal], [morningAamal, eveningAamal]);
   const [done, setDoneRaw] = useDone(date);
@@ -163,16 +169,16 @@ function DayContent({ now }: { now: Date }) {
   }, []);
   const catchUpAmal = useMemo(() => {
     if (!catchUp) return null;
-    const a = quranPortionFor(catchUp.range);
+    const a = localizeAmal(quranPortionFor(catchUp.range, undefined, locale), tx, locale);
     return {
       ...a,
       id: "quran-catchup",
-      title: "Quran catch-up",
-      subtitle: a.subtitle?.replace(/^Today: /, ""),
-      merit:
-        "Pages owed from days you missed or pages you didn't tick. Read as much as you have time for — untick any page you don't get to, and it stays owed. Every page read here brings the coming portions back down.",
+      title: t("day.catchUp.title"),
+      // drop the portion's "Today: " lead-in, in whichever language it came
+      subtitle: a.subtitle?.replace(/^[^:·→]+:\s*/, ""),
+      merit: t("day.catchUp.merit"),
     };
-  }, [catchUp]);
+  }, [catchUp, locale, tx, t]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   // phone navigation: the list is the app; calendar and progress are one tap away
@@ -221,12 +227,15 @@ function DayContent({ now }: { now: Date }) {
         (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)
       )
         return;
-      if (e.key === "ArrowLeft") setOffset((o) => o - 1);
-      else if (e.key === "ArrowRight") setOffset((o) => o + 1);
+      // in right-to-left Arabic the previous day lies to the right
+      const back = rtl ? "ArrowRight" : "ArrowLeft";
+      const forward = rtl ? "ArrowLeft" : "ArrowRight";
+      if (e.key === back) setOffset((o) => o - 1);
+      else if (e.key === forward) setOffset((o) => o + 1);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [openId]);
+  }, [openId, rtl]);
 
   // swipe left/right anywhere on the day (except the calendar) to change days,
   // mirroring the arrow keys on desktop
@@ -248,7 +257,9 @@ function DayContent({ now }: { now: Date }) {
     const dy = t.clientY - s.y;
     // decisively horizontal only, so vertical scrolling never changes the day
     if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) {
-      setOffset((o) => o + (dx < 0 ? 1 : -1));
+      // swiping toward the reading direction's start brings the next day (mirrored in RTL)
+      const forward = rtl ? dx > 0 : dx < 0;
+      setOffset((o) => o + (forward ? 1 : -1));
     }
   }
 
@@ -288,7 +299,7 @@ function DayContent({ now }: { now: Date }) {
       <aside className="no-scrollbar scroll-fade hidden xl:block xl:h-dvh xl:overflow-y-auto xl:border-e xl:border-night-line-soft/60 xl:py-12 xl:pe-12 animate-rise">
         <CalendarPanel />
         <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
-          Umm al-Qura dates — moon-sighting may differ by a day.
+          {t("day.ummAlQura")}
         </p>
       </aside>
 
@@ -297,7 +308,7 @@ function DayContent({ now }: { now: Date }) {
         <div className="animate-rise lg:hidden">
           <CalendarPanel />
           <p className="mt-6 text-center text-[0.7rem] italic text-cream-faint">
-            Umm al-Qura dates — moon-sighting may differ by a day.
+            {t("day.ummAlQura")}
           </p>
         </div>
       )}
@@ -340,24 +351,27 @@ function DayContent({ now }: { now: Date }) {
         {/* week strip — larger screens only; phones use the arrows beside the date */}
         <div className="mt-6 hidden items-center justify-between gap-2 sm:flex">
           <button
-            aria-label="Previous day"
+            aria-label={t("day.prevDay")}
             onClick={() => setOffset((o) => o - 1)}
             className={navButton}
           >
             <ChevronLeft className="rtl:-scale-x-100 size-4" />
           </button>
           <div className="flex flex-1 items-center justify-center gap-2">
-            {DAY_LETTERS.map((letter, d) => {
+            {Array.from({ length: 7 }, (_, d) => {
               // the strip always shows the week containing the *viewed* day
               const dayDate = new Date(viewed);
               dayDate.setDate(dayDate.getDate() + (d - viewed.getDay()));
               const dayOffset = offset + (d - viewed.getDay());
               const selected = d === viewed.getDay();
               const isTodayDot = dayOffset === 0;
+              const letter = new Intl.DateTimeFormat(intl, { weekday: "narrow" }).format(dayDate);
               return (
                 <button
                   key={d}
-                  aria-label={`View ${dayDate.toDateString()}`}
+                  aria-label={t("day.viewDate", {
+                    date: new Intl.DateTimeFormat(intl, { dateStyle: "full" }).format(dayDate),
+                  })}
                   onClick={() => setOffset(dayOffset)}
                   className={
                     "flex size-10 shrink-0 flex-col items-center justify-center rounded-full leading-none transition " +
@@ -377,7 +391,7 @@ function DayContent({ now }: { now: Date }) {
             })}
           </div>
           <button
-            aria-label="Next day"
+            aria-label={t("day.nextDay")}
             onClick={() => setOffset((o) => o + 1)}
             className={navButton}
           >
@@ -388,7 +402,7 @@ function DayContent({ now }: { now: Date }) {
         {/* the day itself — front and centre */}
         <div className="mt-5 flex items-center gap-2 sm:mt-6">
           <button
-            aria-label="Previous day"
+            aria-label={t("day.prevDay")}
             onClick={() => setOffset((o) => o - 1)}
             className={navButton + " sm:hidden"}
           >
@@ -396,17 +410,17 @@ function DayContent({ now }: { now: Date }) {
           </button>
           <div className="min-w-0 flex-1 text-center sm:text-start">
             <h1 className="font-display text-[1.6rem] leading-tight tracking-tight sm:text-[1.7rem]">
-              {isToday ? (night ? "Tonight" : "Today") : gregorianDate(viewed)}
+              {isToday ? t(night ? "day.tonight" : "day.today") : gregorianDate(viewed, intl)}
             </h1>
             <p className="mt-0.5 text-[0.84rem] italic text-cream-dim sm:text-sm">
               {isToday && (
-                <span className="whitespace-nowrap">{gregorianDate(viewed)} · </span>
+                <span className="whitespace-nowrap">{gregorianDate(viewed, intl)} · </span>
               )}
-              <span className="whitespace-nowrap">{hijriDate(viewed)}</span>
+              <span className="whitespace-nowrap">{hijriDate(viewed, intl)}</span>
             </p>
           </div>
           <button
-            aria-label="Next day"
+            aria-label={t("day.nextDay")}
             onClick={() => setOffset((o) => o + 1)}
             className={navButton + " sm:hidden"}
           >
@@ -418,7 +432,7 @@ function DayContent({ now }: { now: Date }) {
           {streak > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-2.5 py-0.5 text-xs text-gold-bright">
               <Flame className="size-3.5" />
-              {streak}-day streak
+              {t("day.streak", { count: streak })}
             </span>
           )}
           {!isToday && (
@@ -426,7 +440,7 @@ function DayContent({ now }: { now: Date }) {
               onClick={() => setOffset(0)}
               className="rounded-full border border-gold-dim/50 px-2.5 py-0.5 text-xs text-gold-bright transition hover:border-gold"
             >
-              ← back to today
+              {t("day.backToToday")}
             </button>
           )}
         </div>
@@ -452,7 +466,7 @@ function DayContent({ now }: { now: Date }) {
                   }}
                 />
                 <span className="text-[0.85rem] leading-snug text-cream-dim">
-                  {e.title}
+                  {tx(e.title)}
                 </span>
               </Link>
             ))}
@@ -473,11 +487,16 @@ function DayContent({ now }: { now: Date }) {
           <p className="mt-2 flex items-center justify-between gap-3 text-[0.75rem] text-cream-faint">
             <span className="inline-flex items-center gap-1.5">
               <Sunrise className="size-3.5 shrink-0 text-gold-dim" />
-              Morning &amp; evening
+              {t("day.sessions")}
             </span>
             <span className="tabular-nums">
               {completed}/{total}
-              {allDone ? " · complete" : completed > 0 ? ` · ~${remainingMinutes} min left` : ` · ~${totalMinutes} min`}
+              {" · "}
+              {allDone
+                ? t("day.complete")
+                : completed > 0
+                  ? t("day.minLeft", { count: remainingMinutes })
+                  : t("day.minAbout", { count: totalMinutes })}
             </span>
           </p>
         </div>
@@ -487,15 +506,15 @@ function DayContent({ now }: { now: Date }) {
       {[
         {
           key: "morning",
-          title: "Morning",
-          when: isToday ? `after Fajr · ${fajrAt}` : "after Fajr",
+          title: t("day.morning"),
+          when: isToday ? t("day.afterFajrAt", { time: fajrAt }) : t("day.afterFajr"),
           Icon: Sunrise,
           list: morningOrdered,
         },
         {
           key: "evening",
-          title: "Evening",
-          when: isToday ? `after Maghrib · ${maghribAt}` : "after Maghrib",
+          title: t("day.evening"),
+          when: isToday ? t("day.afterMaghribAt", { time: maghribAt }) : t("day.afterMaghrib"),
           Icon: MoonStar,
           list: eveningOrdered,
         },
@@ -515,7 +534,8 @@ function DayContent({ now }: { now: Date }) {
                 <div className="hairline flex-1 self-center opacity-40" />
                 <span className="text-[0.72rem] tabular-nums text-cream-faint">
                   {list.length - left.length}/{list.length}
-                  {left.length > 0 ? ` · ~${mins} min` : " · done"}
+                  {" · "}
+                  {left.length > 0 ? t("day.minAbout", { count: mins }) : t("day.done")}
                 </span>
               </div>
               <div className="mt-2.5 space-y-2.5">
@@ -542,16 +562,14 @@ function DayContent({ now }: { now: Date }) {
             <p className="font-arabic text-2xl text-gold-bright">
               تَقَبَّلَ اللَّهُ أَعْمَالَكُمْ
             </p>
-            <p className="mt-2 font-display text-lg">May Allah accept your deeds.</p>
+            <p className="mt-2 font-display text-lg">{t("day.accept")}</p>
             <p className="mt-1 text-sm italic text-cream-dim">
-              {!isToday
-                ? "This day's session was completed."
-                : "Morning and evening are complete. Rest with a light heart."}
+              {!isToday ? t("day.pastComplete") : t("day.todayComplete")}
             </p>
             {streak > 0 && (
               <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-night-line px-3 py-1 text-xs text-gold-bright">
                 <Flame className="size-3.5" />
-                {streak}-day streak — keep it alight
+                {t("day.streakAlight", { count: streak })}
               </p>
             )}
           </div>
@@ -565,12 +583,12 @@ function DayContent({ now }: { now: Date }) {
             </ProgressRing>
             <div className="min-w-0">
               <p className="font-display text-[1.05rem]">
-                {isToday ? (night ? "Tonight's progress" : "Today's progress") : "This day's progress"}
+                {t(isToday ? (night ? "day.progressTonight" : "day.progressToday") : "day.progressDay")}
               </p>
               <p className="mt-0.5 text-[0.84rem] leading-snug text-cream-dim">
                 {completed === 0
-                  ? `Nothing checked yet — both sessions together are about ${totalMinutes} minutes.`
-                  : `${completed} of ${total} done · ~${remainingMinutes} min to finish.`}
+                  ? t("day.nothingYet", { count: totalMinutes })
+                  : t("day.doneOf", { done: completed, total, count: remainingMinutes })}
               </p>
             </div>
           </div>
@@ -585,7 +603,7 @@ function DayContent({ now }: { now: Date }) {
       <footer className="mt-14 text-center text-xs text-cream-faint">
         <div className="hairline mb-6 opacity-40" />
         <p className="italic">
-          &ldquo;Verily in the remembrance of Allah do hearts find rest.&rdquo; — Qur&rsquo;an 13:28
+          {t("day.verse")}
         </p>
       </footer>
       </div>
@@ -605,7 +623,7 @@ function DayContent({ now }: { now: Date }) {
         <div className="xl:hidden">
           <CalendarPanel />
           <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
-            Umm al-Qura dates — moon-sighting may differ by a day.
+            {t("day.ummAlQura")}
           </p>
         </div>
         <div className="hidden xl:block">
@@ -624,9 +642,9 @@ function DayContent({ now }: { now: Date }) {
         <div className="mx-auto flex max-w-xl">
           {(
             [
-              { key: "today", label: "Today", Icon: ListChecks },
-              { key: "calendar", label: "Calendar", Icon: CalendarDays },
-              { key: "progress", label: "Progress", Icon: TrendingUp },
+              { key: "today", label: t("day.tab.today"), Icon: ListChecks },
+              { key: "calendar", label: t("day.tab.calendar"), Icon: CalendarDays },
+              { key: "progress", label: t("day.tab.progress"), Icon: TrendingUp },
             ] as const
           ).map(({ key, label, Icon }) => (
             <button
@@ -669,7 +687,7 @@ function DayContent({ now }: { now: Date }) {
                 }
               : undefined
           }
-          doneLabel={open.id === "quran-daily" && portionSkip.length ? "I have read the ticked pages" : undefined}
+          doneLabel={open.id === "quran-daily" && portionSkip.length ? t("day.readTicked") : undefined}
         />
       )}
 
@@ -693,7 +711,7 @@ function DayContent({ now }: { now: Date }) {
             skip: catchUp.skip,
             onSkip: (skip) => setCatchUp((c) => (c ? { ...c, skip } : c)),
           }}
-          doneLabel={catchUp.skip.length ? "I have read the ticked pages" : "I have read these pages"}
+          doneLabel={t(catchUp.skip.length ? "day.readTicked" : "day.readThese")}
         />
       )}
     </main>

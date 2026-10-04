@@ -9,6 +9,7 @@ import { legacyRange, quranPortionFor, type PageRange } from "./quran-daily";
 import { occasionsFor } from "./occasions";
 import { hijriParts } from "@/lib/dates";
 import { dayMarks, formatMinutes } from "@/lib/aamal-day";
+import { translate, type Locale } from "@/lib/i18n";
 
 /** All aamal with researched audio merged in (Ali Fani first, then fallbacks). */
 export const allAamal: Amal[] = [
@@ -99,18 +100,18 @@ const fajrOf = (d: Date) => dayMarks(d).fajr;
 const laylAtDawn = (d: Date) => fajrOf(d) >= WAKE_AT + LAYL_MINUTES;
 const layl = () => allAamal.find((a) => a.id === "salat-layl")!;
 
-function laylMorning(d: Date): Amal {
+function laylMorning(d: Date, locale: Locale): Amal {
   return {
     ...layl(),
-    subtitle: `On waking, before Fajr at ${formatMinutes(fajrOf(d))} — 11 rak'ahs`,
-    morning: "Fajr is late this season, so it is prayed on waking, in its best time before dawn",
+    subtitle: translate(locale, "day.layl.morningSubtitle", { time: formatMinutes(fajrOf(d)) }),
+    morning: translate(locale, "day.layl.morningReason"),
   };
 }
 
-function laylEvening(d: Date): Amal {
+function laylEvening(d: Date, locale: Locale): Amal {
   return {
     ...layl(),
-    subtitle: `Before sleep this season — Fajr is at ${formatMinutes(fajrOf(d))}, too early to wake for`,
+    subtitle: translate(locale, "day.layl.eveningSubtitle", { time: formatMinutes(fajrOf(d)) }),
   };
 }
 
@@ -118,10 +119,10 @@ function laylEvening(d: Date): Amal {
  * The morning session, after Fajr: every amal whose time is the morning
  * (`morning` set). Real to-dos, ticked into the same `da:done` as the evening.
  */
-export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
+export function morningForDay(weekday: Weekday, date?: Date, locale: Locale = "en"): Amal[] {
   const list = allAamal
     .filter((a) => a.morning && (a.days === "daily" || a.days.includes(weekday)));
-  if (date && laylAtDawn(date)) list.push(laylMorning(date));
+  if (date && laylAtDawn(date)) list.push(laylMorning(date, locale));
   list.sort((a, b) => MORNING_ORDER.indexOf(a.id) - MORNING_ORDER.indexOf(b.id));
   // aamal of the daylight of today's Hijri date (Ghadir, Arafah, Arba'in…)
   if (date)
@@ -130,7 +131,12 @@ export function morningForDay(weekday: Weekday, date?: Date): Amal[] {
 }
 
 /** The evening session's to-dos, after Maghrib (morning aamal excluded). */
-export function aamalForDay(weekday: Weekday, date?: Date, quran?: PageRange): Amal[] {
+export function aamalForDay(
+  weekday: Weekday,
+  date?: Date,
+  quran?: PageRange,
+  locale: Locale = "en",
+): Amal[] {
   const list = allAamal.filter(
     (a) =>
       !a.morning &&
@@ -142,12 +148,12 @@ export function aamalForDay(weekday: Weekday, date?: Date, quran?: PageRange): A
   // On a changeover day this morning's list already holds one (prayed before
   // today's dawn), so tonight's takes its own id.
   else if (!laylAtDawn(dayAfter(date))) {
-    const night = laylEvening(dayAfter(date));
+    const night = laylEvening(dayAfter(date), locale);
     list.push(laylAtDawn(date) ? { ...night, id: "salat-layl-night" } : night);
   }
   if (date) {
     // the portion comes from real reading progress (src/lib/khatm.ts)
-    list.push(quranPortionFor(quran ?? legacyRange(date)));
+    list.push(quranPortionFor(quran ?? legacyRange(date), undefined, locale));
     // tonight, after Maghrib, is already the night of TOMORROW's Hijri date
     const tomorrow = dayAfter(date);
     list.push(
@@ -159,13 +165,17 @@ export function aamalForDay(weekday: Weekday, date?: Date, quran?: PageRange): A
   return list.sort((a, b) => rank(a) - rank(b));
 }
 
-export const TIME_LABELS: Record<TimeOfDay, string> = {
-  morning: "Morning",
-  afternoon: "Afternoon",
-  any: "Through the day",
-  evening: "Evening",
-  night: "Night",
-};
+const TIMES: TimeOfDay[] = ["morning", "afternoon", "any", "evening", "night"];
+
+/** "Morning", "Through the day"… in the given language. */
+export function timeLabels(locale: Locale): Record<TimeOfDay, string> {
+  return Object.fromEntries(TIMES.map((t) => [t, translate(locale, `day.time.${t}`)])) as Record<
+    TimeOfDay,
+    string
+  >;
+}
+
+export const TIME_LABELS: Record<TimeOfDay, string> = timeLabels("en");
 
 export type {
   Amal,

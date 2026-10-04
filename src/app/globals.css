@@ -148,12 +148,32 @@ body {
   font-family: var(--font-arabic);
 }
 
-/* Arabic dua text */
+/* Arabic dua text — always right to left, in either page direction */
 .arabic-text {
   font-family: var(--font-arabic);
   direction: rtl;
   line-height: 2.2;
   word-spacing: 0.08em;
+}
+
+/* ---------- Arabic interface (html lang="ar", dir="rtl") ---------- */
+/* Amiri for the whole UI, a touch larger: its letters sit small on the line.
+   The display face keeps Fraunces for Latin digits and falls to Amiri for
+   Arabic letters. */
+html[lang="ar"] {
+  --font-body: var(--font-arabic);
+  --font-display: var(--font-fraunces), var(--font-amiri), "Amiri", "Scheherazade New", serif;
+  font-size: 128%;
+}
+html[lang="ar"] body {
+  font-family: var(--font-arabic);
+}
+/* Arabic letters must stay joined: no tracking, no case changes anywhere */
+html[lang="ar"] *,
+html[lang="ar"] *::before,
+html[lang="ar"] *::after {
+  letter-spacing: 0 !important;
+  text-transform: none !important;
 }
 
 /* thin gold hairline used as ornament */

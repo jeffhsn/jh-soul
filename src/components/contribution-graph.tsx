@@ -3,9 +3,16 @@
 import { useMemo } from "react";
 import { aamalDate } from "@/lib/aamal-day";
 import { daysAgoKey, todayKey } from "@/lib/dates";
+import { useT } from "@/lib/i18n";
 
 const WEEKS = 17; // ~4 months
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Fill {placeholders} with React nodes (the highlighted figures). */
+function rich(text: string, nodes: Record<string, React.ReactNode>): React.ReactNode[] {
+  return text.split(/\{(\w+)\}/).map((part, i) =>
+    i % 2 ? <span key={i}>{nodes[part] ?? part}</span> : part,
+  );
+}
 
 interface Cell {
   key: string;
@@ -47,7 +54,9 @@ function readDay(key: string): { completed: number; total: number; bonus: number
  * day's aamal completed; full completion glows.
  */
 export function ContributionGraph({ refresh }: { refresh?: unknown }) {
+  const { t, intl } = useT();
   const { cells, monthLabels, stats } = useMemo(() => {
+    const monthFmt = new Intl.DateTimeFormat(intl, { month: "short" });
     void refresh; // recompute when today's done-map changes
     const today = aamalDate(); // the active day turns over at Fajr, not midnight
     // last column = current week; align grid start to that week's Sunday
@@ -76,7 +85,7 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
                 ? 2
                 : 1;
       if (cur.getDate() === 1) {
-        monthLabels.push({ col: Math.floor(i / 7), label: MONTHS[cur.getMonth()] });
+        monthLabels.push({ col: Math.floor(i / 7), label: monthFmt.format(cur) });
       }
       cells.push({
         key,
@@ -103,13 +112,13 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
       if (total > 0 && completed >= total) perfect++;
     }
     return { cells, monthLabels, stats: { active, perfect, bonus: bonusTotal } };
-  }, [refresh]);
+  }, [refresh, intl]);
 
   return (
     <div>
       <div className="mb-3 flex items-center gap-3">
         <h3 className="font-display text-[0.78rem] uppercase tracking-[0.22em] text-gold-dim">
-          Your consistency
+          {t("heat.title")}
         </h3>
         <div className="hairline flex-1 opacity-40" />
       </div>
@@ -140,7 +149,11 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
             title={
               c.future
                 ? undefined
-                : `${c.date.toLocaleDateString("en", { day: "numeric", month: "short" })} — ${c.completed}${c.total ? `/${c.total}` : ""} aamal${c.bonus ? ` · +${c.bonus} morning` : ""}`
+                : t(c.total ? "heat.cellOf" : "heat.cell", {
+                    date: c.date.toLocaleDateString(intl, { day: "numeric", month: "short" }),
+                    done: c.completed,
+                    total: c.total,
+                  }) + (c.bonus ? t("heat.cellBonus", { count: c.bonus }) : "")
             }
             className="relative aspect-square w-full rounded-[3px] transition-colors"
             style={c.future ? { background: "transparent" } : LEVEL_STYLE[c.level]}
@@ -158,28 +171,26 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
       {/* legend + stats */}
       <div className="mt-3 flex items-center justify-between text-[0.62rem] text-cream-faint">
         <span className="inline-flex items-center gap-1">
-          less
+          {t("heat.less")}
           {([0, 1, 2, 3, 4] as const).map((l) => (
             <span key={l} className="size-2.5 rounded-[2px]" style={LEVEL_STYLE[l]} />
           ))}
-          more
+          {t("heat.more")}
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="size-[3px] rounded-full" style={{ background: "var(--color-cream)" }} />
-          morning aamal kept
+          {t("heat.morningKept")}
         </span>
       </div>
       <p className="mt-3 text-[0.75rem] leading-relaxed text-cream-dim">
-        This month:{" "}
-        <span className="text-gold-bright">{stats.active}</span> active{" "}
-        {stats.active === 1 ? "day" : "days"},{" "}
-        <span className="text-gold-bright">{stats.perfect}</span> fully completed
-        {stats.bonus > 0 && (
-          <>
-            , <span className="text-gold-bright">+{stats.bonus}</span> morning{" "}
-            {stats.bonus === 1 ? "amal" : "aamal"} kept
-          </>
-        )}
+        {rich(t("heat.summary", { count: stats.active }), {
+          active: <span className="text-gold-bright">{stats.active}</span>,
+          perfect: <span className="text-gold-bright">{stats.perfect}</span>,
+        })}
+        {stats.bonus > 0 &&
+          rich(t("heat.bonus", { count: stats.bonus }), {
+            bonus: <span className="text-gold-bright">+{stats.bonus}</span>,
+          })}
         .
       </p>
     </div>

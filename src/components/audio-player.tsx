@@ -3,8 +3,24 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { CirclePlay, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { AudioSource } from "@/data";
+import { useContent } from "@/lib/content-i18n";
+import { useT } from "@/lib/i18n";
 import { SPEEDS, useSpeed } from "@/lib/store";
 import { cn } from "@/lib/utils";
+
+/**
+ * A track's title in the reader's language: "Verse 2:255 — Reciter" is
+ * rebuilt from the dictionary, anything else goes through the content
+ * translations (and stays as written when it has none).
+ */
+function useTrackTitle() {
+  const { t } = useT();
+  const { tx } = useContent();
+  return (title: string) => {
+    const m = title.match(/^Verse (\S+) — (.+)$/);
+    return m ? t("reader.audio.verseTitle", { ref: m[1], reciter: m[2] }) : tx(title);
+  };
+}
 
 /**
  * Plays the preferred source first (Ali Fani when available) with the rest as
@@ -90,13 +106,14 @@ function usePlaybackRate(ref: RefObject<HTMLAudioElement | null>) {
 
 /** YouTube-style speed toggle: tap to step to the next rate, long list on hold. */
 function SpeedButton({ className }: { className?: string }) {
+  const { t } = useT();
   const [speed, setSpeed] = useSpeed();
   const [open, setOpen] = useState(false);
   const label = `${speed}×`;
   return (
     <div className={cn("relative", className)}>
       <button
-        aria-label={`Playback speed ${label}`}
+        aria-label={t("reader.audio.speed", { speed: label })}
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "rounded-full border px-2.5 py-1 text-[0.7rem] tabular-nums transition",
@@ -121,7 +138,7 @@ function SpeedButton({ className }: { className?: string }) {
                 s === speed ? "text-gold-bright" : "text-cream-dim",
               )}
             >
-              {s === 1 ? "Normal" : `${s}×`}
+              {s === 1 ? t("reader.audio.normal") : `${s}×`}
             </button>
           ))}
         </div>
@@ -152,9 +169,11 @@ export function PlaylistPlayer({
 }: {
   sources: AudioSource[];
   index?: number;
-  unit?: string;
+  unit?: "verse" | "part";
   onIndexChange?: (i: number) => void;
 }) {
+  const { t } = useT();
+  const trackTitle = useTrackTitle();
   const ref = useRef<HTMLAudioElement>(null);
   const [internal, setInternal] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -198,20 +217,20 @@ export function PlaylistPlayer({
     <div className="relative rounded-2xl border border-night-line bg-night-card/70 p-4">
       <audio ref={ref} src={track.url} preload="none" />
       <SpeedButton className="absolute end-3 top-3" />
-      <p className="px-12 text-center text-[1rem] text-cream">{track.title}</p>
+      <p className="px-12 text-center text-[1rem] text-cream">{trackTitle(track.title)}</p>
       <p className="mt-0.5 text-center text-[0.78rem] text-cream-faint">
-        {unit} {index + 1} of {sources.length} · plays straight through
+        {t(`reader.audio.position_${unit}`, { n: index + 1, total: sources.length })}
       </p>
       <div className="mt-3 flex items-center justify-center gap-4">
         <button
-          aria-label="Previous verse"
+          aria-label={t(`reader.audio.prev_${unit}`)}
           onClick={() => jump(-1)}
           className="grid size-11 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
         >
           <SkipBack className="size-4" />
         </button>
         <button
-          aria-label={playing ? "Pause" : "Play"}
+          aria-label={playing ? t("reader.audio.pause") : t("reader.audio.play")}
           onClick={() => {
             const el = ref.current;
             if (!el) return;
@@ -232,7 +251,7 @@ export function PlaylistPlayer({
           )}
         </button>
         <button
-          aria-label="Next verse"
+          aria-label={t(`reader.audio.next_${unit}`)}
           onClick={() => jump(1)}
           className="grid size-11 shrink-0 place-items-center rounded-full border border-night-line text-cream-dim transition hover:border-gold-dim hover:text-cream"
         >
@@ -244,6 +263,8 @@ export function PlaylistPlayer({
 }
 
 function Mp3Player({ source }: { source: AudioSource }) {
+  const { t } = useT();
+  const trackTitle = useTrackTitle();
   const ref = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -270,7 +291,7 @@ function Mp3Player({ source }: { source: AudioSource }) {
     <div className="flex items-center gap-4">
       <audio ref={ref} src={source.url} preload="metadata" />
       <button
-        aria-label={playing ? "Pause" : "Play"}
+        aria-label={playing ? t("reader.audio.pause") : t("reader.audio.play")}
         onClick={() => {
           const el = ref.current;
           if (!el) return;
@@ -287,7 +308,7 @@ function Mp3Player({ source }: { source: AudioSource }) {
         )}
       </button>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.82rem] text-cream">{source.title}</p>
+        <p className="truncate text-[0.82rem] text-cream">{trackTitle(source.title)}</p>
         <input
           type="range"
           min={0}
@@ -310,6 +331,9 @@ function Mp3Player({ source }: { source: AudioSource }) {
 }
 
 function YouTubePlayer({ source }: { source: AudioSource }) {
+  const { t } = useT();
+  const trackTitle = useTrackTitle();
+  const title = trackTitle(source.title);
   const [loaded, setLoaded] = useState(false);
   const id = source.url;
 
@@ -318,7 +342,7 @@ function YouTubePlayer({ source }: { source: AudioSource }) {
       <button
         onClick={() => setLoaded(true)}
         className="group relative block w-full overflow-hidden rounded-xl border border-night-line"
-        aria-label={`Play ${source.title}`}
+        aria-label={t("reader.audio.playTitle", { title })}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -334,7 +358,7 @@ function YouTubePlayer({ source }: { source: AudioSource }) {
           </span>
         </span>
         <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night/90 to-transparent px-4 pb-3 pt-8 text-start text-[0.8rem] text-cream">
-          {source.title}
+          {title}
         </span>
       </button>
     );
@@ -344,7 +368,7 @@ function YouTubePlayer({ source }: { source: AudioSource }) {
     <iframe
       className="aspect-video w-full rounded-xl border border-night-line"
       src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`}
-      title={source.title}
+      title={title}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
     />

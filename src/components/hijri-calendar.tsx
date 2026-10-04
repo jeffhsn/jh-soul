@@ -10,11 +10,14 @@ import {
   Droplet,
   UtensilsCrossed,
 } from "lucide-react";
-import { hijriMonthDays, hijriParts, todayKey } from "@/lib/dates";
+import { hijriMonthDays, hijriMonthName, hijriParts, todayKey } from "@/lib/dates";
 import { eventsFor, type EventKind } from "@/data/hijri-events";
 import { fastFor, fastingMonthNote, ghuslFor } from "@/data/observances";
 import { occasionsFor } from "@/data/occasions";
 import { ThemeToggle } from "./theme-toggle";
+import { LanguageSwitcher } from "./language-switcher";
+import { useT } from "@/lib/i18n";
+import { useContent } from "@/lib/content-i18n";
 import { cn } from "@/lib/utils";
 
 const KIND_COLOR: Record<EventKind, string> = {
@@ -27,12 +30,13 @@ const GHUSL_COLOR = "#6fa8c9";
 const FAST_COLOR = "#c9975a";
 
 const KIND_LABEL: Record<EventKind, string> = {
-  mourning: "mourning",
-  celebration: "celebration",
-  sacred: "sacred day",
+  mourning: "cal.kind.mourning",
+  celebration: "cal.kind.celebration",
+  sacred: "cal.kind.sacred",
 };
 
 export function HijriCalendar() {
+  const { t } = useT();
   return (
     <main className="mx-auto max-w-xl px-5 pb-24 pt-10 sm:pt-14">
       <header className="flex items-center justify-between gap-3 animate-rise">
@@ -41,15 +45,18 @@ export function HijriCalendar() {
           className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
         >
           <ArrowLeft className="rtl:-scale-x-100 size-3.5" />
-          today&rsquo;s aamal
+          {t("cal.back")}
         </Link>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
       </header>
       <div className="mt-8">
         <CalendarPanel />
       </div>
       <p className="mt-8 text-center text-[0.7rem] italic text-cream-faint">
-        Dates follow the Umm al-Qura calendar — local moon-sighting may differ by a day.
+        {t("cal.ummAlQura")}
       </p>
     </main>
   );
@@ -57,6 +64,8 @@ export function HijriCalendar() {
 
 /** Month grid + occasions — embeddable (sidebar on desktop, page on mobile). */
 export function CalendarPanel() {
+  const { t, locale, intl } = useT();
+  const { tx } = useContent();
   const [now, setNow] = useState<Date | null>(null);
   // anchor = any Gregorian date inside the displayed Hijri month
   const [anchor, setAnchor] = useState<Date | null>(null);
@@ -92,6 +101,11 @@ export function CalendarPanel() {
   }
 
   const month = days[0].hijri;
+  const monthName = hijriMonthName(month.month, locale);
+  // weekday initials, Sunday first, in the reader's language
+  const weekdays = Array.from({ length: 7 }, (_, i) =>
+    new Intl.DateTimeFormat(intl, { weekday: "narrow" }).format(new Date(2024, 0, 7 + i)),
+  );
   const todayK = todayKey(now);
   const firstWeekday = days[0].date.getDay();
   const monthEvents = days.flatMap(({ date, hijri }) =>
@@ -103,22 +117,22 @@ export function CalendarPanel() {
   const pickedNotes: { icon: string; text: string }[] = [];
   if (pickedDay) {
     for (const e of eventsFor(pickedDay.hijri.month, pickedDay.hijri.day))
-      pickedNotes.push({ icon: KIND_COLOR[e.kind], text: e.title });
+      pickedNotes.push({ icon: KIND_COLOR[e.kind], text: tx(e.title) });
     const g = ghuslFor(pickedDay.date, pickedDay.hijri);
-    if (g) pickedNotes.push({ icon: "ghusl", text: g });
+    if (g) pickedNotes.push({ icon: "ghusl", text: tx(g) });
     const f = fastFor(pickedDay.date, pickedDay.hijri, days.length);
-    if (f) pickedNotes.push({ icon: "fast", text: f });
+    if (f) pickedNotes.push({ icon: "fast", text: tx(f) });
     // the special aamal that will appear in the app for this date
     const d = pickedDay.date;
     const next = hijriParts(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 12));
     for (const a of occasionsFor("night", pickedDay.hijri, d, next))
-      pickedNotes.push({ icon: "#d9a954", text: `The evening before, after Maghrib: ${a.title}` });
+      pickedNotes.push({ icon: "#d9a954", text: t("cal.eveningBefore", { title: tx(a.title) }) });
     for (const a of occasionsFor("day", pickedDay.hijri, d, next))
-      pickedNotes.push({ icon: "#d9a954", text: `By day: ${a.title}` });
+      pickedNotes.push({ icon: "#d9a954", text: t("cal.byDay", { title: tx(a.title) }) });
   }
 
   const fmt = (d: Date) =>
-    d.toLocaleDateString("en", { day: "numeric", month: "short" });
+    d.toLocaleDateString(intl, { day: "numeric", month: "short" });
   const range = `${fmt(days[0].date)} — ${fmt(days[days.length - 1].date)}`;
 
   function shiftMonth(dir: -1 | 1) {
@@ -135,7 +149,7 @@ export function CalendarPanel() {
       {/* month header */}
       <div className="flex items-center justify-between">
         <button
-          aria-label="Previous month"
+          aria-label={t("cal.prevMonth")}
           onClick={() => shiftMonth(-1)}
           className="grid size-8 place-items-center rounded-full text-cream-faint transition hover:text-gold-bright"
         >
@@ -143,7 +157,7 @@ export function CalendarPanel() {
         </button>
         <div className="text-center">
           <h2 className="font-display text-[1.35rem] tracking-tight">
-            {month.monthName}{" "}
+            {monthName}{" "}
             <span className="text-gold-dim">{month.year}</span>
           </h2>
           <p className="mt-0.5 text-[0.72rem] italic text-cream-faint">{range}</p>
@@ -152,11 +166,11 @@ export function CalendarPanel() {
             className="mx-auto mt-1.5 flex items-center gap-1 rounded-full border border-night-line px-2.5 py-0.5 text-[0.65rem] text-cream-faint transition hover:border-gold-dim hover:text-cream-dim"
           >
             <ArrowLeftRight className="size-3" />
-            {calMode === "hijri" ? "show Gregorian days" : "show Hijri days"}
+            {calMode === "hijri" ? t("cal.showGregorian") : t("cal.showHijri")}
           </button>
         </div>
         <button
-          aria-label="Next month"
+          aria-label={t("cal.nextMonth")}
           onClick={() => shiftMonth(1)}
           className="grid size-8 place-items-center rounded-full text-cream-faint transition hover:text-gold-bright"
         >
@@ -166,7 +180,7 @@ export function CalendarPanel() {
 
       {/* grid — bare numbers, no boxes */}
       <div className="mt-5 grid grid-cols-7 gap-y-1 text-center">
-        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+        {weekdays.map((d, i) => (
           <span
             key={i}
             className="pb-2 text-[0.62rem] uppercase tracking-[0.18em] text-cream-faint"
@@ -183,7 +197,7 @@ export function CalendarPanel() {
           const evts = eventsFor(hijri.month, hijri.day);
           const ghusl = ghuslFor(date, hijri);
           const fast = fastFor(date, hijri, days.length);
-          const notes = [...evts.map((e) => e.title), ghusl, fast].filter(Boolean);
+          const notes = [...evts.map((e) => e.title), ghusl, fast].filter(Boolean).map((n) => tx(n!));
           return (
             <button
               type="button"
@@ -195,12 +209,12 @@ export function CalendarPanel() {
               {/* subtle hover tooltip: the same day in the other calendar */}
               <span className="pointer-events-none absolute -top-7 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-night-line bg-night-card px-2.5 py-1 text-[0.68rem] text-cream-dim opacity-0 shadow-[0_6px_18px_rgba(0,0,0,0.3)] transition-opacity duration-150 group-hover:opacity-100">
                 {calMode === "hijri"
-                  ? date.toLocaleDateString("en", {
+                  ? date.toLocaleDateString(intl, {
                       weekday: "short",
                       day: "numeric",
                       month: "short",
                     })
-                  : `${date.toLocaleDateString("en", { weekday: "short" })}, ${hijri.day} ${month.monthName}`}
+                  : `${date.toLocaleDateString(intl, { weekday: "short" })}${locale === "ar" ? "،" : ","} ${hijri.day} ${monthName}`}
               </span>
               <span
                 className={cn(
@@ -236,11 +250,11 @@ export function CalendarPanel() {
       <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[0.66rem] text-cream-faint">
         <span className="inline-flex items-center gap-1">
           <Droplet className="size-3" style={{ color: GHUSL_COLOR }} />
-          recommended ghusl
+          {t("cal.legendGhusl")}
         </span>
         <span className="inline-flex items-center gap-1">
           <UtensilsCrossed className="size-3" style={{ color: FAST_COLOR }} />
-          recommended fast
+          {t("cal.legendFast")}
         </span>
       </p>
 
@@ -248,11 +262,11 @@ export function CalendarPanel() {
       {pickedDay && (
         <div className="mt-3 rounded-2xl border border-night-line-soft bg-night-raise/50 px-4 py-3 text-[0.8rem] leading-snug text-cream-dim animate-rise">
           <p className="font-display text-[0.95rem] text-cream">
-            {pickedDay.hijri.day} {month.monthName}
+            {pickedDay.hijri.day} {monthName}
             <span className="text-cream-faint">
               {" "}
               ·{" "}
-              {pickedDay.date.toLocaleDateString("en", {
+              {pickedDay.date.toLocaleDateString(intl, {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -260,7 +274,7 @@ export function CalendarPanel() {
             </span>
           </p>
           {pickedNotes.length === 0 ? (
-            <p className="mt-1 italic text-cream-faint">Nothing marked on this day.</p>
+            <p className="mt-1 italic text-cream-faint">{t("cal.nothingMarked")}</p>
           ) : (
             <ul className="mt-1.5 space-y-1">
               {pickedNotes.map((n, i) => (
@@ -283,7 +297,7 @@ export function CalendarPanel() {
       )}
       {monthNote && (
         <p className="mt-3 text-center text-[0.72rem] italic leading-snug text-cream-dim">
-          {monthNote}
+          {tx(monthNote)}
         </p>
       )}
 
@@ -292,7 +306,7 @@ export function CalendarPanel() {
         <div className="hairline mb-1 opacity-50" />
         {monthEvents.length === 0 ? (
           <p className="py-3 text-sm italic text-cream-dim">
-            No major recorded occasions this month.
+            {t("cal.noOccasions")}
           </p>
         ) : (
           <ul>
@@ -317,16 +331,16 @@ export function CalendarPanel() {
                   </span>
                   <div className="min-w-0">
                     <p className="text-[0.85rem] leading-snug text-cream">
-                      {e.title}
+                      {tx(e.title)}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-[0.68rem] text-cream-faint">
                       <span
                         className="size-1.5 rounded-full"
                         style={{ background: KIND_COLOR[e.kind] }}
                       />
-                      {KIND_LABEL[e.kind]} · {fmt(date)}
+                      {t(KIND_LABEL[e.kind])} · {fmt(date)}
                       {isToday && (
-                        <span className="text-gold-bright">· today</span>
+                        <span className="text-gold-bright">· {t("cal.today")}</span>
                       )}
                     </p>
                   </div>

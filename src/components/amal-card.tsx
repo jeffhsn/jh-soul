@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Amal } from "@/data";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 const TYPE_ICON: Record<Amal["type"], React.ComponentType<{ className?: string }>> = {
   dua: Sparkles,
@@ -39,6 +40,7 @@ export function AmalCard({
 }) {
   const Icon = TYPE_ICON[amal.type];
   const hasAudio = !!amal.audio?.length;
+  const { t } = useT();
 
   return (
     <div
@@ -52,7 +54,7 @@ export function AmalCard({
     >
       {/* check control — 44px hit area around a smaller visual circle */}
       <button
-        aria-label={done ? `Mark ${amal.title} as not done` : `Mark ${amal.title} as done`}
+        aria-label={t(done ? "day.card.markUndone" : "day.card.markDone", { title: amal.title })}
         onClick={(e) => {
           e.stopPropagation();
           onToggle(!done);
@@ -101,12 +103,12 @@ export function AmalCard({
           <div className="mt-1.5 flex items-center gap-3 text-[0.72rem] tracking-wide text-cream-faint">
             <span className="inline-flex items-center gap-1">
               <Clock3 className="size-3" />
-              {amal.minutes} min
+              {t("day.card.min", { count: amal.minutes })}
             </span>
             {hasAudio && (
               <span className="inline-flex items-center gap-1 text-sage/80">
                 <Headphones className="size-3" />
-                audio
+                {t("day.card.audio")}
               </span>
             )}
           </div>

@@ -1,10 +1,416 @@
 import type { Fragment } from ".";
 
+/**
+ * The reader (focus view), its players and counters, the Quran portion and the
+ * Quran panel. Arabic plurals: _zero, _one, _two, _few (3–10), _many (11–99),
+ * _other (100+).
+ */
 const reader: Fragment = {
-  en: {},
-  it: {},
-  ar: {},
-  de: {},
+  en: {
+    // focus view
+    "reader.close": "Close",
+    "reader.done.mark": "I have completed this",
+    "reader.done.undo": "Marked as done — undo",
+    "reader.step.prev": "Previous amal",
+    "reader.step.next": "Next amal",
+
+    // lines reader / portion reader toggles
+    "reader.toggle.transliteration": "transliteration",
+    "reader.toggle.translation": "translation",
+
+    // audio
+    "reader.audio.play": "Play",
+    "reader.audio.pause": "Pause",
+    "reader.audio.playTitle": "Play {title}",
+    "reader.audio.speed": "Playback speed {speed}",
+    "reader.audio.normal": "Normal",
+    "reader.audio.position_verse": "verse {n} of {total} · plays straight through",
+    "reader.audio.position_part": "part {n} of {total} · plays straight through",
+    "reader.audio.prev_verse": "Previous verse",
+    "reader.audio.next_verse": "Next verse",
+    "reader.audio.prev_part": "Previous part",
+    "reader.audio.next_part": "Next part",
+    "reader.audio.verseTitle": "Verse {ref} — {reciter}",
+
+    // counters
+    "reader.tasbih.complete": "Tasbih complete — may it be accepted.",
+    "reader.tasbih.pass": "Pass one bead",
+    "reader.tasbih.tap": "tap to pass a bead",
+    "reader.counter.count": "Count one recitation",
+    "reader.counter.complete": "complete",
+    "reader.counter.of": "of {target}",
+    "reader.counter.tap": "tap to count",
+    "reader.counter.startOver": "start over",
+    "reader.keys.hint": "{space} to count · {backspace} to undo",
+    "reader.keys.space": "Space",
+    "reader.keys.backspace": "Backspace",
+
+    // Quran portion reader
+    "reader.portion.failed":
+      "Couldn’t load the verses right now — check your connection. The recitation above still plays, and the Al-Islam.org links below open the passage to read.",
+    "reader.portion.loading": "loading today’s verses…",
+    "reader.portion.pagesRead": "Pages read",
+    "reader.portion.readOf": "{read} of {total}",
+    "reader.portion.untickHint":
+      "Didn’t get through all of it? Untick the pages you didn’t read — they wait for you as pages owed, nothing is lost.",
+    "reader.portion.owed_one": "{count} page owed",
+    "reader.portion.owed_other": "{count} pages owed",
+    "reader.portion.owedText":
+      "{owed} from days you missed. Have more time today? Read on — the coming portions shrink as you catch up.",
+    "reader.portion.readMore_one": "Read {count} more page now",
+    "reader.portion.readMore_other": "Read {count} more pages now",
+
+    // the generated Daily Quran Portion (src/data/quran-daily.ts)
+    "reader.portion.title": "Daily Quran Portion",
+    "reader.portion.page": "page {n}",
+    "reader.portion.pages": "pages {from}–{to}",
+    "reader.portion.ref": "{surah} {ayah}",
+    "reader.portion.span": "{from} → {to}",
+    "reader.portion.subtitle": "Today: {span} · {pages} · Juz {juz}",
+    "reader.portion.merit":
+      "Your portion continues from where you stopped, and is sized so the whole Quran is completed within a month of starting it — about a juz a day — a missed day is made up, never skipped. Press play below and the exact verses ({span}) are recited to you one by one, or read them on Al-Islam.org.",
+    "reader.portion.audhu": "I seek refuge in Allah from Satan, the accursed.",
+    "reader.portion.bismillah":
+      "In the name of Allah, the Entirely Merciful, the Especially Merciful. — today's reading is {from} through {to}.",
+    "reader.portion.reciter": "Mishary Alafasy",
+    "reader.portion.audioTitle": "{ref} — {reciter}",
+    "reader.portion.linkRead": "Read Surah {surah} (from verse {ayah}) — Al-Islam.org",
+    "reader.portion.linkContinue": "…continue to Surah {surah} (to verse {ayah}) — Al-Islam.org",
+
+    // Quran panel
+    "reader.quran.heading": "Quran",
+    "reader.quran.completed": "Completed",
+    "reader.quran.times_one": "time",
+    "reader.quran.times_other": "times",
+    "reader.quran.firstKhatm": "First khatm",
+    "reader.quran.khatmN": "Khatm {n}",
+    "reader.quran.progress": "{into}/{total} pages",
+    "reader.quran.owed": "Owed",
+    "reader.quran.pages_one": "{count} page",
+    "reader.quran.pages_other": "{count} pages",
+    "reader.quran.owedFrom":
+      "From days you missed. Read them any day — the coming portions shrink as you catch up.",
+    "reader.quran.owedFromSkipped":
+      "From days you missed and pages you didn't tick. Read them any day — the coming portions shrink as you catch up.",
+    "reader.quran.run": "p. {a}",
+    "reader.quran.runRange": "p. {a}–{b}",
+    "reader.quran.readNow_one": "Read {count} page now",
+    "reader.quran.readNow_other": "Read {count} pages now",
+    "reader.quran.daysRead": "Days read",
+    "reader.quran.pagesRead": "Pages read",
+    "reader.quran.intro":
+      "A khatm every month — about a juz a day. Tick the Daily Quran Portion; it continues from where you stop.",
+    "reader.quran.pace_one":
+      "At {count} page a day this khatm completes by {date}. A missed day is made up, never skipped.",
+    "reader.quran.pace_other":
+      "At {count} pages a day this khatm completes by {date}. A missed day is made up, never skipped.",
+  },
+
+  it: {
+    "reader.close": "Chiudi",
+    "reader.done.mark": "L’ho completato",
+    "reader.done.undo": "Segnato come fatto — annulla",
+    "reader.step.prev": "Amal precedente",
+    "reader.step.next": "Amal successivo",
+
+    "reader.toggle.transliteration": "traslitterazione",
+    "reader.toggle.translation": "traduzione",
+
+    "reader.audio.play": "Riproduci",
+    "reader.audio.pause": "Pausa",
+    "reader.audio.playTitle": "Riproduci {title}",
+    "reader.audio.speed": "Velocità di riproduzione {speed}",
+    "reader.audio.normal": "Normale",
+    "reader.audio.position_verse": "versetto {n} di {total} · riproduzione continua",
+    "reader.audio.position_part": "parte {n} di {total} · riproduzione continua",
+    "reader.audio.prev_verse": "Versetto precedente",
+    "reader.audio.next_verse": "Versetto successivo",
+    "reader.audio.prev_part": "Parte precedente",
+    "reader.audio.next_part": "Parte successiva",
+    "reader.audio.verseTitle": "Versetto {ref} — {reciter}",
+
+    "reader.tasbih.complete": "Tasbih completato — che sia accettato.",
+    "reader.tasbih.pass": "Fai scorrere un grano",
+    "reader.tasbih.tap": "tocca per far scorrere un grano",
+    "reader.counter.count": "Conta una recitazione",
+    "reader.counter.complete": "completato",
+    "reader.counter.of": "su {target}",
+    "reader.counter.tap": "tocca per contare",
+    "reader.counter.startOver": "ricomincia",
+    "reader.keys.hint": "{space} per contare · {backspace} per annullare",
+    "reader.keys.space": "Spazio",
+    "reader.keys.backspace": "Backspace",
+
+    "reader.portion.failed":
+      "Non è stato possibile caricare i versetti — controlla la connessione. La recitazione qui sopra continua a funzionare, e i link ad Al-Islam.org qui sotto aprono il brano da leggere.",
+    "reader.portion.loading": "caricamento dei versetti di oggi…",
+    "reader.portion.pagesRead": "Pagine lette",
+    "reader.portion.readOf": "{read} di {total}",
+    "reader.portion.untickHint":
+      "Non sei riuscito a leggere tutto? Togli la spunta alle pagine che non hai letto — ti aspettano come pagine da recuperare, nulla va perduto.",
+    "reader.portion.owed_one": "{count} pagina da recuperare",
+    "reader.portion.owed_other": "{count} pagine da recuperare",
+    "reader.portion.owedText":
+      "{owed} dai giorni mancati. Hai più tempo oggi? Continua a leggere — le prossime porzioni si accorciano man mano che recuperi.",
+    "reader.portion.readMore_one": "Leggi ora {count} pagina in più",
+    "reader.portion.readMore_other": "Leggi ora {count} pagine in più",
+
+    "reader.portion.title": "Porzione quotidiana del Corano",
+    "reader.portion.page": "pagina {n}",
+    "reader.portion.pages": "pagine {from}–{to}",
+    "reader.portion.ref": "{surah} {ayah}",
+    "reader.portion.span": "{from} → {to}",
+    "reader.portion.subtitle": "Oggi: {span} · {pages} · Juz {juz}",
+    "reader.portion.merit":
+      "La tua porzione riprende da dove ti sei fermato, ed è misurata perché l’intero Corano sia completato entro un mese dall’inizio — circa un juz al giorno — un giorno mancato si recupera, non si salta mai. Premi play qui sotto e i versetti esatti ({span}) ti vengono recitati uno per uno, oppure leggili su Al-Islam.org.",
+    "reader.portion.audhu": "Mi rifugio in Allah da Satana, il lapidato.",
+    "reader.portion.bismillah":
+      "Nel nome di Allah, il Compassionevole, il Misericordioso. — la lettura di oggi va da {from} a {to}.",
+    "reader.portion.reciter": "Mishary Alafasy",
+    "reader.portion.audioTitle": "{ref} — {reciter}",
+    "reader.portion.linkRead": "Leggi la sura {surah} (dal versetto {ayah}) — Al-Islam.org",
+    "reader.portion.linkContinue": "…prosegui con la sura {surah} (fino al versetto {ayah}) — Al-Islam.org",
+
+    "reader.quran.heading": "Corano",
+    "reader.quran.completed": "Completato",
+    "reader.quran.times_one": "volta",
+    "reader.quran.times_other": "volte",
+    "reader.quran.firstKhatm": "Primo khatm",
+    "reader.quran.khatmN": "Khatm {n}",
+    "reader.quran.progress": "{into}/{total} pagine",
+    "reader.quran.owed": "Da recuperare",
+    "reader.quran.pages_one": "{count} pagina",
+    "reader.quran.pages_other": "{count} pagine",
+    "reader.quran.owedFrom":
+      "Dai giorni mancati. Leggile in qualunque giorno — le prossime porzioni si accorciano man mano che recuperi.",
+    "reader.quran.owedFromSkipped":
+      "Dai giorni mancati e dalle pagine senza spunta. Leggile in qualunque giorno — le prossime porzioni si accorciano man mano che recuperi.",
+    "reader.quran.run": "p. {a}",
+    "reader.quran.runRange": "pp. {a}–{b}",
+    "reader.quran.readNow_one": "Leggi ora {count} pagina",
+    "reader.quran.readNow_other": "Leggi ora {count} pagine",
+    "reader.quran.daysRead": "Giorni di lettura",
+    "reader.quran.pagesRead": "Pagine lette",
+    "reader.quran.intro":
+      "Un khatm ogni mese — circa un juz al giorno. Spunta la Porzione quotidiana del Corano; riprende da dove ti fermi.",
+    "reader.quran.pace_one":
+      "Con {count} pagina al giorno questo khatm si completa entro il {date}. Un giorno mancato si recupera, non si salta mai.",
+    "reader.quran.pace_other":
+      "Con {count} pagine al giorno questo khatm si completa entro il {date}. Un giorno mancato si recupera, non si salta mai.",
+  },
+
+  ar: {
+    "reader.close": "إغلاق",
+    "reader.done.mark": "أتممتُ هذا العمل",
+    "reader.done.undo": "تمّ — تراجع",
+    "reader.step.prev": "العمل السابق",
+    "reader.step.next": "العمل التالي",
+
+    "reader.toggle.transliteration": "النطق اللاتيني",
+    "reader.toggle.translation": "الترجمة",
+
+    "reader.audio.play": "تشغيل",
+    "reader.audio.pause": "إيقاف مؤقت",
+    "reader.audio.playTitle": "تشغيل {title}",
+    "reader.audio.speed": "سرعة التشغيل {speed}",
+    "reader.audio.normal": "عادية",
+    "reader.audio.position_verse": "الآية {n} من {total} · تُتلى متتابعة",
+    "reader.audio.position_part": "الجزء {n} من {total} · يُتلى متتابعًا",
+    "reader.audio.prev_verse": "الآية السابقة",
+    "reader.audio.next_verse": "الآية التالية",
+    "reader.audio.prev_part": "الجزء السابق",
+    "reader.audio.next_part": "الجزء التالي",
+    "reader.audio.verseTitle": "الآية {ref} — {reciter}",
+
+    "reader.tasbih.complete": "تمّ التسبيح — تقبّل الله.",
+    "reader.tasbih.pass": "مرّر حبّة",
+    "reader.tasbih.tap": "انقر لتمرير حبّة",
+    "reader.counter.count": "عُدّ مرّة واحدة",
+    "reader.counter.complete": "تمّ",
+    "reader.counter.of": "من {target}",
+    "reader.counter.tap": "انقر للعدّ",
+    "reader.counter.startOver": "ابدأ من جديد",
+    "reader.keys.hint": "{space} للعدّ · {backspace} للتراجع",
+    "reader.keys.space": "مفتاح المسافة",
+    "reader.keys.backspace": "مفتاح الحذف",
+
+    "reader.portion.failed":
+      "تعذّر تحميل الآيات الآن — تحقّق من اتصالك. التلاوة في الأعلى ما زالت تعمل، وروابط Al-Islam.org في الأسفل تفتح المقطع للقراءة.",
+    "reader.portion.loading": "جارٍ تحميل آيات اليوم…",
+    "reader.portion.pagesRead": "الصفحات المقروءة",
+    "reader.portion.readOf": "{read} من {total}",
+    "reader.portion.untickHint":
+      "لم تُكمل الورد كلّه؟ أزل العلامة عن الصفحات التي لم تقرأها — تبقى لك صفحاتٍ فائتة، ولا يضيع شيء.",
+    "reader.portion.owed_zero": "لا صفحات فائتة",
+    "reader.portion.owed_one": "صفحة واحدة فائتة",
+    "reader.portion.owed_two": "صفحتان فائتتان",
+    "reader.portion.owed_few": "{count} صفحات فائتة",
+    "reader.portion.owed_many": "{count} صفحة فائتة",
+    "reader.portion.owed_other": "{count} صفحة فائتة",
+    "reader.portion.owedText":
+      "{owed} من أيام فاتتك. لديك وقت أكثر اليوم؟ واصل القراءة — فالأوراد القادمة تقصر كلّما استدركت.",
+    "reader.portion.readMore_zero": "اقرأ {count} صفحة أخرى الآن",
+    "reader.portion.readMore_one": "اقرأ صفحة أخرى الآن",
+    "reader.portion.readMore_two": "اقرأ صفحتين أخريين الآن",
+    "reader.portion.readMore_few": "اقرأ {count} صفحات أخرى الآن",
+    "reader.portion.readMore_many": "اقرأ {count} صفحة أخرى الآن",
+    "reader.portion.readMore_other": "اقرأ {count} صفحة أخرى الآن",
+
+    "reader.portion.title": "الورد اليومي من القرآن",
+    "reader.portion.page": "الصفحة {n}",
+    "reader.portion.pages": "الصفحات {from}–{to}",
+    "reader.portion.ref": "{surah} {ayah}",
+    "reader.portion.span": "{from} ← {to}",
+    "reader.portion.subtitle": "اليوم: {span} · {pages} · الجزء {juz}",
+    "reader.portion.merit":
+      "وردك يبدأ من حيث توقّفت، ومقدّر بحيث تختم القرآن كلّه خلال شهر من بدئه — نحو جزء في اليوم — واليوم الفائت يُستدرك ولا يُترك. اضغط تشغيل في الأسفل فتُتلى عليك الآيات نفسها ({span}) آيةً آية، أو اقرأها على Al-Islam.org.",
+    "reader.portion.audhu": "أعوذ بالله من الشيطان الرجيم",
+    "reader.portion.bismillah": "بسم الله الرحمن الرحيم — ورد اليوم من {from} إلى {to}.",
+    "reader.portion.reciter": "مشاري العفاسي",
+    "reader.portion.audioTitle": "{ref} — {reciter}",
+    "reader.portion.linkRead": "اقرأ {surah} (من الآية {ayah}) — Al-Islam.org",
+    "reader.portion.linkContinue": "…وتابع إلى {surah} (حتى الآية {ayah}) — Al-Islam.org",
+
+    "reader.quran.heading": "القرآن",
+    "reader.quran.completed": "الختمات",
+    "reader.quran.times_zero": "مرّة",
+    "reader.quran.times_one": "مرّة",
+    "reader.quran.times_two": "مرّتان",
+    "reader.quran.times_few": "مرّات",
+    "reader.quran.times_many": "مرّة",
+    "reader.quran.times_other": "مرّة",
+    "reader.quran.firstKhatm": "الختمة الأولى",
+    "reader.quran.khatmN": "الختمة {n}",
+    "reader.quran.progress": "{into}/{total} صفحة",
+    "reader.quran.owed": "الفائت",
+    "reader.quran.pages_zero": "{count} صفحة",
+    "reader.quran.pages_one": "صفحة واحدة",
+    "reader.quran.pages_two": "صفحتان",
+    "reader.quran.pages_few": "{count} صفحات",
+    "reader.quran.pages_many": "{count} صفحة",
+    "reader.quran.pages_other": "{count} صفحة",
+    "reader.quran.owedFrom":
+      "من أيام فاتتك. اقرأها في أيّ يوم — فالأوراد القادمة تقصر كلّما استدركت.",
+    "reader.quran.owedFromSkipped":
+      "من أيام فاتتك وصفحات لم تضع عليها علامة. اقرأها في أيّ يوم — فالأوراد القادمة تقصر كلّما استدركت.",
+    "reader.quran.run": "ص {a}",
+    "reader.quran.runRange": "ص {a}–{b}",
+    "reader.quran.readNow_zero": "اقرأ {count} صفحة الآن",
+    "reader.quran.readNow_one": "اقرأ صفحة واحدة الآن",
+    "reader.quran.readNow_two": "اقرأ صفحتين الآن",
+    "reader.quran.readNow_few": "اقرأ {count} صفحات الآن",
+    "reader.quran.readNow_many": "اقرأ {count} صفحة الآن",
+    "reader.quran.readNow_other": "اقرأ {count} صفحة الآن",
+    "reader.quran.daysRead": "أيام القراءة",
+    "reader.quran.pagesRead": "الصفحات المقروءة",
+    "reader.quran.intro":
+      "ختمة كلّ شهر — نحو جزء في اليوم. ضع علامة على الورد اليومي من القرآن؛ فهو يبدأ من حيث توقّفت.",
+    "reader.quran.pace_zero":
+      "بمعدّل {count} صفحة يوميًا تتمّ هذه الختمة بحلول {date}. اليوم الفائت يُستدرك ولا يُترك.",
+    "reader.quran.pace_one":
+      "بمعدّل صفحة واحدة يوميًا تتمّ هذه الختمة بحلول {date}. اليوم الفائت يُستدرك ولا يُترك.",
+    "reader.quran.pace_two":
+      "بمعدّل صفحتين يوميًا تتمّ هذه الختمة بحلول {date}. اليوم الفائت يُستدرك ولا يُترك.",
+    "reader.quran.pace_few":
+      "بمعدّل {count} صفحات يوميًا تتمّ هذه الختمة بحلول {date}. اليوم الفائت يُستدرك ولا يُترك.",
+    "reader.quran.pace_many":
+      "بمعدّل {count} صفحة يوميًا تتمّ هذه الختمة بحلول {date}. اليوم الفائت يُستدرك ولا يُترك.",
+    "reader.quran.pace_other":
+      "بمعدّل {count} صفحة يوميًا تتمّ هذه الختمة بحلول {date}. اليوم الفائت يُستدرك ولا يُترك.",
+  },
+
+  de: {
+    "reader.close": "Schließen",
+    "reader.done.mark": "Ich habe es verrichtet",
+    "reader.done.undo": "Als erledigt markiert — rückgängig",
+    "reader.step.prev": "Vorheriges Amal",
+    "reader.step.next": "Nächstes Amal",
+
+    "reader.toggle.transliteration": "Umschrift",
+    "reader.toggle.translation": "Übersetzung",
+
+    "reader.audio.play": "Abspielen",
+    "reader.audio.pause": "Pause",
+    "reader.audio.playTitle": "{title} abspielen",
+    "reader.audio.speed": "Wiedergabegeschwindigkeit {speed}",
+    "reader.audio.normal": "Normal",
+    "reader.audio.position_verse": "Vers {n} von {total} · läuft ohne Unterbrechung",
+    "reader.audio.position_part": "Teil {n} von {total} · läuft ohne Unterbrechung",
+    "reader.audio.prev_verse": "Vorheriger Vers",
+    "reader.audio.next_verse": "Nächster Vers",
+    "reader.audio.prev_part": "Vorheriger Teil",
+    "reader.audio.next_part": "Nächster Teil",
+    "reader.audio.verseTitle": "Vers {ref} — {reciter}",
+
+    "reader.tasbih.complete": "Tasbih vollendet — möge es angenommen werden.",
+    "reader.tasbih.pass": "Eine Perle weiterschieben",
+    "reader.tasbih.tap": "tippen, um eine Perle weiterzuschieben",
+    "reader.counter.count": "Eine Rezitation zählen",
+    "reader.counter.complete": "vollendet",
+    "reader.counter.of": "von {target}",
+    "reader.counter.tap": "tippen zum Zählen",
+    "reader.counter.startOver": "neu beginnen",
+    "reader.keys.hint": "{space} zum Zählen · {backspace} zum Rückgängigmachen",
+    "reader.keys.space": "Leertaste",
+    "reader.keys.backspace": "Rücktaste",
+
+    "reader.portion.failed":
+      "Die Verse konnten gerade nicht geladen werden — prüfe deine Verbindung. Die Rezitation oben läuft weiter, und die Al-Islam.org-Links unten öffnen den Abschnitt zum Lesen.",
+    "reader.portion.loading": "die Verse von heute werden geladen…",
+    "reader.portion.pagesRead": "Gelesene Seiten",
+    "reader.portion.readOf": "{read} von {total}",
+    "reader.portion.untickHint":
+      "Nicht alles geschafft? Entferne das Häkchen bei den Seiten, die du nicht gelesen hast — sie warten als offene Seiten auf dich, nichts geht verloren.",
+    "reader.portion.owed_one": "{count} offene Seite",
+    "reader.portion.owed_other": "{count} offene Seiten",
+    "reader.portion.owedText":
+      "{owed} aus verpassten Tagen. Heute mehr Zeit? Lies weiter — die kommenden Abschnitte werden kürzer, je mehr du aufholst.",
+    "reader.portion.readMore_one": "Jetzt {count} weitere Seite lesen",
+    "reader.portion.readMore_other": "Jetzt {count} weitere Seiten lesen",
+
+    "reader.portion.title": "Täglicher Koranabschnitt",
+    "reader.portion.page": "Seite {n}",
+    "reader.portion.pages": "Seiten {from}–{to}",
+    "reader.portion.ref": "{surah} {ayah}",
+    "reader.portion.span": "{from} → {to}",
+    "reader.portion.subtitle": "Heute: {span} · {pages} · Juz {juz}",
+    "reader.portion.merit":
+      "Dein Abschnitt setzt dort fort, wo du aufgehört hast, und ist so bemessen, dass der ganze Koran innerhalb eines Monats nach Beginn vollendet wird — etwa ein Juz am Tag — ein verpasster Tag wird nachgeholt, nie übersprungen. Drücke unten auf Abspielen, und genau diese Verse ({span}) werden dir einer nach dem anderen rezitiert, oder lies sie auf Al-Islam.org.",
+    "reader.portion.audhu": "Ich suche Zuflucht bei Allah vor dem verfluchten Satan.",
+    "reader.portion.bismillah":
+      "Im Namen Allahs, des Allerbarmers, des Barmherzigen. — die heutige Lesung reicht von {from} bis {to}.",
+    "reader.portion.reciter": "Mishary Alafasy",
+    "reader.portion.audioTitle": "{ref} — {reciter}",
+    "reader.portion.linkRead": "Sure {surah} lesen (ab Vers {ayah}) — Al-Islam.org",
+    "reader.portion.linkContinue": "…weiter mit Sure {surah} (bis Vers {ayah}) — Al-Islam.org",
+
+    "reader.quran.heading": "Koran",
+    "reader.quran.completed": "Vollendet",
+    "reader.quran.times_one": "Mal",
+    "reader.quran.times_other": "Mal",
+    "reader.quran.firstKhatm": "Erster Khatm",
+    "reader.quran.khatmN": "Khatm {n}",
+    "reader.quran.progress": "{into}/{total} Seiten",
+    "reader.quran.owed": "Offen",
+    "reader.quran.pages_one": "{count} Seite",
+    "reader.quran.pages_other": "{count} Seiten",
+    "reader.quran.owedFrom":
+      "Aus verpassten Tagen. Lies sie an einem beliebigen Tag — die kommenden Abschnitte werden kürzer, je mehr du aufholst.",
+    "reader.quran.owedFromSkipped":
+      "Aus verpassten Tagen und Seiten ohne Häkchen. Lies sie an einem beliebigen Tag — die kommenden Abschnitte werden kürzer, je mehr du aufholst.",
+    "reader.quran.run": "S. {a}",
+    "reader.quran.runRange": "S. {a}–{b}",
+    "reader.quran.readNow_one": "Jetzt {count} Seite lesen",
+    "reader.quran.readNow_other": "Jetzt {count} Seiten lesen",
+    "reader.quran.daysRead": "Lesetage",
+    "reader.quran.pagesRead": "Gelesene Seiten",
+    "reader.quran.intro":
+      "Ein Khatm jeden Monat — etwa ein Juz am Tag. Hake den Täglichen Koranabschnitt ab; er setzt dort fort, wo du aufhörst.",
+    "reader.quran.pace_one":
+      "Mit {count} Seite am Tag ist dieser Khatm bis zum {date} vollendet. Ein verpasster Tag wird nachgeholt, nie übersprungen.",
+    "reader.quran.pace_other":
+      "Mit {count} Seiten am Tag ist dieser Khatm bis zum {date} vollendet. Ein verpasster Tag wird nachgeholt, nie übersprungen.",
+  },
 };
 
 export default reader;

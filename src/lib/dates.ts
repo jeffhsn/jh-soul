@@ -1,5 +1,7 @@
 /** Date helpers — local-time based, since aamal follow the user's local day. */
 
+import type { Locale } from "./i18n";
+
 export function todayKey(d: Date = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -7,20 +9,29 @@ export function todayKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-export function hijriDate(d: Date = new Date()): string {
+/**
+ * The Hijri date in the reader's language. `intl` is the locale's Intl tag
+ * (useT().intl). English and Arabic keep Intl's own wording ("Rabiʻ II 23,
+ * 1448 AH", "23 ربيع الآخر 1448 هـ"); Italian and German get the familiar
+ * transliterated month names instead of Intl's "Rabiʻ II".
+ */
+export function hijriDate(d: Date = new Date(), intl: string = "en"): string {
   try {
-    return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(d);
+    const locale = localeOf(intl);
+    if (locale === "en" || locale === "ar") {
+      const tag = intl.includes("-u-") ? `${intl}-ca-islamic-umalqura` : `${intl}-u-ca-islamic-umalqura`;
+      return new Intl.DateTimeFormat(tag, { day: "numeric", month: "long", year: "numeric" }).format(d);
+    }
+    const h = hijriParts(d);
+    const name = hijriMonthName(h.month, locale);
+    return locale === "de" ? `${h.day}. ${name} ${h.year} AH` : `${h.day} ${name} ${h.year} AH`;
   } catch {
     return "";
   }
 }
 
-export function gregorianDate(d: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en", {
+export function gregorianDate(d: Date = new Date(), intl: string = "en"): string {
+  return new Intl.DateTimeFormat(intl, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -42,6 +53,36 @@ export interface HijriParts {
   day: number;
   year: number;
   monthName: string;
+}
+
+/** The app's Locale from an Intl tag ("ar-u-nu-latn" → "ar"). */
+function localeOf(intl: string): Locale {
+  const l = intl.slice(0, 2);
+  return l === "it" || l === "ar" || l === "de" ? l : "en";
+}
+
+const HIJRI_MONTHS_AR = [
+  "محرم",
+  "صفر",
+  "ربيع الأول",
+  "ربيع الآخر",
+  "جمادى الأولى",
+  "جمادى الآخرة",
+  "رجب",
+  "شعبان",
+  "رمضان",
+  "شوال",
+  "ذو القعدة",
+  "ذو الحجة",
+];
+
+/**
+ * Hijri month name (1 = Muharram … 12 = Dhu al-Hijjah) in a language.
+ * Italian and German write the same transliterations as English.
+ */
+export function hijriMonthName(month: number, locale: Locale): string {
+  const list = locale === "ar" ? HIJRI_MONTHS_AR : HIJRI_MONTHS;
+  return list[month - 1] ?? "";
 }
 
 const HIJRI_MONTHS = [

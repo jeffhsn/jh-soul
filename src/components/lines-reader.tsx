@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Line } from "@/data";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,19 +10,29 @@ import { cn } from "@/lib/utils";
  * quiet translation. One line = one breath.
  */
 export function LinesReader({ lines }: { lines: Line[] }) {
+  const { t } = useT();
   const [showTr, setShowTr] = useState(true);
   const [showEn, setShowEn] = useState(true);
+  // in Arabic the lines carry no transliteration/translation — nothing to toggle
+  const hasTr = lines.some((l) => l.tr);
+  const hasEn = lines.some((l) => l.en);
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-end gap-2 text-[0.72rem]">
-        <Toggle on={showTr} onClick={() => setShowTr((v) => !v)}>
-          transliteration
-        </Toggle>
-        <Toggle on={showEn} onClick={() => setShowEn((v) => !v)}>
-          translation
-        </Toggle>
-      </div>
+      {(hasTr || hasEn) && (
+        <div className="mb-6 flex items-center justify-end gap-2 text-[0.72rem]">
+          {hasTr && (
+            <Toggle on={showTr} onClick={() => setShowTr((v) => !v)}>
+              {t("reader.toggle.transliteration")}
+            </Toggle>
+          )}
+          {hasEn && (
+            <Toggle on={showEn} onClick={() => setShowEn((v) => !v)}>
+              {t("reader.toggle.translation")}
+            </Toggle>
+          )}
+        </div>
+      )}
       <ol className="space-y-7">
         {lines.map((line, i) => (
           <li key={i} className="group">
@@ -61,7 +72,7 @@ function Toggle({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1 uppercase tracking-[0.14em] transition",
+        "rounded-full border px-3 py-1 uppercase tracking-[0.14em] transition rtl:normal-case rtl:tracking-normal",
         on
           ? "border-gold-dim/60 text-gold-bright"
           : "border-night-line text-cream-faint hover:text-cream-dim",

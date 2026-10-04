@@ -4,8 +4,10 @@ import { useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import type { Line } from "@/data";
 import { useCountState } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { useCountKeys } from "@/lib/use-count-keys";
 import { ProgressRing } from "./progress-ring";
+import { CountKeysHint } from "./tasbih-beads";
 
 /**
  * Single-phrase repetition counter (salawat, istighfar…).
@@ -24,6 +26,7 @@ export function PhraseCounter({
   phrase?: Line;
   onComplete: () => void;
 }) {
+  const { t } = useT();
   const [state, setState] = useCountState(amalId, date);
   const [, setTick] = useState(0);
   const doneRef = useRef(false);
@@ -61,15 +64,15 @@ export function PhraseCounter({
       {phrase && (
         <div className="text-center">
           <p className="arabic-text text-3xl text-cream">{phrase.ar}</p>
-          <p className="mt-2 text-sm italic text-sage/85">{phrase.tr}</p>
-          <p className="mt-0.5 text-[0.82rem] text-cream-dim">{phrase.en}</p>
+          {phrase.tr && <p className="mt-2 text-sm italic text-sage/85">{phrase.tr}</p>}
+          {phrase.en && <p className="mt-0.5 text-[0.82rem] text-cream-dim">{phrase.en}</p>}
         </div>
       )}
 
       <button
         onClick={tap}
         disabled={finished}
-        aria-label="Count one recitation"
+        aria-label={t("reader.counter.count")}
         className="relative mt-10 touch-manipulation rounded-full outline-none transition active:scale-[0.97]"
       >
         {state.count > 0 && !finished && (
@@ -87,23 +90,19 @@ export function PhraseCounter({
               {finished ? "✓" : state.count}
             </span>
             <span className="mt-1 text-sm text-cream-faint">
-              {finished ? "complete" : `of ${target}`}
+              {finished ? t("reader.counter.complete") : t("reader.counter.of", { target })}
             </span>
           </span>
         </ProgressRing>
       </button>
 
       {!finished && (
-        <p className="mt-5 text-[0.78rem] uppercase tracking-[0.2em] text-cream-faint">
-          tap to count
+        <p className="mt-5 text-[0.78rem] uppercase tracking-[0.2em] text-cream-faint rtl:normal-case rtl:tracking-normal">
+          {t("reader.counter.tap")}
         </p>
       )}
 
-      <p className="mt-4 hidden text-center text-[0.68rem] tracking-wide text-cream-faint md:block">
-        <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Space</kbd> to
-        count · <kbd className="rounded border border-night-line px-1.5 py-0.5 font-sans">Backspace</kbd>{" "}
-        to undo
-      </p>
+      <CountKeysHint />
       <button
         onClick={() => {
           doneRef.current = false;
@@ -112,7 +111,7 @@ export function PhraseCounter({
         className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-faint transition hover:text-cream-dim"
       >
         <RotateCcw className="size-3" />
-        start over
+        {t("reader.counter.startOver")}
       </button>
     </div>
   );
