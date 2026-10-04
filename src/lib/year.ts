@@ -4,21 +4,19 @@ import { allAamal } from "@/data";
 import { aamalDate } from "./aamal-day";
 import { hijriParts, todayKey } from "./dates";
 import { lastFolded, yearKey, yearSummaries, type YearSummary } from "./folded";
-import { carryOf, khatmState, rangeOfDay } from "./khatm";
+import { carryOf, khatmState, pagesReadOn } from "./khatm";
 import { emit, stamp } from "./store";
 
 /**
- * "Your year": each Hijri year, summed up. While a year is recent its numbers
- * are computed from the day-by-day detail. Four months after it ends (once it
- * has left the heatmap) the detail is folded into the summary for good —
- * `da:year:<year>` — so what each person stores stays small however many
- * years they keep coming. Nothing a person sees is lost: the summary, the
- * lifetime sadaqa, the streak and the khatm all continue from it.
+ * "Your year": each Hijri year, summed up. While the year runs its numbers are
+ * computed from the day-by-day detail. When it ends (1 Muharram) the detail is
+ * folded into the summary for good — `da:year:<year>` — and every new year
+ * starts fresh, so what each person stores stays small however many years
+ * they keep coming. The summary stays, and the lifetime sadaqa, the streak and
+ * the khatm all continue from it.
  */
 
 const DATED = /^da:[a-z]+:(\d{4}-\d{2}-\d{2})/;
-/** heatmap is 17 weeks: fold only once a year's last day is older than that */
-const FOLD_AFTER_DAYS = 120;
 const META = "da:meta:updated";
 
 const keyDate = (key: string) => {
@@ -76,8 +74,9 @@ function computeYear(year: number): YearSummary {
     const done = json<Record<string, boolean>>(`da:done:${key}`, {});
     const bonus = Object.keys(json<Record<string, boolean>>(`da:morning:${key}`, {})).length;
     const ids = Object.keys(done);
+    const caughtUp = window.localStorage.getItem(`da:quranx:${key}`) !== null;
     const total = Number(window.localStorage.getItem(`da:total:${key}`) ?? 0);
-    if (ids.length + bonus > 0) s.present++;
+    if (ids.length + bonus > 0 || caughtUp) s.present++;
     s.kept += ids.length + bonus;
     if (total > 0 && ids.length >= total) {
       s.perfect++;
@@ -89,10 +88,7 @@ function computeYear(year: number): YearSummary {
       counts.set(base, (counts.get(base) ?? 0) + 1);
     }
     if (done["qada-salat"]) s.qada++;
-    if (done["quran-daily"]) {
-      const r = rangeOfDay(key);
-      s.quranPages += r.to - r.from + 1;
-    }
+    s.quranPages += pagesReadOn(key); // the portion (minus unticked pages) and any catch-up
     const given = Number(window.localStorage.getItem(`da:sadaqa:${key}`));
     if (Number.isFinite(given) && given > 0) {
       s.sadaqaCents += Math.round(given * 100);
@@ -133,18 +129,15 @@ export function yearSummary(year: number): YearSummary {
   return stored?.through ? stored : computeYear(year);
 }
 
-/** The date a finished year's detail will be folded into its summary. */
-export const foldDate = (year: number) => keyDate(shift(yearBounds(year).to, FOLD_AFTER_DAYS + 1));
-
 /**
- * Fold every finished year that has left the heatmap: write its summary, then
- * drop its day-by-day keys. Runs after a sync, so the summary is made from
+ * Fold every finished year: write its summary, then drop its day-by-day keys. Runs after a sync, so the summary is made from
  * everything this person's devices hold. Oldest year first, so each khatm
  * carry builds on the one before.
  */
 export function foldOldYears() {
   if (typeof window === "undefined") return;
-  const cutoff = todayKey(new Date(aamalDate().getTime() - FOLD_AFTER_DAYS * 864e5));
+  // a year folds once its last day is over (the active day turns over at Fajr)
+  const cutoff = shift(todayKey(aamalDate()), -1);
   const dated: string[] = [];
   for (let i = 0; i < window.localStorage.length; i++) {
     const k = window.localStorage.key(i);

@@ -21,6 +21,8 @@ export function FocusView({
   onStep,
   onClose,
   onDone,
+  quran,
+  doneLabel,
 }: {
   amal: Amal;
   date: string;
@@ -31,6 +33,15 @@ export function FocusView({
   onStep: (delta: 1 | -1) => void;
   onClose: () => void;
   onDone: (value: boolean) => void;
+  /** Quran readings: per-page ticks, and whether to offer the catch-up */
+  quran?: {
+    pages: { from: number; to: number };
+    skip: number[];
+    onSkip: (skip: number[]) => void;
+    catchUpHint?: boolean;
+  };
+  /** the done button's wording, when "I have completed this" does not fit */
+  doneLabel?: string;
 }) {
   const interactive = amal.type === "tasbih" || amal.type === "counter";
 
@@ -157,6 +168,10 @@ export function FocusView({
                   refs={amal.verseRefs}
                   audio={amal.audio}
                   date={date}
+                  pages={quran?.pages}
+                  skip={quran?.skip}
+                  onSkip={quran?.onSkip}
+                  catchUpHint={quran?.catchUpHint}
                 />
                 {amal.links?.map((link) => (
                   <a
@@ -224,7 +239,7 @@ export function FocusView({
                 )}
               >
                 <Check className="size-4" strokeWidth={3} />
-                {done ? "Marked as done — undo" : "I have completed this"}
+                {done ? "Marked as done — undo" : (doneLabel ?? "I have completed this")}
               </button>
             </div>
           )}
@@ -232,6 +247,7 @@ export function FocusView({
 
         {/* vertical stepper — floats outside the panel (right edge on phones),
             gold so it reads as "move through the day", not part of the amal */}
+        {step.total > 1 && (
         <div
           data-step-nav
           className="pointer-events-auto fixed bottom-[7.5rem] right-2.5 z-50 flex flex-col items-center gap-2 sm:bottom-auto sm:right-auto sm:left-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))] sm:top-1/2 sm:-translate-y-1/2"
@@ -256,6 +272,7 @@ export function FocusView({
             <ChevronDown className="size-5" strokeWidth={2.5} />
           </button>
         </div>
+        )}
       </Dialog.Portal>
     </Dialog.Root>
   );

@@ -36,6 +36,7 @@ export function Pwa() {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
         if (!k) continue;
+        if (k.startsWith("da:qtext:catchup-")) localStorage.removeItem(k); // catch-up verse text, read once
         const m = k.match(/^da:(prayers|count|qtext):(\d{4}-\d{2}-\d{2})/);
         if (m && m[2] < cutoff) localStorage.removeItem(k);
       }

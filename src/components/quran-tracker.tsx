@@ -4,7 +4,8 @@ import { useSyncExternalStore } from "react";
 import { BookOpenText } from "lucide-react";
 import { QURAN_PAGES } from "@/data/quran-daily";
 import { aamalKey } from "@/lib/aamal-day";
-import { khatmDeadline, khatmState, paceFor } from "@/lib/khatm";
+import { khatmDeadline, khatmState, owedOn, paceFor, type Owed } from "@/lib/khatm";
+import type { PageRange } from "@/data/quran-daily";
 import { subscribe } from "@/lib/store";
 
 interface QuranProgress {
@@ -18,9 +19,19 @@ interface QuranProgress {
   pace: number;
   /** when that month ends, as text — empty before the first day */
   deadline: string;
+  /** pages owed from missed days or unticked pages, and the reading that catches up */
+  owed: Owed;
 }
 
-const EMPTY: QuranProgress = { khatms: 0, into: 0, pages: 0, days: 0, pace: 2, deadline: "" };
+const EMPTY: QuranProgress = {
+  khatms: 0,
+  into: 0,
+  pages: 0,
+  days: 0,
+  pace: 2,
+  deadline: "",
+  owed: { pages: 0, skipped: [], next: null },
+};
 let cache: QuranProgress = EMPTY;
 let cacheSig = "";
 
@@ -35,6 +46,7 @@ function compute(): QuranProgress {
     pages: state.pages,
     days: state.days,
     pace: paceFor(state, aamalKey()),
+    owed: owedOn(aamalKey()),
     deadline: deadline
       ? deadline.toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })
       : "",
@@ -58,6 +70,18 @@ function useQuranProgress(): QuranProgress {
 }
 
 /** Changes whenever reading progress does — lets the day view re-derive its portion. */
+/** Pages owed and the catch-up reading, for the day's reader. */
+export function useQuranOwed(): Owed {
+  return useQuranProgress().owed;
+}
+
+/** Open a catch-up reading (handled by the day view, which owns the reader). */
+export function openCatchUp(range: PageRange) {
+  window.dispatchEvent(new CustomEvent<PageRange>("da:catch-up", { detail: range }));
+}
+
+const runLabel = ([a, b]: [number, number]) => (a === b ? `p. ${a}` : `p. ${a}–${b}`);
+
 export function useQuranVersion(): string {
   const p = useQuranProgress();
   return `${p.khatms}:${p.into}:${p.days}`;
@@ -65,7 +89,7 @@ export function useQuranVersion(): string {
 
 /** How many times the Quran has been completed — sibling of the Sadaqa panel. */
 export function QuranPanel() {
-  const { khatms, into, pages, days, pace, deadline } = useQuranProgress();
+  const { khatms, into, pages, days, pace, deadline, owed } = useQuranProgress();
   const percent = (into / QURAN_PAGES) * 100;
 
   return (
@@ -119,6 +143,43 @@ export function QuranPanel() {
             />
           </div>
         </div>
+
+        {/* pages owed: missed days and unticked pages, caught up on any day */}
+        {owed.pages > 0 && owed.next && (
+          <div className="relative mt-4 border-t border-night-line-soft pt-4">
+            <div className="flex items-baseline justify-between gap-3 text-[0.78rem]">
+              <span className="text-cream-dim">Owed</span>
+              <span className="tabular-nums text-gold-bright">
+                {owed.pages} {owed.pages === 1 ? "page" : "pages"}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[0.72rem] leading-snug text-cream-faint">
+              From days you missed{owed.skipped.length ? " and pages you didn't tick" : ""}. Read them any day —
+              the coming portions shrink as you catch up.
+            </p>
+            {owed.skipped.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {owed.skipped.slice(0, 8).map((run) => (
+                  <button
+                    key={run[0]}
+                    onClick={() => openCatchUp({ from: run[0], to: Math.min(run[1], run[0] + 39) })}
+                    className="rounded-full border border-night-line px-2.5 py-1 text-[0.7rem] tabular-nums text-cream-dim transition hover:border-gold-dim hover:text-gold-bright"
+                  >
+                    {runLabel(run)}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => openCatchUp(owed.next!)}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-gold-dim/60 py-2.5 text-[0.82rem] text-gold-bright transition hover:border-gold hover:bg-night-raise active:scale-[0.99]"
+            >
+              <BookOpenText className="size-3.5" />
+              Read {owed.next.to - owed.next.from + 1} {owed.next.to === owed.next.from ? "page" : "pages"} now
+              <span className="tabular-nums text-cream-faint">· {runLabel([owed.next.from, owed.next.to])}</span>
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-night-line-soft pt-4">
           <Stat label="Days read" value={String(days)} />

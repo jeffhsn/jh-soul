@@ -7,7 +7,8 @@ import { createHash } from "node:crypto";
  * itself. Opening the site with `#id=<id>` on another device joins that copy.
  *
  * Storage is Upstash Redis (free plan, no card, auto-upgrade off — it can
- * never bill). Built to keep 1,000 people saving every day inside that plan:
+ * never bill). Built to keep as many people as the plan can hold saving every
+ * day inside it — about 1,500:
  *  - one Redis hash per person, one field per `da:` key:
  *    "<updated>|<rev>|v<json>" or "<updated>|<rev>|d" for a deletion;
  *  - one sync = ONE command: a Lua script (billed as a single command) that
@@ -15,12 +16,18 @@ import { createHash } from "node:crypto";
  *    every field changed since the device's last `rev` — so only what changed
  *    travels, both ways;
  *  - a daily budget (DAY_UNITS) under 90% of the plan's commands and
- *    bandwidth, and room for at most MAX_PEOPLE people, both checked inside
- *    the script. Past either the device keeps working from its own copy and
- *    tries again later (429 / 507); nothing is lost.
- * Nothing ever expires. A `da:year:<y>` summary carrying `"through":"<date>"`
- * folds that Hijri year: the script drops every dated field up to it and
- * ignores any that arrive later (src/lib/year.ts).
+ *    bandwidth, checked inside the script;
+ *  - storage measured, not guessed: the script keeps `da:bytes` (what every
+ *    stored field takes) and `da:people`, and lets a NEW person in only while
+ *    bytes + people × RESERVE (room each person may still grow this year)
+ *    stays under STORAGE_LIMIT — so everyone already in can always save.
+ *    Past either limit a device keeps working from its own copy and tries
+ *    again later (429 / 507); nothing is lost.
+ * Each Hijri year is folded at its end: a `da:year:<y>` summary carrying
+ * `"through":"<date>"` makes the script drop every dated field up to it and
+ * ignore any that arrive later (src/lib/year.ts), so a person never holds
+ * more than a year of detail. Per-day counter state (`da:count:`) older than
+ * 45 days is pruned here as the devices prune it.
  *
  *   POST { since, changes: [[key, updated, json | null], …] }
  *     → { rev, reset, changes: [[key, updated, json | null], …] }
@@ -35,26 +42,37 @@ const MAX_BYTES = 400_000;
 /**
  * Free plan per month: 500K commands, 10 GB bandwidth, 256 MB storage.
  * One daily counter in "units" = commands + bandwidth/20 KB (500K ≈ 10 GB/20 KB):
- * 31 days × 14,500 stays under 90% of both. A person syncs ~8 times a day → ~1,800 a day fit.
+ * 31 days × 14,500 stays under 90% of both. A person syncs ~6–8 times a day → ~2,000 a day fit.
  */
 const DAY_UNITS = 14_500;
-/** ≤ ~230 KB each with a year and four months of detail at most: 1,000 people stay under 256 MB */
-const MAX_PEOPLE = 1_000;
-/** keys that are not people: two daily budget counters and the keep-alive */
-const OTHER_KEYS = 3;
+/** stay well under the plan's 256 MB, leaving room for Redis's own overhead */
+const STORAGE_LIMIT = 200_000_000;
+/** room kept for each person to grow until their year folds (a busy year is ~150 KB) */
+const RESERVE = 130_000;
+/** Redis's per-field cost on top of a field's name and value */
+const FIELD = 64;
 
 const SCRIPT = `
 local h, b = KEYS[1], KEYS[2]
 local since = tonumber(ARGV[1])
+local FIELD = tonumber(ARGV[5])
 if tonumber(redis.call('GET', b) or '0') >= tonumber(ARGV[2]) then return {'paused'} end
-local n = (#ARGV - 4) / 3
+local n = (#ARGV - 7) / 3
 if redis.call('EXISTS', h) == 0 then
   if n == 0 then
     redis.call('INCRBY', b, 1)
     redis.call('EXPIRE', b, 172800)
     return {'ok', '0', '0'}
   end
-  if redis.call('DBSIZE') >= tonumber(ARGV[3]) then return {'full'} end
+  local bytes = tonumber(redis.call('GET', 'da:bytes') or '0')
+  local people = tonumber(redis.call('GET', 'da:people') or '0')
+  if bytes + people * tonumber(ARGV[4]) >= tonumber(ARGV[3]) then return {'full'} end
+  redis.call('INCR', 'da:people')
+end
+local delta = 0
+local function drop(f, v)
+  redis.call('HDEL', h, f)
+  delta = delta - #f - #v - FIELD
 end
 local through = redis.call('HGET', h, '~through') or ''
 local rev = tonumber(redis.call('HGET', h, '~rev') or '0')
@@ -62,31 +80,46 @@ local reset = '0'
 if since > rev then since = 0; reset = '1' end
 local mine = {}
 local function dated(k) return string.match(k, '^da:%l+:(%d%d%d%d%-%d%d%-%d%d)') end
+local function fold(upto)
+  local all = redis.call('HGETALL', h)
+  for i = 1, #all, 2 do
+    local fd = dated(all[i])
+    if fd and fd <= upto then drop(all[i], all[i + 1]) end
+  end
+end
 for i = 0, n - 1 do
-  local k, t, v = ARGV[5 + i * 3], tonumber(ARGV[6 + i * 3]), ARGV[7 + i * 3]
+  local k, t, v = ARGV[8 + i * 3], tonumber(ARGV[9 + i * 3]), ARGV[10 + i * 3]
   local d = dated(k)
   if not (d and d <= through) then
     local cur = redis.call('HGET', h, k)
     local ct = cur and tonumber(string.match(cur, '^(%d+)|')) or -1
     if t > ct then
       rev = rev + 1
-      redis.call('HSET', h, k, t .. '|' .. rev .. '|' .. v)
+      local val = t .. '|' .. rev .. '|' .. v
+      redis.call('HSET', h, k, val)
+      delta = delta + #val - (cur and #cur or -#k - FIELD)
       mine[k] = true
       local upto = string.match(k, '^da:year:') and string.match(v, '"through":"(%d%d%d%d%-%d%d%-%d%d)"')
       if upto and upto > through then
         through = upto
         redis.call('HSET', h, '~through', through)
-        for _, f in ipairs(redis.call('HKEYS', h)) do
-          local fd = dated(f)
-          if fd and fd <= through then redis.call('HDEL', h, f) end
-        end
+        fold(through)
       end
     end
   end
 end
+-- now and then, drop per-day counter state the devices no longer keep
+if rev % 25 == 0 and n > 0 then
+  local all = redis.call('HGETALL', h)
+  for i = 1, #all, 2 do
+    local cd = string.match(all[i], '^da:count:(%d%d%d%d%-%d%d%-%d%d)')
+    if cd and cd < ARGV[6] then drop(all[i], all[i + 1]) end
+  end
+end
 redis.call('HSET', h, '~rev', rev)
+if delta ~= 0 then redis.call('INCRBY', 'da:bytes', delta) end
 local out = {'ok', tostring(rev), reset}
-local bytes = tonumber(ARGV[4])
+local bytes = tonumber(ARGV[7])
 if since < rev then
   local all = redis.call('HGETALL', h)
   for i = 1, #all, 2 do
@@ -150,10 +183,14 @@ export async function POST(req: Request) {
     const body = await req.text();
     if (body.length > MAX_BYTES) return Response.json({ error: "too large" }, { status: 413 });
     const { since, changes } = JSON.parse(body) as { since?: number; changes?: Change[] };
+    const countCutoff = new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 10);
     const args: (string | number)[] = [
       Math.max(0, Math.floor(Number(since) || 0)),
       DAY_UNITS,
-      MAX_PEOPLE + OTHER_KEYS,
+      STORAGE_LIMIT,
+      RESERVE,
+      FIELD,
+      countCutoff,
       body.length,
     ];
     for (const c of changes ?? []) {

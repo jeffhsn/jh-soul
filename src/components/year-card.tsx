@@ -6,7 +6,7 @@ import { allAamal } from "@/data";
 import { aamalDate } from "@/lib/aamal-day";
 import { hijriParts, todayKey } from "@/lib/dates";
 import { emit, stamp, subscribe } from "@/lib/store";
-import { foldDate, yearBounds, yearSummary, yearsWithData } from "@/lib/year";
+import { yearSummary, yearsWithData } from "@/lib/year";
 import { formatAmount } from "./sadaqa-entry";
 
 const titles = new Map(allAamal.map((a) => [a.id, a.title]));
@@ -108,10 +108,8 @@ export function YearCard({ refresh }: { refresh?: unknown }) {
 
         <p className="mt-4 text-[0.7rem] italic leading-snug text-cream-faint">
           {running
-            ? `The year closes on ${dayFmt.format(keyDate(s.to))}; its summary stays here for good.`
-            : s.through
-              ? "Kept for good as this summary."
-              : `Day-by-day detail stays until ${dayFmt.format(foldDate(year))}, then this summary keeps the year for good. Want every day? Save a backup file below.`}
+            ? `On ${dayFmt.format(keyDate(s.to))} this year closes: its days are wrapped into this summary, kept for good, and a fresh year begins.`
+            : "This year is wrapped up — kept for good as this summary."}
         </p>
       </div>
     </section>

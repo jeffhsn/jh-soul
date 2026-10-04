@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -28,12 +28,16 @@ import { ContributionGraph } from "./contribution-graph";
 import { PrayerTimes } from "./prayer-times";
 import { QuranPanel, useQuranVersion } from "./quran-tracker";
 import { portionFor } from "@/lib/khatm";
+import { quranPortionFor, type PageRange } from "@/data/quran-daily";
 import { useSyncStatus } from "@/lib/sync";
 import {
   computeStreak,
   absorbMorningTicks,
   recordDayTotal,
   recordQuranPortion,
+  addCatchUp,
+  setQuranSkip,
+  subscribe,
   useDone,
 } from "@/lib/store";
 import { AmalCard } from "./amal-card";
@@ -42,7 +46,6 @@ import { SadaqaField, SadaqaPanel } from "./sadaqa-entry";
 import type { Amal } from "@/data";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
-import { SyncNote } from "./sync-note";
 import { YearCard, YearNudge } from "./year-card";
 
 // the reader dialog (audio players, tasbih beads, counters) is only needed
@@ -137,6 +140,38 @@ function DayContent({ now }: { now: Date }) {
     if (id === "quran-daily" && value) recordQuranPortion(date, quranRange);
     setDoneRaw(id, value);
   };
+  // pages of the day's portion unticked as not read (they stay owed)
+  const pinnedRaw = useSyncExternalStore(
+    subscribe,
+    () => window.localStorage.getItem(`da:quran:${date}`),
+    () => null,
+  );
+  const portionSkip = useMemo<number[]>(() => {
+    try {
+      return (JSON.parse(pinnedRaw ?? "null")?.skip as number[]) ?? [];
+    } catch {
+      return [];
+    }
+  }, [pinnedRaw]);
+  // a catch-up reading, opened from the Quran panel or under the day's portion
+  const [catchUp, setCatchUp] = useState<{ range: PageRange; skip: number[] } | null>(null);
+  useEffect(() => {
+    const onOpen = (e: Event) => setCatchUp({ range: (e as CustomEvent<PageRange>).detail, skip: [] });
+    window.addEventListener("da:catch-up", onOpen);
+    return () => window.removeEventListener("da:catch-up", onOpen);
+  }, []);
+  const catchUpAmal = useMemo(() => {
+    if (!catchUp) return null;
+    const a = quranPortionFor(catchUp.range);
+    return {
+      ...a,
+      id: "quran-catchup",
+      title: "Quran catch-up",
+      subtitle: a.subtitle?.replace(/^Today: /, ""),
+      merit:
+        "Pages owed from days you missed or pages you didn't tick. Read as much as you have time for — untick any page you don't get to, and it stays owed. Every page read here brings the coming portions back down.",
+    };
+  }, [catchUp]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   // phone navigation: the list is the app; calendar and progress are one tap away
@@ -548,7 +583,6 @@ function DayContent({ now }: { now: Date }) {
 
       <footer className="mt-14 text-center text-xs text-cream-faint">
         <div className="hairline mb-6 opacity-40" />
-        <SyncNote />
         <p className="italic">
           &ldquo;Verily in the remembrance of Allah do hearts find rest.&rdquo; — Qur&rsquo;an 13:28
         </p>
@@ -622,6 +656,41 @@ function DayContent({ now }: { now: Date }) {
             setDone(open.id, v);
             if (v) advanceAfterDone(open.id);
           }}
+          quran={
+            open.id === "quran-daily"
+              ? {
+                  pages: quranRange,
+                  skip: portionSkip,
+                  onSkip: (skip) => setQuranSkip(date, quranRange, skip),
+                  catchUpHint: isToday,
+                }
+              : undefined
+          }
+          doneLabel={open.id === "quran-daily" && portionSkip.length ? "I have read the ticked pages" : undefined}
+        />
+      )}
+
+      {catchUp && catchUpAmal && (
+        <FocusView
+          key={`catchup-${catchUp.range.from}`}
+          amal={catchUpAmal}
+          date={`catchup-${catchUp.range.from}-${catchUp.range.to}`}
+          done={false}
+          step={{ index: 0, total: 1, completed: 0 }}
+          onStep={() => {}}
+          onClose={() => setCatchUp(null)}
+          onDone={() => {
+            const { range, skip } = catchUp;
+            if (skip.length < range.to - range.from + 1)
+              addCatchUp(aamalKey(), skip.length ? { ...range, skip } : range);
+            setCatchUp(null);
+          }}
+          quran={{
+            pages: catchUp.range,
+            skip: catchUp.skip,
+            onSkip: (skip) => setCatchUp((c) => (c ? { ...c, skip } : c)),
+          }}
+          doneLabel={catchUp.skip.length ? "I have read the ticked pages" : "I have read these pages"}
         />
       )}
     </main>

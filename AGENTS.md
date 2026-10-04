@@ -40,20 +40,23 @@ person (`da:h:<sha256>`, field per `da:` key = "<updated>|<rev>|v<json>" or "…
 a Lua script via EVALSHA (src/app/api/sync/route.ts) that merges the device's changes (newest `da:meta:updated` stamp wins)
 and returns only fields changed since the device's `da:sync:rev`. Client (src/lib/sync.ts) sends only keys stamped since
 `da:sync:pushed`; syncs on load, on return after 10+ min, 20 s after a write, on hide. The script enforces a daily budget
-(DAY_UNITS, <90% of commands+bandwidth) and MAX_PEOPLE (1,000, keeps storage <256 MB); past either → 429/507, devices keep
-working locally. Nothing expires. Opening `https://…/#id=<id>` joins a person's copy (footer "Copy my private link",
-src/components/sync-note.tsx, which also has backup-file download/restore). A daily Vercel cron (vercel.json →
+(DAY_UNITS, <90% of commands+bandwidth) and measures storage (`da:bytes`, `da:people`): a NEW person is admitted only while
+bytes + people × RESERVE < STORAGE_LIMIT (≈1,500 people); past a limit → 429/507, devices keep working locally.
+Opening `https://…/#id=<id>` joins a person's copy (no UI for it — the owner rejected the footer link/backup buttons). A daily Vercel cron (vercel.json →
 /api/keepalive, CRON_SECRET) stops Upstash archiving after 30 idle days. Env: KV_REST_API_URL / KV_REST_API_TOKEN
 (UPSTASH_REDIS_REST_* also accepted). Without them sync answers 503 and the site runs device-only. The old single-user
 Vercel Blob copy (DA_SYNC_KEY) is unused, kept only as a backup. The service worker never caches /api/.
 Your year (src/lib/year.ts, src/components/year-card.tsx): each Hijri year summed up (days, whole days, longest run,
 khatms, Quran pages, qada days, sadaqa, most-kept aamal), on the Progress tab/rail, with a dismissible Muharram nudge.
-120 days after a Hijri year ends its dated keys are FOLDED into `da:year:<y>` (with `through` and a khatm carry) and
+When a Hijri year ends (1 Muharram) its dated keys are FOLDED into `da:year:<y>` (with `through` and a khatm carry) and
 deleted — keeps each person's storage bounded. khatm.ts, computeStreak and the lifetime sadaqa continue from folded
 summaries (src/lib/folded.ts); the sync script drops/ignores dated fields ≤ `through`.
-Quran khatm is MONTHLY: portions paced so a khatm completes within 30 days of its first day (~1 juz/day, max 40 pages);
+Quran catch-up: page ticks in the portion reader (`skip` on `da:quran:<date>`) and optional catch-up readings
+(`da:quranx:<date>` = ranges, not in da:done/totals) opened from the Quran panel or under the portion; owedOn() in khatm.ts =
+missed-day deficit vs an even monthly pace, or skipped pages. Quran khatm is MONTHLY: portions paced so a khatm completes within 30 days of its first day (~1 juz/day, max 40 pages);
 a khatm already running on 2026-10-04 (MONTHLY_FROM) gets its month from that day.
-Tend the Soul reading: books on Imam al-Mahdi (aj) and the lives of all twelve Imams (al-Qurashi series) on Al-Islam.org
+Tend the Soul reading: the three classical al-Mahdi (aj) books (al-Saduq's Kamal al-Din, al-Nu'mani's and al-Tusi's Ghayba)
+on Al-Islam.org, the Imams' lives as Sayed Ammar Nakshawani's Thaqlain lecture series on YouTube
 (al-islam.org is behind Cloudflare — curl gets 403; verify those links in a real browser), plus Look-up links to Sistani,
 Fadlallah (bayynat.org.lb) and Khamenei.ir.
 Qada prayers (`qada-salat`, one day = 17 rak'ahs) open the Evening session — an obligation before the recommended aamal.

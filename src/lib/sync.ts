@@ -73,12 +73,6 @@ export function getSyncId(): string | null {
   return id;
 }
 
-/** Link that opens this same progress on another device. */
-export function shareLink() {
-  const k = getSyncId();
-  return k ? `${window.location.origin}/#id=${k}` : null;
-}
-
 function skipped(k: string) {
   return !k.startsWith("da:") || SKIP.has(k) || SKIP_PREFIX.some((p) => k.startsWith(p));
 }
@@ -240,41 +234,4 @@ export function useSyncStatus() {
     () => status,
     () => "off" as SyncStatus,
   );
-}
-
-/** Everything worth keeping, as a file the person can store anywhere. */
-export function backupFile() {
-  const meta = readMeta();
-  const data: Record<string, string> = {};
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const k = window.localStorage.key(i)!;
-    if (!skipped(k)) data[k] = window.localStorage.getItem(k)!;
-  }
-  const blob = new Blob([JSON.stringify({ app: "dailyaamal", v: 2, data, updated: meta })], {
-    type: "application/json",
-  });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `daily-aamal-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-
-/** Merge a backup file in (newer entries win, nothing newer is overwritten), then back it up. */
-export async function restoreFile(file: File) {
-  const parsed = JSON.parse(await file.text()) as {
-    app?: string;
-    v?: number;
-    data?: Record<string, unknown>;
-    updated?: Record<string, number>;
-  };
-  if (parsed.app !== "dailyaamal" || typeof parsed.data !== "object" || !parsed.data)
-    throw new Error("not a Daily Aamal backup");
-  const updated = parsed.updated ?? {};
-  // v1 files held parsed JSON values; v2 the raw stored strings
-  const raw = (v: unknown) => (parsed.v === 2 ? String(v) : typeof v === "string" ? v : JSON.stringify(v));
-  const keys = new Set([...Object.keys(parsed.data), ...Object.keys(updated)]);
-  apply([...keys].map((k) => [k, updated[k] ?? 0, k in parsed.data! ? raw(parsed.data![k]) : null] as Change));
-  window.localStorage.setItem(PUSHED, "-1"); // send it all on the next sync
-  schedule(0);
 }

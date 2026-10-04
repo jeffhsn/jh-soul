@@ -51,12 +51,33 @@ const keyDate = (key: string) => {
 const daysBetween = (a: string, b: string) =>
   Math.round((keyDate(b).getTime() - keyDate(a).getTime()) / 86_400_000);
 
-function storedRange(key: string): PageRange | null {
+/** A run of pages read, minus any the reader unticked as not read. */
+export interface ReadRange extends PageRange {
+  skip?: number[];
+}
+
+function valid(r: unknown): ReadRange | null {
+  const x = r as ReadRange | null;
+  if (!x || !(x.from >= 1 && x.to <= QURAN_PAGES && x.from <= x.to)) return null;
+  const skip = Array.isArray(x.skip) ? x.skip.filter((p) => p >= x.from && p <= x.to) : [];
+  return skip.length ? { from: x.from, to: x.to, skip } : { from: x.from, to: x.to };
+}
+
+function storedRange(key: string): ReadRange | null {
   try {
-    const r = JSON.parse(window.localStorage.getItem(`da:quran:${key}`) ?? "null");
-    if (r && r.from >= 1 && r.to <= QURAN_PAGES && r.from <= r.to) return r;
+    return valid(JSON.parse(window.localStorage.getItem(`da:quran:${key}`) ?? "null"));
   } catch {}
   return null;
+}
+
+/** Catch-up reading done on a day, beyond its portion: `da:quranx:<date>` → ReadRange[]. */
+export function extrasOn(key: string): ReadRange[] {
+  try {
+    const list = JSON.parse(window.localStorage.getItem(`da:quranx:${key}`) ?? "[]");
+    return Array.isArray(list) ? (list.map(valid).filter(Boolean) as ReadRange[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 function tickedOn(key: string): boolean {
@@ -68,22 +89,32 @@ function tickedOn(key: string): boolean {
 }
 
 /** The portion a given day stands for: its stored one, else the legacy slice. */
-export function rangeOfDay(key: string): PageRange {
+export function rangeOfDay(key: string): ReadRange {
   return storedRange(key) ?? legacyRange(keyDate(key));
+}
+
+const pagesIn = (r: ReadRange) => r.to - r.from + 1 - (r.skip?.length ?? 0);
+
+/** Pages actually read on a day: its portion if ticked (minus unticked pages), plus catch-up. */
+export function pagesReadOn(key: string): number {
+  let n = tickedOn(key) ? pagesIn(rangeOfDay(key)) : 0;
+  for (const x of extrasOn(key)) n += pagesIn(x);
+  return n;
 }
 
 function fresh(): KhatmState {
   return { khatms: 0, read: new Set(), startKey: null, startPage: 1, days: 0, pages: 0 };
 }
 
-function apply(state: KhatmState, key: string, range: PageRange) {
+function apply(state: KhatmState, key: string, range: ReadRange, day = true) {
   if (state.startKey === null) {
     state.startKey = key;
     state.startPage = range.from;
   }
-  for (let p = range.from; p <= range.to; p++) state.read.add(p);
-  state.days++;
-  state.pages += range.to - range.from + 1;
+  const skip = new Set(range.skip);
+  for (let p = range.from; p <= range.to; p++) if (!skip.has(p)) state.read.add(p);
+  if (day) state.days++;
+  state.pages += pagesIn(range);
   if (state.read.size >= QURAN_PAGES) {
     state.khatms++;
     state.read = new Set();
@@ -126,13 +157,79 @@ export function khatmState(beforeKey?: string): KhatmState {
       if (JSON.parse(window.localStorage.getItem(k!) ?? "{}")["quran-daily"]) keys.push(m[1]);
     } catch {}
   }
-  for (const key of keys.sort()) apply(state, key, rangeOfDay(key));
+  // days with catch-up reading count too, ticked or not
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const m = window.localStorage.key(i)?.match(/^da:quranx:(\d{4}-\d{2}-\d{2})$/);
+    if (m && !(beforeKey && m[1] >= beforeKey) && m[1] > after && !keys.includes(m[1])) keys.push(m[1]);
+  }
+  for (const key of keys.sort()) {
+    if (tickedOn(key)) apply(state, key, rangeOfDay(key));
+    for (const x of extrasOn(key)) apply(state, key, x, !tickedOn(key));
+  }
   return state;
+}
+
+/** Position of a page in the current khatm's reading order (cyclic from where it began). */
+const orderOf = (state: KhatmState, p: number) => (p - state.startPage + QURAN_PAGES) % QURAN_PAGES;
+
+/** The furthest page read in the current khatm, as a position in its order; -1 before the first. */
+function frontOf(state: KhatmState): number {
+  let front = -1;
+  for (const p of state.read) front = Math.max(front, orderOf(state, p));
+  return front;
+}
+
+const pageAt = (state: KhatmState, i: number) => ((state.startPage - 1 + i) % QURAN_PAGES) + 1;
+
+/** Pages left behind the furthest page read — unticked as not read — as [from, to] runs. */
+export function skippedRuns(state: KhatmState): [number, number][] {
+  const runs: [number, number][] = [];
+  const front = frontOf(state);
+  for (let i = 0; i < front; i++) {
+    const p = pageAt(state, i);
+    if (state.read.has(p)) continue;
+    const last = runs[runs.length - 1];
+    if (last && last[1] === p - 1) last[1] = p;
+    else runs.push([p, p]);
+  }
+  return runs;
+}
+
+/**
+ * How many pages short of an even monthly pace this khatm will still be once
+ * `todayPortion` is read — the missed days. Zero when on time or ahead.
+ */
+export function behindBy(state: KhatmState, key: string, todayPortion?: ReadRange | null): number {
+  if (!state.startKey) return 0;
+  const elapsed = Math.max(0, daysBetween(paceStart(state.startKey), key)) + 1;
+  const due = Math.ceil((QURAN_PAGES * Math.min(KHATM_DAYS, elapsed)) / KHATM_DAYS);
+  const coming = todayPortion ? pagesIn(todayPortion) : 0;
+  return Math.max(0, due - state.read.size - coming);
+}
+
+/**
+ * The next catch-up reading: a skipped run if there is one, else the pages
+ * after the furthest read — beyond today's portion (`reservedTo`), so it never
+ * repeats it — as many as are owed, at most two juz at a sitting.
+ */
+export function catchUpPortion(state: KhatmState, owed: number, reservedTo?: number): PageRange | null {
+  const skipped = skippedRuns(state)[0];
+  if (skipped) return { from: skipped[0], to: Math.min(skipped[1], skipped[0] + MAX_PAGES_A_DAY - 1) };
+  if (owed <= 0) return null;
+  let start = frontOf(state) + 1;
+  if (reservedTo !== undefined) start = Math.max(start, orderOf(state, reservedTo) + 1);
+  if (start >= QURAN_PAGES) return null;
+  const from = pageAt(state, start);
+  let to = from;
+  while (to - from + 1 < Math.min(owed, MAX_PAGES_A_DAY) && to < QURAN_PAGES && !state.read.has(to + 1)) to++;
+  return { from, to };
 }
 
 /** Pages a day needed from `key` on to finish the current khatm inside its month. */
 export function paceFor(state: KhatmState, key: string): number {
-  const left = QURAN_PAGES - state.read.size;
+  // pages skipped behind the front are caught up apart; the pace covers what lies ahead
+  const ahead = QURAN_PAGES - 1 - frontOf(state);
+  const left = ahead > 0 ? ahead : QURAN_PAGES - state.read.size;
   const elapsed = state.startKey ? Math.max(0, daysBetween(paceStart(state.startKey), key)) : 0;
   const daysLeft = Math.max(1, KHATM_DAYS - elapsed);
   return Math.min(MAX_PAGES_A_DAY, Math.max(1, Math.ceil(left / daysLeft)));
@@ -145,14 +242,14 @@ export function paceFor(state: KhatmState, key: string): number {
  */
 export function nextPortion(state: KhatmState, key: string): PageRange {
   const pace = paceFor(state, key);
+  // continue after the furthest page read; skipped pages wait in the catch-up
   let from = state.startPage;
-  for (let i = 0; i < QURAN_PAGES; i++) {
-    const p = ((state.startPage - 1 + i) % QURAN_PAGES) + 1;
-    if (!state.read.has(p)) {
-      from = p;
-      break;
-    }
-  }
+  const front = frontOf(state);
+  let found = false;
+  for (let i = front + 1; i < QURAN_PAGES && !found; i++)
+    if (!state.read.has(pageAt(state, i))) [from, found] = [pageAt(state, i), true];
+  for (let i = 0; i < QURAN_PAGES && !found; i++)
+    if (!state.read.has(pageAt(state, i))) [from, found] = [pageAt(state, i), true];
   let to = from;
   while (to - from + 1 < pace && to < QURAN_PAGES && !state.read.has(to + 1)) to++;
   return { from, to };
@@ -192,4 +289,25 @@ export function khatmDeadline(state: KhatmState): Date | null {
   const d = keyDate(paceStart(state.startKey));
   d.setDate(d.getDate() + KHATM_DAYS - 1);
   return d;
+}
+
+export interface Owed {
+  /** pages owed in all: the missed days, or the skipped pages if more */
+  pages: number;
+  /** pages unticked as not read, behind the furthest page read */
+  skipped: [number, number][];
+  /** the reading "Read more now" opens, or null when nothing is owed */
+  next: PageRange | null;
+}
+
+/** What `key`'s reader still owes this khatm, beyond the day's own portion. */
+export function owedOn(key: string): Owed {
+  if (typeof window === "undefined") return { pages: 0, skipped: [], next: null };
+  const state = khatmState();
+  const today = tickedOn(key) ? null : storedRange(key);
+  const behind = behindBy(state, key, today);
+  const skipped = skippedRuns(state);
+  const skippedPages = skipped.reduce((n, [a, b]) => n + b - a + 1, 0);
+  const pages = Math.max(behind, skippedPages);
+  return { pages, skipped, next: pages > 0 ? catchUpPortion(state, behind, today?.to) : null };
 }

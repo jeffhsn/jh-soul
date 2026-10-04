@@ -128,6 +128,25 @@ export function recordQuranPortion(date: string, range: { from: number; to: numb
   write(key, range);
 }
 
+/**
+ * Pages of a day's portion the reader unticked as not read: they stay unread
+ * and wait in the catch-up (src/lib/khatm.ts). Pins the portion if it is not yet.
+ */
+export function setQuranSkip(date: string, range: { from: number; to: number }, skip: number[]) {
+  if (typeof window === "undefined") return;
+  const key = `da:quran:${date}`;
+  const pinned = read<{ from: number; to: number } | null>(key, null) ?? range;
+  const kept = skip.filter((p) => p >= pinned.from && p <= pinned.to).sort((a, b) => a - b);
+  write(key, kept.length ? { from: pinned.from, to: pinned.to, skip: kept } : { from: pinned.from, to: pinned.to });
+}
+
+/** Catch-up reading finished on `date`, beyond its portion. */
+export function addCatchUp(date: string, range: { from: number; to: number; skip?: number[] }) {
+  if (typeof window === "undefined") return;
+  const key = `da:quranx:${date}`;
+  write(key, [...read<unknown[]>(key, []), range]);
+}
+
 /** Record how many aamal existed today so streaks can be computed later. */
 export function recordDayTotal(date: string, total: number) {
   if (typeof window === "undefined") return;

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AudioSource } from "@/data";
 import { cn } from "@/lib/utils";
 import { PlaylistPlayer } from "./audio-player";
+import { openCatchUp, useQuranOwed } from "./quran-tracker";
 
 interface VerseRef {
   surah: number;
@@ -73,10 +74,20 @@ export function QuranPortionReader({
   refs,
   audio,
   date,
+  pages,
+  skip = [],
+  onSkip,
+  catchUpHint = false,
 }: {
   refs: VerseRef[];
   audio: AudioSource[];
   date: string;
+  /** the portion's pages, ticked one by one: untick what wasn't read */
+  pages?: { from: number; to: number };
+  skip?: number[];
+  onSkip?: (skip: number[]) => void;
+  /** the day's own portion: offer the catch-up when pages are owed */
+  catchUpHint?: boolean;
 }) {
   const [verses, setVerses] = useState<VerseText[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -176,6 +187,85 @@ export function QuranPortionReader({
           ))}
         </ol>
       )}
+
+      {pages && onSkip && pages.to > pages.from && (
+        <PageTicks pages={pages} skip={skip} onSkip={onSkip} />
+      )}
+      {catchUpHint && <CatchUpHint />}
+    </div>
+  );
+}
+
+/**
+ * One tick per page of the portion, all on: untick a page that wasn't read
+ * and it stays owed — it waits in the Quran catch-up instead of being lost.
+ */
+function PageTicks({
+  pages,
+  skip,
+  onSkip,
+}: {
+  pages: { from: number; to: number };
+  skip: number[];
+  onSkip: (skip: number[]) => void;
+}) {
+  const list: number[] = [];
+  for (let p = pages.from; p <= pages.to; p++) list.push(p);
+  const off = new Set(skip);
+  const read = list.length - off.size;
+  return (
+    <div className="mt-8 rounded-2xl border border-night-line-soft px-4 py-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[0.72rem] uppercase tracking-[0.16em] text-gold-dim">Pages read</p>
+        <p className="text-[0.75rem] tabular-nums text-cream-faint">
+          {read} of {list.length}
+        </p>
+      </div>
+      <p className="mt-1.5 text-[0.78rem] leading-snug text-cream-faint">
+        Didn&rsquo;t get through all of it? Untick the pages you didn&rsquo;t read — they wait for you as
+        pages owed, nothing is lost.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {list.map((p) => {
+          const on = !off.has(p);
+          return (
+            <button
+              key={p}
+              aria-pressed={on}
+              onClick={() => onSkip(on ? [...skip, p] : skip.filter((x) => x !== p))}
+              className={cn(
+                "min-w-11 rounded-lg border px-2 py-1.5 text-[0.78rem] tabular-nums transition active:scale-95",
+                on
+                  ? "border-gold-dim/70 text-gold-bright"
+                  : "border-night-line text-cream-faint line-through decoration-cream-faint/60",
+              )}
+            >
+              {p}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Under the day's portion: pages owed from missed days, read now if there is time. */
+function CatchUpHint() {
+  const owed = useQuranOwed();
+  if (!owed.next || owed.pages <= 0) return null;
+  const n = owed.next.to - owed.next.from + 1;
+  return (
+    <div className="mt-4 rounded-2xl border border-gold-dim/40 bg-night-card px-4 py-4">
+      <p className="text-[0.85rem] leading-snug text-cream-dim">
+        <span className="text-gold-bright">{owed.pages} {owed.pages === 1 ? "page" : "pages"} owed</span> from
+        days you missed. Have more time today? Read on — the coming portions shrink as you catch up.
+      </p>
+      <button
+        onClick={() => openCatchUp(owed.next!)}
+        className="mt-3 w-full rounded-xl border border-gold-dim/60 py-2.5 text-[0.85rem] text-gold-bright transition hover:border-gold active:scale-[0.99]"
+      >
+        Read {n} more {n === 1 ? "page" : "pages"} now
+      </button>
     </div>
   );
 }
