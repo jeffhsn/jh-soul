@@ -26,7 +26,7 @@ const on = (month: number, ...days: number[]) => (h: HijriParts) =>
 
 const DUAS = "https://www.duas.org";
 
-const OCCASIONS: Occasion[] = [
+export const OCCASIONS: Occasion[] = [
   // ——— every month ———
   {
     when: "night",

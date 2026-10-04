@@ -61,7 +61,7 @@ export function YearCard({ refresh }: { refresh?: unknown }) {
             onClick={() => setPicked(years[i + 1])}
             className="grid size-9 shrink-0 place-items-center rounded-full text-cream-dim transition hover:text-gold-bright disabled:opacity-25"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="rtl:-scale-x-100 size-4" />
           </button>
           <div className="min-w-0 text-center">
             <p className="font-display text-[1.6rem] leading-none tabular-nums text-gold-bright">{year} AH</p>
@@ -75,7 +75,7 @@ export function YearCard({ refresh }: { refresh?: unknown }) {
             onClick={() => setPicked(years[i - 1])}
             className="grid size-9 shrink-0 place-items-center rounded-full text-cream-dim transition hover:text-gold-bright disabled:opacity-25"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="rtl:-scale-x-100 size-4" />
           </button>
         </div>
 
@@ -152,7 +152,7 @@ export function YearNudge({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="mb-6 flex items-center gap-2 rounded-2xl border border-gold-dim/40 bg-night-card px-4 py-3">
       <Sparkles className="size-4 shrink-0 text-gold" />
-      <button onClick={onOpen} className="min-w-0 flex-1 text-left text-[0.84rem] leading-snug text-cream-dim">
+      <button onClick={onOpen} className="min-w-0 flex-1 text-start text-[0.84rem] leading-snug text-cream-dim">
         <span className="text-gold-bright">{ended} AH is complete.</span> See your year — {present} days of
         remembrance.
       </button>

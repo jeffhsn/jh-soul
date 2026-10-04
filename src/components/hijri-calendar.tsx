@@ -40,7 +40,7 @@ export function HijriCalendar() {
           href="/"
           className="inline-flex items-center gap-1.5 rounded-full border border-night-line px-3.5 py-1.5 text-xs text-cream-dim transition hover:border-gold-dim hover:text-cream"
         >
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className="rtl:-scale-x-100 size-3.5" />
           today&rsquo;s aamal
         </Link>
         <ThemeToggle />
@@ -139,7 +139,7 @@ export function CalendarPanel() {
           onClick={() => shiftMonth(-1)}
           className="grid size-8 place-items-center rounded-full text-cream-faint transition hover:text-gold-bright"
         >
-          <ChevronLeft className="size-5" />
+          <ChevronLeft className="rtl:-scale-x-100 size-5" />
         </button>
         <div className="text-center">
           <h2 className="font-display text-[1.35rem] tracking-tight">
@@ -160,7 +160,7 @@ export function CalendarPanel() {
           onClick={() => shiftMonth(1)}
           className="grid size-8 place-items-center rounded-full text-cream-faint transition hover:text-gold-bright"
         >
-          <ChevronRight className="size-5" />
+          <ChevronRight className="rtl:-scale-x-100 size-5" />
         </button>
       </div>
 
@@ -309,7 +309,7 @@ export function CalendarPanel() {
                 >
                   <span
                     className={cn(
-                      "w-7 shrink-0 pt-0.5 text-right font-display text-[1.15rem] leading-none",
+                      "w-7 shrink-0 pt-0.5 text-end font-display text-[1.15rem] leading-none",
                       isToday ? "text-gold-bright" : "text-cream-dim",
                     )}
                   >

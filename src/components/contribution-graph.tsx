@@ -147,7 +147,7 @@ export function ContributionGraph({ refresh }: { refresh?: unknown }) {
           >
             {!c.future && c.bonus > 0 && (
               <span
-                className="absolute right-[1px] top-[1px] size-[3px] rounded-full"
+                className="absolute end-[1px] top-[1px] size-[3px] rounded-full"
                 style={{ background: "var(--color-cream)" }}
               />
             )}

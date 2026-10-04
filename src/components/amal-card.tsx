@@ -74,7 +74,7 @@ export function AmalCard({
       {/* main click area opens focus view */}
       <button
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-4 text-left"
+        className="flex min-w-0 flex-1 items-center gap-4 text-start"
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -87,7 +87,7 @@ export function AmalCard({
               {amal.title}
             </span>
             {amal.arabicTitle && (
-              <span className="font-arabic ml-auto text-[1.05rem] leading-none text-gold-bright/80">
+              <span className="font-arabic ms-auto text-[1.05rem] leading-none text-gold-bright/80">
                 {amal.arabicTitle}
               </span>
             )}

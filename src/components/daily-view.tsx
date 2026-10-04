@@ -284,7 +284,7 @@ function DayContent({ now }: { now: Date }) {
   return (
     <main className="mx-auto max-w-xl px-4 pb-32 pt-8 sm:px-5 sm:pt-14 lg:grid lg:h-dvh lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-14 lg:overflow-hidden lg:pb-0 lg:pt-0 xl:max-w-[88rem] xl:grid-cols-[400px_minmax(0,1fr)_300px]">
       {/* calendar — fixed left rail on wide screens; only the middle column scrolls */}
-      <aside className="no-scrollbar scroll-fade hidden xl:block xl:h-dvh xl:overflow-y-auto xl:border-r xl:border-night-line-soft/60 xl:py-12 xl:pr-12 animate-rise">
+      <aside className="no-scrollbar scroll-fade hidden xl:block xl:h-dvh xl:overflow-y-auto xl:border-e xl:border-night-line-soft/60 xl:py-12 xl:pe-12 animate-rise">
         <CalendarPanel />
         <p className="mt-6 text-center text-[0.65rem] italic text-cream-faint">
           Umm al-Qura dates — moon-sighting may differ by a day.
@@ -343,7 +343,7 @@ function DayContent({ now }: { now: Date }) {
             onClick={() => setOffset((o) => o - 1)}
             className={navButton}
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="rtl:-scale-x-100 size-4" />
           </button>
           <div className="flex flex-1 items-center justify-center gap-2">
             {DAY_LETTERS.map((letter, d) => {
@@ -380,7 +380,7 @@ function DayContent({ now }: { now: Date }) {
             onClick={() => setOffset((o) => o + 1)}
             className={navButton}
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="rtl:-scale-x-100 size-4" />
           </button>
         </div>
 
@@ -391,9 +391,9 @@ function DayContent({ now }: { now: Date }) {
             onClick={() => setOffset((o) => o - 1)}
             className={navButton + " sm:hidden"}
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="rtl:-scale-x-100 size-4" />
           </button>
-          <div className="min-w-0 flex-1 text-center sm:text-left">
+          <div className="min-w-0 flex-1 text-center sm:text-start">
             <h1 className="font-display text-[1.6rem] leading-tight tracking-tight sm:text-[1.7rem]">
               {isToday ? (night ? "Tonight" : "Today") : gregorianDate(viewed)}
             </h1>
@@ -409,7 +409,7 @@ function DayContent({ now }: { now: Date }) {
             onClick={() => setOffset((o) => o + 1)}
             className={navButton + " sm:hidden"}
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="rtl:-scale-x-100 size-4" />
           </button>
         </div>
 
@@ -590,7 +590,7 @@ function DayContent({ now }: { now: Date }) {
       </div>
 
       {/* right rail: fixed pane — calendar on lg (2-col), heatmap on xl (3-col) */}
-      <aside className="no-scrollbar scroll-fade hidden lg:block lg:h-dvh lg:overflow-y-auto lg:border-l lg:border-night-line-soft/60 lg:py-12 lg:pl-12 animate-rise">
+      <aside className="no-scrollbar scroll-fade hidden lg:block lg:h-dvh lg:overflow-y-auto lg:border-s lg:border-night-line-soft/60 lg:py-12 lg:ps-12 animate-rise">
         <div className="mb-8 flex justify-end">
           <ThemeToggle />
         </div>

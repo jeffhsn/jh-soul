@@ -155,7 +155,7 @@ export function QuranPortionReader({
               <button
                 onClick={() => setCurrent(i)}
                 className={cn(
-                  "w-full rounded-2xl border px-4 py-3 text-left transition",
+                  "w-full rounded-2xl border px-4 py-3 text-start transition",
                   i === current
                     ? "border-gold-dim/60 bg-night-card shadow-[0_0_18px_rgba(220,175,94,0.12)]"
                     : "border-transparent hover:border-night-line-soft",

@@ -122,7 +122,7 @@ export function SadaqaEntry({
           How much did you give today?
         </span>
         <div className="relative mt-3">
-        <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 font-display text-3xl text-gold-dim">
+        <span className="pointer-events-none absolute start-5 top-1/2 -translate-y-1/2 font-display text-3xl text-gold-dim">
           €
         </span>
         <input
@@ -143,7 +143,7 @@ export function SadaqaEntry({
               onDone();
             }
           }}
-          className="w-full rounded-2xl border border-night-line bg-night-card py-4 pl-12 pr-5 font-display text-3xl tabular-nums text-cream outline-none transition placeholder:text-cream-faint/60 focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(220,175,94,0.15)]"
+          className="w-full rounded-2xl border border-night-line bg-night-card py-4 ps-12 pe-5 font-display text-3xl tabular-nums text-cream outline-none transition placeholder:text-cream-faint/60 focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(220,175,94,0.15)]"
         />
         </div>
         <span className="mt-2 block text-[0.78rem] italic text-cream-dim">
@@ -186,7 +186,7 @@ export function SadaqaPanel() {
         {/* soft gold glow behind the figure */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full opacity-60 blur-2xl"
+          className="pointer-events-none absolute -end-10 -top-10 size-36 rounded-full opacity-60 blur-2xl"
           style={{
             background:
               "radial-gradient(circle, color-mix(in srgb, var(--color-gold) 28%, transparent), transparent 70%)",

@@ -108,7 +108,7 @@ function SpeedButton({ className }: { className?: string }) {
         {label}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 flex flex-col overflow-hidden rounded-xl border border-night-line bg-night-card shadow-lg">
+        <div className="absolute end-0 top-full z-10 mt-1 flex flex-col overflow-hidden rounded-xl border border-night-line bg-night-card shadow-lg">
           {SPEEDS.map((s) => (
             <button
               key={s}
@@ -117,7 +117,7 @@ function SpeedButton({ className }: { className?: string }) {
                 setOpen(false);
               }}
               className={cn(
-                "px-4 py-1.5 text-left text-[0.78rem] tabular-nums transition hover:bg-night-line/60",
+                "px-4 py-1.5 text-start text-[0.78rem] tabular-nums transition hover:bg-night-line/60",
                 s === speed ? "text-gold-bright" : "text-cream-dim",
               )}
             >
@@ -197,7 +197,7 @@ export function PlaylistPlayer({
   return (
     <div className="relative rounded-2xl border border-night-line bg-night-card/70 p-4">
       <audio ref={ref} src={track.url} preload="none" />
-      <SpeedButton className="absolute right-3 top-3" />
+      <SpeedButton className="absolute end-3 top-3" />
       <p className="px-12 text-center text-[1rem] text-cream">{track.title}</p>
       <p className="mt-0.5 text-center text-[0.78rem] text-cream-faint">
         {unit} {index + 1} of {sources.length} · plays straight through
@@ -333,7 +333,7 @@ function YouTubePlayer({ source }: { source: AudioSource }) {
             <CirclePlay className="size-6" />
           </span>
         </span>
-        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night/90 to-transparent px-4 pb-3 pt-8 text-left text-[0.8rem] text-cream">
+        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night/90 to-transparent px-4 pb-3 pt-8 text-start text-[0.8rem] text-cream">
           {source.title}
         </span>
       </button>

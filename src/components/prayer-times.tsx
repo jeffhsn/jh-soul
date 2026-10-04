@@ -407,7 +407,7 @@ export function PrayerTimes({ date }: { date: Date }) {
                       onClick={() => pick(s)}
                       onMouseEnter={() => setHighlight(i)}
                       className={cn(
-                        "flex w-full flex-col items-start px-4 py-2.5 text-left transition",
+                        "flex w-full flex-col items-start px-4 py-2.5 text-start transition",
                         i === highlight && "bg-gold/10",
                       )}
                     >
@@ -416,7 +416,7 @@ export function PrayerTimes({ date }: { date: Date }) {
                         {s.label}
                       </span>
                       {s.detail && (
-                        <span className="mt-0.5 line-clamp-1 pl-[18px] text-[0.68rem] text-cream-faint">
+                        <span className="mt-0.5 line-clamp-1 ps-[18px] text-[0.68rem] text-cream-faint">
                           {s.detail}
                         </span>
                       )}

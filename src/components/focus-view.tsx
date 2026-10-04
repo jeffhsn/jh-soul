@@ -157,7 +157,7 @@ export function FocusView({
                     className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
                   >
                     {link.label}
-                    <ArrowUpRight className="size-3.5" />
+                    <ArrowUpRight className="rtl:-scale-x-100 size-3.5" />
                   </a>
                 ))}
               </>
@@ -182,7 +182,7 @@ export function FocusView({
                     className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
                   >
                     {link.label}
-                    <ArrowUpRight className="size-3.5" />
+                    <ArrowUpRight className="rtl:-scale-x-100 size-3.5" />
                   </a>
                 ))}
               </>
@@ -194,7 +194,7 @@ export function FocusView({
                   </div>
                 )}
                 {amal.steps && (
-                  <ol className="mb-6 space-y-3.5 pr-12 sm:pr-0">
+                  <ol className="mb-6 space-y-3.5 pe-12 sm:pe-0">
                     {amal.steps.map((step, i) => (
                       <li key={i} className="flex gap-3.5">
                         <span className="grid size-6 shrink-0 place-items-center rounded-full border border-gold-dim/50 font-display text-[0.75rem] tabular-nums text-gold-bright">
@@ -216,10 +216,10 @@ export function FocusView({
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="mr-2 mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
+                    className="me-2 mt-6 inline-flex items-center gap-1.5 rounded-full border border-night-line px-4 py-2 text-sm text-sage transition hover:border-gold-dim hover:text-gold-bright"
                   >
                     {link.label}
-                    <ArrowUpRight className="size-3.5" />
+                    <ArrowUpRight className="rtl:-scale-x-100 size-3.5" />
                   </a>
                 ))}
               </>
@@ -250,7 +250,7 @@ export function FocusView({
         {step.total > 1 && (
         <div
           data-step-nav
-          className="pointer-events-auto fixed bottom-[7.5rem] right-2.5 z-50 flex flex-col items-center gap-2 sm:bottom-auto sm:right-auto sm:left-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))] sm:top-1/2 sm:-translate-y-1/2"
+          className="pointer-events-auto fixed bottom-[7.5rem] end-2.5 z-50 flex flex-col items-center gap-2 sm:bottom-auto sm:right-auto sm:left-[min(calc(50%+21rem+0.75rem),calc(100vw-4rem))] sm:top-1/2 sm:-translate-y-1/2"
         >
           <button
             aria-label="Previous amal"
@@ -285,7 +285,7 @@ export function FocusView({
 function GroupedLinks({ links }: { links: ExternalLink[] }) {
   const groups = [...new Set(links.map((l) => l.group ?? ""))];
   return (
-    <div className="mt-8 space-y-8 pr-12 sm:pr-0">
+    <div className="mt-8 space-y-8 pe-12 sm:pe-0">
       {groups.map((group) => {
         const items = links.filter((l) => (l.group ?? "") === group);
         const books = items.filter((l) => l.kind === "book");
@@ -323,7 +323,7 @@ function GroupedLinks({ links }: { links: ExternalLink[] }) {
                     rel="noreferrer"
                     className="group relative flex flex-col items-center rounded-2xl border border-night-line-soft bg-night-raise/40 px-2.5 pt-4 pb-3 text-center transition hover:border-gold-dim/60 hover:bg-night-raise"
                   >
-                    <span className="absolute top-2 left-2 grid size-5 place-items-center rounded-full bg-night text-[0.62rem] tabular-nums text-gold-dim">
+                    <span className="absolute top-2 start-2 grid size-5 place-items-center rounded-full bg-night text-[0.62rem] tabular-nums text-gold-dim">
                       {i + 1}
                     </span>
                     {l.image && (
@@ -368,7 +368,7 @@ function GroupedLinks({ links }: { links: ExternalLink[] }) {
                           </span>
                         )}
                       </span>
-                      <ArrowUpRight className="size-3.5 shrink-0 text-cream-faint transition group-hover:text-gold-bright" />
+                      <ArrowUpRight className="rtl:-scale-x-100 size-3.5 shrink-0 text-cream-faint transition group-hover:text-gold-bright" />
                     </a>
                   </li>
                 ))}

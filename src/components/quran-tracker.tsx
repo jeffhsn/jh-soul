@@ -107,7 +107,7 @@ export function QuranPanel() {
       <div className="relative overflow-hidden rounded-2xl border border-night-line-soft bg-night-card px-5 py-5">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full opacity-60 blur-2xl"
+          className="pointer-events-none absolute -end-10 -top-10 size-36 rounded-full opacity-60 blur-2xl"
           style={{
             background:
               "radial-gradient(circle, color-mix(in srgb, var(--color-gold) 28%, transparent), transparent 70%)",

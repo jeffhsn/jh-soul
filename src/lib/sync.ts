@@ -28,7 +28,7 @@ const REV = "da:sync:rev";
 const PUSHED = "da:sync:pushed";
 const META = "da:meta:updated";
 /** device preferences, caches and this device's own sync bookkeeping stay local */
-const SKIP = new Set([ID, REV, PUSHED, "da:sync:key", META, "da:theme", "da:calmode", "da:location", "da:sync:off"]);
+const SKIP = new Set([ID, REV, PUSHED, "da:sync:key", META, "da:theme", "da:lang", "da:calmode", "da:location", "da:sync:off"]);
 const SKIP_PREFIX = ["da:prayers:", "da:qtext:"];
 
 export type SyncStatus = "off" | "syncing" | "synced" | "paused" | "error";
