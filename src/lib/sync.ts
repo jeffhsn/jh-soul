@@ -15,8 +15,12 @@ import { emit, subscribe } from "./store";
  * deletion. The server merges each save into what it holds and answers with
  * the merged copy, so one round trip both pushes and pulls.
  *
- *  - pull on load, when the tab becomes visible, and every 5 minutes while visible
- *  - push (debounced) after any local write, and on page hide
+ *  - pull on load, and when the tab comes back after 10 minutes or more
+ *  - push (debounced) after any local write, and on page hide — only when
+ *    something actually changed since the last sync
+ * Requests are kept few on purpose: the cloud lives on a free plan with a
+ * daily budget. When the server says the budget is spent (429) or it is full
+ * (507), this device keeps working from its own copy and tries again later.
  */
 
 const ID_STORAGE = "da:sync:id";
@@ -25,7 +29,7 @@ const META = "da:meta:updated";
 const SKIP = new Set([ID_STORAGE, "da:sync:key", META, "da:theme", "da:calmode", "da:location", "da:sync:off"]);
 const SKIP_PREFIX = ["da:prayers:", "da:qtext:"];
 
-export type SyncStatus = "off" | "syncing" | "synced" | "error";
+export type SyncStatus = "off" | "syncing" | "synced" | "paused" | "error";
 type Snapshot = { data: Record<string, unknown>; updated: Record<string, number> };
 
 let status: SyncStatus = "off";
@@ -35,6 +39,9 @@ let started = false;
 let inflight = false;
 let dirty = false;
 let applying = false; // true while remote values are being written locally
+let lastPull = 0;
+/** what the cloud held after the last successful sync — an identical push is skipped */
+let lastSynced = "";
 const statusListeners = new Set<() => void>();
 
 function setStatus(s: SyncStatus) {
@@ -156,6 +163,10 @@ async function request(method: "GET" | "PUT", body?: string) {
     setStatus("off");
     throw new Error("sync not configured");
   }
+  if (res.status === 429 || res.status === 507) {
+    setStatus("paused");
+    throw new Error("cloud paused");
+  }
   if (!res.ok) throw new Error(`sync ${res.status}`);
   return (await res.json()) as Partial<Snapshot>;
 }
@@ -166,11 +177,13 @@ export async function pull() {
   inflight = true;
   try {
     setStatus("syncing");
+    lastPull = Date.now();
     const localNewer = apply(await request("GET"));
+    lastSynced = JSON.stringify(snapshot());
     setStatus("synced");
     if (localNewer || dirty) schedulePush(0);
   } catch (e) {
-    if (status !== "off") setStatus("error");
+    if (status !== "off" && status !== "paused") setStatus("error");
     console.warn("[sync] pull failed", e);
   } finally {
     inflight = false;
@@ -184,16 +197,19 @@ async function push() {
     return;
   }
   const snap = snapshot();
+  const body = JSON.stringify(snap);
   dirty = false;
   // a visitor who has not ticked anything yet has nothing worth a cloud copy
   if (!Object.keys(snap.data).length && !Object.keys(snap.updated).length) return;
+  if (body === lastSynced) return;
   inflight = true;
   try {
     setStatus("syncing");
-    apply(await request("PUT", JSON.stringify(snap)));
+    apply(await request("PUT", body));
+    lastSynced = JSON.stringify(snapshot());
     setStatus("synced");
   } catch (e) {
-    if (status !== "off") setStatus("error");
+    if (status !== "off" && status !== "paused") setStatus("error");
     console.warn("[sync] push failed", e);
   } finally {
     inflight = false;
@@ -201,7 +217,7 @@ async function push() {
   }
 }
 
-function schedulePush(delay = 3000) {
+function schedulePush(delay = 20_000) {
   if (!getSyncId()) return;
   dirty = true;
   if (pushTimer) clearTimeout(pushTimer);
@@ -246,13 +262,11 @@ export function startSync() {
     if (!applying) schedulePush();
   });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") void pull();
-    else flush();
+    if (document.visibilityState === "visible") {
+      if (Date.now() - lastPull > 10 * 60_000) void pull();
+    } else flush();
   });
   window.addEventListener("pagehide", flush);
-  setInterval(() => {
-    if (document.visibilityState === "visible") void pull();
-  }, 5 * 60_000);
 }
 
 export function useSyncStatus() {
@@ -264,4 +278,23 @@ export function useSyncStatus() {
     () => status,
     () => "off" as SyncStatus,
   );
+}
+
+/** Everything worth keeping, as a file the person can store anywhere. */
+export function backupFile() {
+  const blob = new Blob([JSON.stringify({ app: "dailyaamal", ...snapshot() })], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `daily-aamal-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** Merge a backup file in (newer entries win, nothing newer is overwritten), then back it up. */
+export async function restoreFile(file: File) {
+  const parsed = JSON.parse(await file.text()) as Partial<Snapshot> & { app?: string };
+  if (parsed.app !== "dailyaamal" || typeof parsed.data !== "object") throw new Error("not a Daily Aamal backup");
+  apply({ data: parsed.data, updated: parsed.updated ?? {} });
+  emit();
+  schedulePush(0);
 }

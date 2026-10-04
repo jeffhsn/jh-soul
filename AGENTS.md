@@ -36,11 +36,15 @@ When testing in a browser, set localStorage `da:sync:off` (or block `/api/sync`)
 Shared site, no accounts: every browser makes up a random secret id (`da:sync:id`, 22 chars) on first visit, so each
 visitor's progress is their own. Everything lives in localStorage first; the cloud copy is per person in Upstash Redis
 (free plan, autoUpgrade off — never billed, it throttles instead) through `/api/sync` (src/app/api/sync/route.ts):
-header `x-da-id`, key `da:u:<sha256>` with a 400-day TTL refreshed on save, plus a dated `NX` copy per day kept 14 days.
+header `x-da-id`, key `da:u:<sha256>` (deflated, `z:` prefix) that NEVER expires (owner: saves must never disappear),
+plus a dated `NX` copy per day kept 7 days. The route keeps its own daily budget (DAY_UNITS, ~90% of the free plan's
+commands and bandwidth) and a key cap (MAX_KEYS, room for 1,000 people); past either it answers 429/507 and devices keep
+working locally. A daily Vercel cron (vercel.json → /api/keepalive, CRON_SECRET) stops Upstash archiving after 30 idle days.
+The footer also offers a backup file download/restore.
 The server MERGES each PUT per key (newest `da:meta:updated` timestamp wins; a stamped key absent from data = deletion)
 and answers with the merged copy. Opening `https://…/#id=<id>` makes a device join that person's copy (its own progress
 is merged in) — the "Use on another device" button in the footer (src/components/sync-note.tsx) copies that link.
-Client engine: src/lib/sync.ts (pull on load/visible/every 5 min while visible; debounced push). Command budget matters
+Client engine: src/lib/sync.ts (pull on load and on return after 10+ min; push debounced 20 s / on hide, skipped when unchanged). Command budget matters
 (500K/month free): don't add polling. Env: KV_REST_API_URL / KV_REST_API_TOKEN (UPSTASH_REDIS_REST_* also accepted) —
 pull with `vercel env pull .env.local`. The old single-user Vercel Blob copy (DA_SYNC_KEY) is no longer used; it is kept
 as a backup only. Sync starts from pwa.tsx on every load. The service worker never caches /api/.
