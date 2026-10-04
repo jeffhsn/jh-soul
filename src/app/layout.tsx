@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Alegreya_Sans, Amiri } from "next/font/google";
 import { Pwa } from "@/components/pwa";
+import { LOCALE_BOOT } from "@/lib/locale-boot";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -49,7 +50,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${fraunces.variable} ${alegreyaSans.variable} ${amiri.variable}`}
-      // the theme boot script below adds "light" before hydration on purpose
+      // the boot scripts below set "light", lang and dir before hydration on purpose
       suppressHydrationWarning
     >
       <head>
@@ -59,6 +60,8 @@ export default function RootLayout({
             __html: `try{if(localStorage.getItem("da:theme")==="light")document.documentElement.classList.add("light")}catch(e){}`,
           }}
         />
+        {/* language and direction (Arabic reads right to left) before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: LOCALE_BOOT }} />
         {/* warm up connections used on every visit */}
         <link rel="preconnect" href="https://api.aladhan.com" />
         <link rel="preconnect" href="https://i.ytimg.com" />

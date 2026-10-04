@@ -46,6 +46,7 @@ import { SadaqaField, SadaqaPanel } from "./sadaqa-entry";
 import type { Amal } from "@/data";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
+import { LanguageNavItem, LanguageSwitcher } from "./language-switcher";
 import { YearCard, YearNudge } from "./year-card";
 
 // the reader dialog (audio players, tasbih beads, counters) is only needed
@@ -591,7 +592,8 @@ function DayContent({ now }: { now: Date }) {
 
       {/* right rail: fixed pane — calendar on lg (2-col), heatmap on xl (3-col) */}
       <aside className="no-scrollbar scroll-fade hidden lg:block lg:h-dvh lg:overflow-y-auto lg:border-s lg:border-night-line-soft/60 lg:py-12 lg:ps-12 animate-rise">
-        <div className="mb-8 flex justify-end">
+        <div className="mb-8 flex justify-end gap-2">
+          <LanguageSwitcher />
           <ThemeToggle />
         </div>
         <div className="mb-10">
@@ -639,6 +641,7 @@ function DayContent({ now }: { now: Date }) {
               <span className="text-[0.68rem] tracking-wide">{label}</span>
             </button>
           ))}
+          <LanguageNavItem />
           <ThemeToggleNavItem />
         </div>
       </nav>
