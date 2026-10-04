@@ -3,6 +3,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { aamalDate, aamalKey } from "./aamal-day";
 import { daysAgoKey } from "./dates";
+import { lastFolded, yearSummaries } from "./folded";
 
 /**
  * Progress lives in localStorage:
@@ -147,8 +148,14 @@ export function computeStreak(): number {
   if (typeof window === "undefined") return 0;
   let streak = 0;
   const today = aamalDate();
-  for (let i = 0; i < 366; i++) {
+  const folded = lastFolded();
+  for (let i = 0; i < 4000; i++) {
     const date = daysAgoKey(i, today);
+    // reached a folded year: its summary knows how the run stood at its end
+    if (folded?.through && date <= folded.through) {
+      if (date === folded.through) streak += folded.endStreak;
+      break;
+    }
     const total = Number(window.localStorage.getItem(`da:total:${date}`) ?? 0);
     const done = read<Record<string, boolean>>(doneKey(date), {});
     const completed = Object.keys(done).length;
@@ -259,6 +266,12 @@ function computeSadaqaTotal(): SadaqaTotal {
     if (!Number.isFinite(n) || n <= 0) continue;
     cents += Math.round(n * 100);
     days++;
+  }
+  // folded years keep their sums in their summaries
+  for (const y of yearSummaries()) {
+    if (!y.through) continue;
+    cents += y.sadaqaCents;
+    days += y.sadaqaDays;
   }
   return { total: cents / 100, days };
 }

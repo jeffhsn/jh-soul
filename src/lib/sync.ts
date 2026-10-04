@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { emit, subscribe } from "./store";
+import { foldOldYears } from "./year";
 
 /**
  * Everything under `da:` lives in this browser first; the cloud keeps each
@@ -10,38 +11,37 @@ import { emit, subscribe } from "./store";
  * and opening the site with `#id=<id>` makes another device join that copy
  * (its own progress is merged in, nothing is thrown away).
  *
- * Per-key last-write-wins using the `da:meta:updated` timestamps that
- * store.write()/stamp() record; a stamped key that is gone locally is a
- * deletion. The server merges each save into what it holds and answers with
- * the merged copy, so one round trip both pushes and pulls.
+ * Only changes travel. A sync sends the keys stamped (`da:meta:updated`)
+ * since the last one, with deletions as a stamp without a value, and gets
+ * back every key the cloud changed since `da:sync:rev`. Newest stamp wins.
+ * One request, one Redis command (src/app/api/sync/route.ts).
  *
- *  - pull on load, and when the tab comes back after 10 minutes or more
- *  - push (debounced) after any local write, and on page hide — only when
- *    something actually changed since the last sync
- * Requests are kept few on purpose: the cloud lives on a free plan with a
- * daily budget. When the server says the budget is spent (429) or it is full
- * (507), this device keeps working from its own copy and tries again later.
+ *  - on load, and when the tab comes back after 10 minutes or more
+ *  - 20 s after a local write, and on page hide
+ * The cloud lives on a free plan with a daily budget: when it says the budget
+ * is spent (429) or it is full (507), this device keeps working from its own
+ * copy and tries again later.
  */
 
-const ID_STORAGE = "da:sync:id";
+const ID = "da:sync:id";
+const REV = "da:sync:rev";
+const PUSHED = "da:sync:pushed";
 const META = "da:meta:updated";
-/** device preferences, caches and this device's own id stay local */
-const SKIP = new Set([ID_STORAGE, "da:sync:key", META, "da:theme", "da:calmode", "da:location", "da:sync:off"]);
+/** device preferences, caches and this device's own sync bookkeeping stay local */
+const SKIP = new Set([ID, REV, PUSHED, "da:sync:key", META, "da:theme", "da:calmode", "da:location", "da:sync:off"]);
 const SKIP_PREFIX = ["da:prayers:", "da:qtext:"];
 
 export type SyncStatus = "off" | "syncing" | "synced" | "paused" | "error";
-type Snapshot = { data: Record<string, unknown>; updated: Record<string, number> };
+type Change = [string, number, string | null];
 
 let status: SyncStatus = "off";
 let id: string | null = null;
-let pushTimer: ReturnType<typeof setTimeout> | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
 let started = false;
 let inflight = false;
-let dirty = false;
-let applying = false; // true while remote values are being written locally
-let lastPull = 0;
-/** what the cloud held after the last successful sync — an identical push is skipped */
-let lastSynced = "";
+let again = false;
+let applying = false; // true while cloud values are being written locally
+let lastSync = 0;
 const statusListeners = new Set<() => void>();
 
 function setStatus(s: SyncStatus) {
@@ -62,10 +62,10 @@ export function getSyncId(): string | null {
   try {
     // "da:sync:off" = test harnesses keep the page away from the cloud
     if (window.localStorage.getItem("da:sync:off")) return null;
-    id = window.localStorage.getItem(ID_STORAGE);
+    id = window.localStorage.getItem(ID);
     if (!id || !VALID.test(id)) {
       id = newId();
-      window.localStorage.setItem(ID_STORAGE, id);
+      window.localStorage.setItem(ID, id);
     }
   } catch {
     return null;
@@ -83,7 +83,7 @@ function skipped(k: string) {
   return !k.startsWith("da:") || SKIP.has(k) || SKIP_PREFIX.some((p) => k.startsWith(p));
 }
 
-function readUpdated(): Record<string, number> {
+function readMeta(): Record<string, number> {
   try {
     return JSON.parse(window.localStorage.getItem(META) ?? "{}");
   } catch {
@@ -91,147 +91,105 @@ function readUpdated(): Record<string, number> {
   }
 }
 
-function snapshot(): Snapshot {
-  const data: Record<string, unknown> = {};
-  const updated: Record<string, number> = {};
-  for (const [k, t] of Object.entries(readUpdated())) if (!skipped(k)) updated[k] = t;
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const k = window.localStorage.key(i);
+const num = (k: string) => Number(window.localStorage.getItem(k) ?? 0) || 0;
+
+/** Keys stamped since the last sync (all of them on a device's first). */
+function changesSince(pushed: number): Change[] {
+  const meta = readMeta();
+  const keys = new Set(Object.keys(meta));
+  if (pushed <= 0)
+    for (let i = 0; i < window.localStorage.length; i++) keys.add(window.localStorage.key(i)!);
+  const out: Change[] = [];
+  for (const k of keys) {
     if (!k || skipped(k)) continue;
-    const raw = window.localStorage.getItem(k);
-    if (raw === null) continue;
-    try {
-      data[k] = JSON.parse(raw);
-    } catch {
-      data[k] = raw; // plain strings (e.g. da:total:<date>)
-    }
-    updated[k] ??= 0;
+    const t = meta[k] ?? 0;
+    if (pushed > 0 && t < pushed) continue;
+    out.push([k, t, window.localStorage.getItem(k)]);
   }
-  return { data, updated };
+  return out;
 }
 
-/** Bring the cloud copy in; returns true when this device holds something newer. */
-function apply(remote: Partial<Snapshot>) {
-  const rData = remote.data ?? {};
-  const rUpd = remote.updated ?? {};
-  const meta = readUpdated();
-  const local = snapshot();
+/** Bring the cloud's changes in; newest stamp wins. */
+function apply(changes: Change[]) {
+  if (!changes.length) return;
+  const meta = readMeta();
   let changed = false;
-  let localNewer = false;
   applying = true;
   try {
-    for (const k of new Set([...Object.keys(rData), ...Object.keys(rUpd)])) {
+    for (const [k, t, v] of changes) {
       if (skipped(k)) continue;
-      const lt = local.updated[k] ?? 0;
-      const rt = rUpd[k] ?? 0;
-      const has = k in local.data;
-      if (k in rData) {
-        if (!has || rt > lt) {
-          const v = rData[k];
-          window.localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
-          meta[k] = rt;
-          changed = true;
-        } else if (lt > rt) localNewer = true;
-      } else if (rt > lt) {
-        // deleted on another device
-        if (has) {
-          window.localStorage.removeItem(k);
-          changed = true;
-        }
-        meta[k] = rt;
-      } else if (has) localNewer = true;
+      const local = window.localStorage.getItem(k);
+      if (t < (meta[k] ?? 0) || (t === (meta[k] ?? 0) && local !== null)) continue;
+      if (v === null) {
+        if (local !== null) window.localStorage.removeItem(k);
+      } else if (local !== v) window.localStorage.setItem(k, v);
+      meta[k] = t;
+      changed = true;
     }
-    for (const k of Object.keys(local.data)) if (!(k in rData) && !(k in rUpd)) localNewer = true;
     window.localStorage.setItem(META, JSON.stringify(meta));
-    if (changed) emit();
   } finally {
     applying = false;
   }
-  return localNewer;
+  if (changed) emit();
 }
 
-async function request(method: "GET" | "PUT", body?: string) {
+async function sync() {
   const k = getSyncId();
-  if (!k) throw new Error("no id");
-  const res = await fetch("/api/sync", {
-    method,
-    headers: { "x-da-id": k, ...(body ? { "content-type": "application/json" } : {}) },
-    body,
-    keepalive: method === "PUT" && !!body && body.length < 60_000,
-  });
-  if (res.status === 503) {
-    setStatus("off");
-    throw new Error("sync not configured");
-  }
-  if (res.status === 429 || res.status === 507) {
-    setStatus("paused");
-    throw new Error("cloud paused");
-  }
-  if (!res.ok) throw new Error(`sync ${res.status}`);
-  return (await res.json()) as Partial<Snapshot>;
-}
-
-/** Bring remote changes in, then push anything local that is newer. */
-export async function pull() {
-  if (!getSyncId() || inflight) return;
-  inflight = true;
-  try {
-    setStatus("syncing");
-    lastPull = Date.now();
-    const localNewer = apply(await request("GET"));
-    lastSynced = JSON.stringify(snapshot());
-    setStatus("synced");
-    if (localNewer || dirty) schedulePush(0);
-  } catch (e) {
-    if (status !== "off" && status !== "paused") setStatus("error");
-    console.warn("[sync] pull failed", e);
-  } finally {
-    inflight = false;
-  }
-}
-
-async function push() {
-  if (!getSyncId()) return;
+  if (!k) return;
   if (inflight) {
-    dirty = true;
+    again = true;
     return;
   }
-  const snap = snapshot();
-  const body = JSON.stringify(snap);
-  dirty = false;
-  // a visitor who has not ticked anything yet has nothing worth a cloud copy
-  if (!Object.keys(snap.data).length && !Object.keys(snap.updated).length) return;
-  if (body === lastSynced) return;
+  const since = num(REV);
+  const pushed = num(PUSHED);
+  const startedAt = Date.now();
+  const changes = changesSince(pushed);
+  // a new visitor with nothing yet has nothing in the cloud either
+  if (!changes.length && since === 0 && pushed > 0) return;
   inflight = true;
+  again = false;
   try {
     setStatus("syncing");
-    apply(await request("PUT", body));
-    lastSynced = JSON.stringify(snapshot());
+    lastSync = startedAt;
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "x-da-id": k, "content-type": "application/json" },
+      body: JSON.stringify({ since, changes }),
+      keepalive: true,
+    });
+    if (res.status === 503) return setStatus("off");
+    if (res.status === 429 || res.status === 507) return setStatus("paused");
+    if (!res.ok) throw new Error(`sync ${res.status}`);
+    const out = (await res.json()) as { rev: number; reset: boolean; changes: Change[] };
+    apply(out.changes);
+    window.localStorage.setItem(REV, String(out.rev));
+    // the cloud lost track of this device (or was emptied): send everything next time
+    window.localStorage.setItem(PUSHED, out.reset ? "-1" : String(startedAt));
+    if (out.reset) again = true;
     setStatus("synced");
+    foldOldYears(); // after a sync, so a year is summed from everything this person holds
   } catch (e) {
-    if (status !== "off" && status !== "paused") setStatus("error");
-    console.warn("[sync] push failed", e);
+    setStatus("error");
+    console.warn("[sync] failed", e);
   } finally {
     inflight = false;
-    if (dirty) schedulePush(500);
+    if (again) schedule(500);
   }
 }
 
-function schedulePush(delay = 20_000) {
-  if (!getSyncId()) return;
-  dirty = true;
-  if (pushTimer) clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => {
-    pushTimer = null;
-    void push();
+function schedule(delay = 20_000) {
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(() => {
+    timer = null;
+    void sync();
   }, delay);
 }
 
 function flush() {
-  if (!dirty && !pushTimer) return;
-  if (pushTimer) clearTimeout(pushTimer);
-  pushTimer = null;
-  void push();
+  if (!timer) return;
+  clearTimeout(timer);
+  timer = null;
+  void sync();
 }
 
 /** Start once per page. Safe to call repeatedly. */
@@ -242,28 +200,32 @@ export function startSync() {
   try {
     void navigator.storage?.persist?.();
   } catch {}
-  // joining from another device: https://…/#id=<id>
   try {
+    // joining from another device: https://…/#id=<id>
     const url = new URL(window.location.href);
     const given = (new URLSearchParams(url.hash.slice(1)).get("id") ?? url.searchParams.get("id"))?.trim();
     if (given && VALID.test(given)) {
       id = given;
-      window.localStorage.setItem(ID_STORAGE, given);
-      dirty = true; // merge whatever this device already had into the joined copy
+      window.localStorage.setItem(ID, given);
+      window.localStorage.setItem(REV, "0"); // fetch the whole copy…
+      window.localStorage.setItem(PUSHED, "-1"); // …and merge in everything this device holds
     }
     if (given !== undefined) {
       url.searchParams.delete("id");
       window.history.replaceState(null, "", url.pathname + url.search);
     }
+    // first run on this device (or since the per-person cloud): send everything once
+    if (window.localStorage.getItem(PUSHED) === null) window.localStorage.setItem(PUSHED, "-1");
   } catch {}
-  if (getSyncId()) void pull();
-  // any local write → push soon (not the ones we just pulled in)
+  if (getSyncId()) void sync();
+  else foldOldYears();
+  // any local write → sync soon (not the ones just pulled in)
   subscribe(() => {
-    if (!applying) schedulePush();
+    if (!applying) schedule();
   });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      if (Date.now() - lastPull > 10 * 60_000) void pull();
+      if (Date.now() - lastSync > 10 * 60_000) void sync();
     } else flush();
   });
   window.addEventListener("pagehide", flush);
@@ -282,7 +244,15 @@ export function useSyncStatus() {
 
 /** Everything worth keeping, as a file the person can store anywhere. */
 export function backupFile() {
-  const blob = new Blob([JSON.stringify({ app: "dailyaamal", ...snapshot() })], { type: "application/json" });
+  const meta = readMeta();
+  const data: Record<string, string> = {};
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const k = window.localStorage.key(i)!;
+    if (!skipped(k)) data[k] = window.localStorage.getItem(k)!;
+  }
+  const blob = new Blob([JSON.stringify({ app: "dailyaamal", v: 2, data, updated: meta })], {
+    type: "application/json",
+  });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `daily-aamal-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -292,9 +262,19 @@ export function backupFile() {
 
 /** Merge a backup file in (newer entries win, nothing newer is overwritten), then back it up. */
 export async function restoreFile(file: File) {
-  const parsed = JSON.parse(await file.text()) as Partial<Snapshot> & { app?: string };
-  if (parsed.app !== "dailyaamal" || typeof parsed.data !== "object") throw new Error("not a Daily Aamal backup");
-  apply({ data: parsed.data, updated: parsed.updated ?? {} });
-  emit();
-  schedulePush(0);
+  const parsed = JSON.parse(await file.text()) as {
+    app?: string;
+    v?: number;
+    data?: Record<string, unknown>;
+    updated?: Record<string, number>;
+  };
+  if (parsed.app !== "dailyaamal" || typeof parsed.data !== "object" || !parsed.data)
+    throw new Error("not a Daily Aamal backup");
+  const updated = parsed.updated ?? {};
+  // v1 files held parsed JSON values; v2 the raw stored strings
+  const raw = (v: unknown) => (parsed.v === 2 ? String(v) : typeof v === "string" ? v : JSON.stringify(v));
+  const keys = new Set([...Object.keys(parsed.data), ...Object.keys(updated)]);
+  apply([...keys].map((k) => [k, updated[k] ?? 0, k in parsed.data! ? raw(parsed.data![k]) : null] as Change));
+  window.localStorage.setItem(PUSHED, "-1"); // send it all on the next sync
+  schedule(0);
 }

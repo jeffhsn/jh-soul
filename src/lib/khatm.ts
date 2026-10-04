@@ -1,22 +1,33 @@
 import { legacyRange, QURAN_PAGES, type PageRange } from "@/data/quran-daily";
+import { lastFolded, type KhatmCarry } from "./folded";
 
 /**
  * Progress-based khatm. The Quran is read in order, continuing from wherever
  * the owner actually is, and each day's portion is sized so that the khatm
- * completes within a year of its first day — so a missed day makes the
- * following portions a little larger instead of leaving a hole.
+ * completes within a month (30 days) of its first day — about a juz a day —
+ * so a missed day makes the following portions a little larger instead of
+ * leaving a hole.
  *
  * What was read is the union of the portions of every day on which
  * "quran-daily" is ticked:
  *  - `da:quran:<date>` → {from,to}: the portion that day was given (stored the
  *    first time the day becomes active, so it cannot shift once ticked);
  *  - a ticked day without one read the old date-derived slice (`legacyRange`).
- * Everything else is derived; nothing else is stored.
+ * Everything else is derived; nothing else is stored. Days of a folded Hijri
+ * year (src/lib/folded.ts) are gone; their progress continues from the
+ * year's `khatm` carry.
  */
 
-const YEAR_DAYS = 365;
-/** a sane ceiling so one long absence cannot produce an impossible day */
-const MAX_PAGES_A_DAY = 20;
+const KHATM_DAYS = 30;
+/** a sane ceiling (two juz) so one long absence cannot produce an impossible day */
+const MAX_PAGES_A_DAY = 40;
+/**
+ * Khatms used to be paced over a year. A khatm already under way when the
+ * pace became monthly gets its month from this day, not from its first day —
+ * otherwise it would be "overdue" and demand two juz a day.
+ */
+const MONTHLY_FROM = "2026-10-04";
+const paceStart = (startKey: string) => (startKey > MONTHLY_FROM ? startKey : MONTHLY_FROM);
 
 export interface KhatmState {
   /** completed readings of the whole Quran */
@@ -81,15 +92,36 @@ function apply(state: KhatmState, key: string, range: PageRange) {
   }
 }
 
+export function carryOf(state: KhatmState): KhatmCarry {
+  const read: [number, number][] = [];
+  for (const p of [...state.read].sort((a, b) => a - b)) {
+    const last = read[read.length - 1];
+    if (last && last[1] === p - 1) last[1] = p;
+    else read.push([p, p]);
+  }
+  const { khatms, startKey, startPage, days, pages } = state;
+  return { khatms, read, startKey, startPage, days, pages };
+}
+
+function fromCarry(c: KhatmCarry): KhatmState {
+  const read = new Set<number>();
+  for (const [from, to] of c.read) for (let p = from; p <= to; p++) read.add(p);
+  return { khatms: c.khatms, read, startKey: c.startKey, startPage: c.startPage, days: c.days, pages: c.pages };
+}
+
 /** Everything read on ticked days strictly before `beforeKey` (or on all days). */
 export function khatmState(beforeKey?: string): KhatmState {
-  const state = fresh();
-  if (typeof window === "undefined") return state;
+  if (typeof window === "undefined") return fresh();
+  // a folded year carries everything read up to its last day
+  const folded = lastFolded();
+  const carried = folded?.khatm && folded.through && (!beforeKey || folded.through < beforeKey);
+  const state = carried ? fromCarry(folded.khatm!) : fresh();
+  const after = carried ? folded.through! : "";
   const keys: string[] = [];
   for (let i = 0; i < window.localStorage.length; i++) {
     const k = window.localStorage.key(i);
     const m = k?.match(/^da:done:(\d{4}-\d{2}-\d{2})$/);
-    if (!m || (beforeKey && m[1] >= beforeKey)) continue;
+    if (!m || (beforeKey && m[1] >= beforeKey) || m[1] <= after) continue;
     try {
       if (JSON.parse(window.localStorage.getItem(k!) ?? "{}")["quran-daily"]) keys.push(m[1]);
     } catch {}
@@ -98,11 +130,11 @@ export function khatmState(beforeKey?: string): KhatmState {
   return state;
 }
 
-/** Pages a day needed from `key` on to finish the current khatm inside its year. */
+/** Pages a day needed from `key` on to finish the current khatm inside its month. */
 export function paceFor(state: KhatmState, key: string): number {
   const left = QURAN_PAGES - state.read.size;
-  const elapsed = state.startKey ? Math.max(0, daysBetween(state.startKey, key)) : 0;
-  const daysLeft = Math.max(1, YEAR_DAYS - elapsed);
+  const elapsed = state.startKey ? Math.max(0, daysBetween(paceStart(state.startKey), key)) : 0;
+  const daysLeft = Math.max(1, KHATM_DAYS - elapsed);
   return Math.min(MAX_PAGES_A_DAY, Math.max(1, Math.ceil(left / daysLeft)));
 }
 
@@ -157,7 +189,7 @@ export function portionFor(key: string, activeKey: string): PageRange {
 /** The date by which the current khatm completes at its pace, for the tracker. */
 export function khatmDeadline(state: KhatmState): Date | null {
   if (!state.startKey) return null;
-  const d = keyDate(state.startKey);
-  d.setDate(d.getDate() + YEAR_DAYS);
+  const d = keyDate(paceStart(state.startKey));
+  d.setDate(d.getDate() + KHATM_DAYS - 1);
   return d;
 }

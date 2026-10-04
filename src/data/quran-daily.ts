@@ -1,6 +1,6 @@
 // Daily Quran portion — the 604-page Madani mushaf, read in order. Which pages
 // fall on which day is decided by src/lib/khatm.ts from what has actually been
-// read (so at least one khatm completes every year); this file turns a page
+// read (so a khatm completes every month); this file turns a page
 // range into the checklist item: exact verses, per-ayah audio (Alafasy, from
 // everyayah.com) and the Al-Islam.org links.
 // Page/verse boundaries generated from api.alquran.cloud/v1/meta (Madani 604).
@@ -134,9 +134,9 @@ export function quranPortionFor(range: PageRange, note?: string): Amal {
     type: "quran",
     days: "daily",
     timeOfDay: "any",
-    minutes: pages * 3,
+    minutes: pages * 2,
     merit:
-      `${note ? note + " " : ""}Your portion continues from where you stopped, and is sized so the whole Quran is completed within a year of starting it — a missed day is made up, never skipped. Press play below and the exact verses (${from} → ${to}) are recited to you one by one, or read them on Al-Islam.org.`,
+      `${note ? note + " " : ""}Your portion continues from where you stopped, and is sized so the whole Quran is completed within a month of starting it — about a juz a day — a missed day is made up, never skipped. Press play below and the exact verses (${from} → ${to}) are recited to you one by one, or read them on Al-Islam.org.`,
     lines: [
       {
         ar: "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيْطَانِ ٱلرَّجِيمِ",

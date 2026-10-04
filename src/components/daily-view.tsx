@@ -43,6 +43,7 @@ import type { Amal } from "@/data";
 import { Splash } from "./splash";
 import { ThemeToggle, ThemeToggleNavItem } from "./theme-toggle";
 import { SyncNote } from "./sync-note";
+import { YearCard, YearNudge } from "./year-card";
 
 // the reader dialog (audio players, tasbih beads, counters) is only needed
 // once an item is tapped — keep it out of the initial bundle
@@ -273,6 +274,9 @@ function DayContent({ now }: { now: Date }) {
           <div className="mt-10">
             <ContributionGraph refresh={done} />
           </div>
+          <div className="mt-10">
+            <YearCard refresh={done} />
+          </div>
         </div>
       )}
 
@@ -285,6 +289,13 @@ function DayContent({ now }: { now: Date }) {
         onTouchEnd={onTouchEnd}
       >
       {/* 1 — what day is it */}
+      <YearNudge
+        onOpen={() => {
+          if (window.matchMedia("(min-width: 1024px)").matches)
+            document.getElementById("your-year")?.scrollIntoView({ behavior: "smooth" });
+          else switchTab("progress");
+        }}
+      />
       <header className="animate-rise">
         <p className="text-center font-arabic text-xl text-gold/90 animate-glow-pulse">
           بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
@@ -563,6 +574,9 @@ function DayContent({ now }: { now: Date }) {
         </div>
         <div className="hidden xl:block">
           <ContributionGraph refresh={done} />
+        </div>
+        <div className="mt-10">
+          <YearCard refresh={done} />
         </div>
       </aside>
 

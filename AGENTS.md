@@ -35,19 +35,27 @@ Sadaqa amounts are euro to the cent: sum in cents, display €5 or €0.70 (neve
 When testing in a browser, set localStorage `da:sync:off` (or block `/api/sync`) unless testing sync itself; never open a page with the owner's `#id=` link.
 Shared site, no accounts: every browser makes up a random secret id (`da:sync:id`, 22 chars) on first visit, so each
 visitor's progress is their own. Everything lives in localStorage first; the cloud copy is per person in Upstash Redis
-(free plan, autoUpgrade off — never billed, it throttles instead) through `/api/sync` (src/app/api/sync/route.ts):
-header `x-da-id`, key `da:u:<sha256>` (deflated, `z:` prefix) that NEVER expires (owner: saves must never disappear),
-plus a dated `NX` copy per day kept 7 days. The route keeps its own daily budget (DAY_UNITS, ~90% of the free plan's
-commands and bandwidth) and a key cap (MAX_KEYS, room for 1,000 people); past either it answers 429/507 and devices keep
-working locally. A daily Vercel cron (vercel.json → /api/keepalive, CRON_SECRET) stops Upstash archiving after 30 idle days.
-The footer also offers a backup file download/restore.
-The server MERGES each PUT per key (newest `da:meta:updated` timestamp wins; a stamped key absent from data = deletion)
-and answers with the merged copy. Opening `https://…/#id=<id>` makes a device join that person's copy (its own progress
-is merged in) — the "Use on another device" button in the footer (src/components/sync-note.tsx) copies that link.
-Client engine: src/lib/sync.ts (pull on load and on return after 10+ min; push debounced 20 s / on hide, skipped when unchanged). Command budget matters
-(500K/month free): don't add polling. Env: KV_REST_API_URL / KV_REST_API_TOKEN (UPSTASH_REDIS_REST_* also accepted) —
-pull with `vercel env pull .env.local`. The old single-user Vercel Blob copy (DA_SYNC_KEY) is no longer used; it is kept
-as a backup only. Sync starts from pwa.tsx on every load. The service worker never caches /api/.
+(free plan, autoUpgrade off — never billed). Sized for 1,000 people saving daily inside the free plan: one Redis HASH per
+person (`da:h:<sha256>`, field per `da:` key = "<updated>|<rev>|v<json>" or "…|d" deletion), and ONE command per sync —
+a Lua script via EVALSHA (src/app/api/sync/route.ts) that merges the device's changes (newest `da:meta:updated` stamp wins)
+and returns only fields changed since the device's `da:sync:rev`. Client (src/lib/sync.ts) sends only keys stamped since
+`da:sync:pushed`; syncs on load, on return after 10+ min, 20 s after a write, on hide. The script enforces a daily budget
+(DAY_UNITS, <90% of commands+bandwidth) and MAX_PEOPLE (1,000, keeps storage <256 MB); past either → 429/507, devices keep
+working locally. Nothing expires. Opening `https://…/#id=<id>` joins a person's copy (footer "Copy my private link",
+src/components/sync-note.tsx, which also has backup-file download/restore). A daily Vercel cron (vercel.json →
+/api/keepalive, CRON_SECRET) stops Upstash archiving after 30 idle days. Env: KV_REST_API_URL / KV_REST_API_TOKEN
+(UPSTASH_REDIS_REST_* also accepted). Without them sync answers 503 and the site runs device-only. The old single-user
+Vercel Blob copy (DA_SYNC_KEY) is unused, kept only as a backup. The service worker never caches /api/.
+Your year (src/lib/year.ts, src/components/year-card.tsx): each Hijri year summed up (days, whole days, longest run,
+khatms, Quran pages, qada days, sadaqa, most-kept aamal), on the Progress tab/rail, with a dismissible Muharram nudge.
+120 days after a Hijri year ends its dated keys are FOLDED into `da:year:<y>` (with `through` and a khatm carry) and
+deleted — keeps each person's storage bounded. khatm.ts, computeStreak and the lifetime sadaqa continue from folded
+summaries (src/lib/folded.ts); the sync script drops/ignores dated fields ≤ `through`.
+Quran khatm is MONTHLY: portions paced so a khatm completes within 30 days of its first day (~1 juz/day, max 40 pages);
+a khatm already running on 2026-10-04 (MONTHLY_FROM) gets its month from that day.
+Tend the Soul reading: books on Imam al-Mahdi (aj) and the lives of all twelve Imams (al-Qurashi series) on Al-Islam.org
+(al-islam.org is behind Cloudflare — curl gets 403; verify those links in a real browser), plus Look-up links to Sistani,
+Fadlallah (bayynat.org.lb) and Khamenei.ir.
 Qada prayers (`qada-salat`, one day = 17 rak'ahs) open the Evening session — an obligation before the recommended aamal.
 The owner wants anything worth keeping saved in the cloud this way, never only in the browser.
 Old address: the phone PWA was installed from https://dailyaamal.vercel.app (pre-rename). Keep it pointing at production —

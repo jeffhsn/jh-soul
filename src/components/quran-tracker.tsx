@@ -14,9 +14,9 @@ interface QuranProgress {
   /** pages read overall, and the days they were read on */
   pages: number;
   days: number;
-  /** pages a day that finish the current khatm inside its year */
+  /** pages a day that finish the current khatm inside its month */
   pace: number;
-  /** when that year ends, as text — empty before the first day */
+  /** when that month ends, as text — empty before the first day */
   deadline: string;
 }
 
@@ -127,7 +127,7 @@ export function QuranPanel() {
 
         <p className="mt-4 text-[0.72rem] italic leading-snug text-cream-dim">
           {days === 0 || !deadline
-            ? "Tick the Daily Quran Portion — it continues from where you stop, and every page adds up here."
+            ? "A khatm every month — about a juz a day. Tick the Daily Quran Portion; it continues from where you stop."
             : `At ${pace} ${pace === 1 ? "page" : "pages"} a day this khatm completes by ${deadline}. A missed day is made up, never skipped.`}
         </p>
       </div>
